@@ -7,9 +7,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 interface ChatContainerProps {
   messages: Message[];
   isLoading: boolean;
+  onRegenerate?: () => void;
 }
 
-const ChatContainer = ({ messages, isLoading }: ChatContainerProps) => {
+const ChatContainer = ({ messages, isLoading, onRegenerate }: ChatContainerProps) => {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -26,13 +27,17 @@ const ChatContainer = ({ messages, isLoading }: ChatContainerProps) => {
           <div className="text-center space-y-4 max-w-md">
             <h3 className="text-lg font-medium">Welcome to the AI Model Explorer</h3>
             <p className="text-muted-foreground text-sm">
-              Select a model from the carousel above and start chatting to see how different LLMs respond to your queries.
+              Select a model and start chatting to see how different LLMs respond to your queries.
             </p>
           </div>
         </div>
       ) : (
         displayMessages.map((message, index) => (
-          <MessageBubble key={index} message={message} />
+          <MessageBubble 
+            key={index} 
+            message={message} 
+            onRegenerate={message.role === 'assistant' ? onRegenerate : undefined}
+          />
         ))
       )}
       {isLoading && (

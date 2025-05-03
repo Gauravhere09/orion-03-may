@@ -28,19 +28,19 @@ const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="p-4 border-t border-muted">
-      <div className="flex space-x-2">
+      <div className="flex space-x-2 relative max-w-3xl mx-auto">
         <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type your message..."
-          className="resize-none min-h-[60px] rounded-2xl"
+          className="resize-none min-h-[60px] rounded-3xl pr-14"
           disabled={disabled}
         />
         <Button 
           type="submit" 
           size="icon" 
-          className="h-[60px] w-[60px] rounded-2xl"
+          className="absolute right-2 bottom-2 h-10 w-10 rounded-full"
           disabled={!input.trim() || disabled}
         >
           <svg 

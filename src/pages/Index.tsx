@@ -4,19 +4,20 @@ import { Message, sendMessageToGroq, regenerateResponse } from '@/services/api';
 import { aiModels, AIModel } from '@/data/models';
 import { getApiKey, hasApiKey } from '@/services/storage';
 
-import ModelSelector from '@/components/ModelSelector';
 import ChatContainer from '@/components/ChatContainer';
 import ChatInput from '@/components/ChatInput';
 import ApiKeyModal from '@/components/ApiKeyModal';
+import ModelSelectorDialog from '@/components/ModelSelectorDialog';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
-import { RefreshCw, Copy } from 'lucide-react';
+import { RefreshCw, Copy, Settings, Sparkles } from 'lucide-react';
 
 const Index = () => {
   const [selectedModel, setSelectedModel] = useState<AIModel>(aiModels[0]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
+  const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const lastUserMessageIndexRef = useRef<number>(-1);
   
   // Check if API key exists on initial load
@@ -119,8 +120,8 @@ const Index = () => {
     }
   };
 
+  // Fix for the findLast method not being available
   const handleCopyLastMessage = () => {
-    // Fix for the findLast method not being available
     let lastMessage = null;
     for (let i = messages.length - 1; i >= 0; i--) {
       if (messages[i].role === 'assistant') {
@@ -138,54 +139,40 @@ const Index = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen max-h-screen overflow-hidden p-4 md:p-6">
-      <header className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-bold">AI Model Explorer</h1>
-          <p className="text-sm text-muted-foreground">
-            Powered by Groq API
-          </p>
+    <div className="flex flex-col h-screen max-h-screen overflow-hidden">
+      <header className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center space-x-2">
+          <h1 className="text-xl font-bold">AI Chat</h1>
         </div>
         
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => setApiKeyModalOpen(true)}
-        >
-          {hasApiKey() ? "Change API Key" : "Set API Key"}
-        </Button>
+        <div className="flex items-center space-x-3">
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="flex items-center space-x-2"
+            onClick={() => setModelSelectorOpen(true)}
+          >
+            <Sparkles className="h-4 w-4" />
+            <span className="hidden sm:inline">{selectedModel.name} {selectedModel.version}</span>
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setApiKeyModalOpen(true)}
+            title="API Key Settings"
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+        </div>
       </header>
       
-      <ModelSelector 
-        selectedModel={selectedModel}
-        onModelSelect={handleModelSelect}
-      />
-      
-      <div className="flex-1 flex flex-col mt-2 mb-4 overflow-hidden bg-card/30 border rounded-xl">
-        <ChatContainer messages={messages} isLoading={isLoading} />
-        
-        <div className="border-t border-muted p-2 flex items-center justify-end gap-2">
-          {messages.length > 0 && (
-            <>
-              <Button 
-                variant="secondary" 
-                size="sm" 
-                onClick={handleCopyLastMessage}
-                disabled={isLoading || !messages.some(m => m.role === 'assistant')}
-              >
-                <Copy className="h-4 w-4 mr-2" /> Copy
-              </Button>
-              <Button 
-                variant="secondary" 
-                size="sm" 
-                onClick={handleRegenerateResponse}
-                disabled={isLoading || messages.length === 0}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" /> Regenerate
-              </Button>
-            </>
-          )}
-        </div>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <ChatContainer 
+          messages={messages} 
+          isLoading={isLoading} 
+          onRegenerate={handleRegenerateResponse}
+        />
         
         <ChatInput 
           onSendMessage={handleSendMessage} 
@@ -198,9 +185,15 @@ const Index = () => {
         onOpenChange={setApiKeyModalOpen} 
         onApiKeySaved={() => {}} 
       />
+      
+      <ModelSelectorDialog
+        open={modelSelectorOpen}
+        onOpenChange={setModelSelectorOpen}
+        selectedModel={selectedModel}
+        onModelSelect={handleModelSelect}
+      />
     </div>
   );
 };
 
 export default Index;
-
