@@ -1,11 +1,9 @@
 
 import { cn } from "@/lib/utils";
+import { Message } from "@/services/api";
 
 interface MessageBubbleProps {
-  message: {
-    role: 'user' | 'assistant';
-    content: string;
-  };
+  message: Message;
 }
 
 const MessageBubble = ({ message }: MessageBubbleProps) => {
