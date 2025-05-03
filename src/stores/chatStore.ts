@@ -1,10 +1,11 @@
 
 import { create } from 'zustand';
-import { Message, GeneratedCode, sendMessageWithFallback, enhancePrompt, parseCodeResponse, getMessageText, MessageContent, prepareMessageContent } from '@/services/api';
-import { hasApiKeys, saveChat, getChatById, deleteChat } from '@/services/storage';
+import { Message, GeneratedCode, sendMessageWithFallback, enhancePrompt, parseCodeResponse, getMessageText, prepareMessageContent } from '@/services/api';
+import { hasApiKeys, saveChat } from '@/services/storage';
 import { toast } from '@/components/ui/sonner';
 import { useModelStore } from './modelStore';
 import { useUiStore } from './uiStore';
+import { getCodeGenerationPrompt, getAssistantPrompt, initializeChat, parseCodeFromResponse, enhanceUserPrompt } from './chatActions';
 
 interface ChatStore {
   messages: Message[];
@@ -31,45 +32,13 @@ interface ChatStore {
   setIsEnhancingPrompt: (isEnhancing: boolean) => void;
 }
 
-// System message for code generation
-const getCodeGenerationPrompt = (modelName: string, modelVersion: string) => `You are an AI code generator assistant powered by ${modelName} ${modelVersion}. 
-Generate clean, well-structured HTML, CSS, and JavaScript code based on user requests.
-Always provide your response ONLY with the code blocks - no extra text.
-Format your code with:
-\`\`\`html
-<!-- HTML code here -->
-\`\`\`
-\`\`\`css
-/* CSS code here */
-\`\`\`
-\`\`\`javascript
-// JavaScript code here
-\`\`\`
-Use detailed comments in the code and ensure it's well-organized.
-Make the code look visually appealing with good styling and responsive design.
-Focus on creating intuitive and modern user interfaces.`;
-
-const getAssistantPrompt = (modelName: string, modelVersion: string) => `You are a helpful AI assistant powered by ${modelName} ${modelVersion}.
-Respond concisely and accurately to questions and provide assistance as needed.`;
-
 export const useChatStore = create<ChatStore>((set, get) => {
+  // Controller for aborting requests
   const abortControllerRef: { current: AbortController | null } = { current: null };
+  // Reference to the last user message index
   let lastUserMessageIndexRef = -1;
   
   // Initialize with stored chat if available, otherwise use default welcome message
-  const initializeChat = () => {
-    const chatId = Date.now().toString();
-    const welcomeMessage = 'Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you. You can use our default OpenRouter API keys or add your own!';
-    
-    return {
-      chatId,
-      messages: [{
-        role: 'assistant',
-        content: prepareMessageContent(welcomeMessage)
-      }]
-    };
-  };
-  
   const initialState = initializeChat();
   
   return {
@@ -95,11 +64,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
       get().handleNewChat();
     },
     
-    enhanceUserPrompt: (prompt) => {
-      // A simple enhancement logic could be implemented here
-      // For now, we'll just add some structuring to the prompt
-      return `Create a well-structured, responsive design with the following requirements:\n\n${prompt}\n\nPlease include detailed comments and ensure the code is clean and maintainable.`;
-    },
+    enhanceUserPrompt,
     
     handleSendMessage: async (content, imageUrls = []) => {
       if (!hasApiKeys()) {
@@ -332,8 +297,6 @@ export const useChatStore = create<ChatStore>((set, get) => {
       });
     },
     
-    parseCodeFromResponse: (content: string) => {
-      return parseCodeResponse(content);
-    }
+    parseCodeFromResponse
   };
 });

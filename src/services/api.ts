@@ -1,56 +1,11 @@
+
 import { AIModel } from '@/data/models';
 import { ApiKey, getAllApiKeys } from './storage';
-
-export interface MessageContent {
-  type: string;
-  text?: string;
-  image_url?: {
-    url: string;
-  };
-}
-
-export interface Message {
-  role: 'user' | 'assistant' | 'system';
-  content: string | MessageContent[];
-}
-
-export interface ChatCompletionResponse {
-  id: string;
-  choices: {
-    message: {
-      role: string;
-      content: string;
-    };
-  }[];
-}
-
-export interface ErrorResponse {
-  error: {
-    message: string;
-    code?: string;
-    type?: string;
-  };
-}
-
-export interface GeneratedCode {
-  html?: string;
-  css?: string;
-  js?: string;
-  preview?: string;
-}
-
-// API error that includes which key was used
-export class ApiError extends Error {
-  apiKey: string;
-  code?: string;
-  
-  constructor(message: string, apiKey: string, code?: string) {
-    super(message);
-    this.name = 'ApiError';
-    this.apiKey = apiKey;
-    this.code = code;
-  }
-}
+import { Message, ChatCompletionResponse, ErrorResponse, GeneratedCode, ApiError, MessageContent } from './apiTypes';
+import { getMessageText, hasCodeBlocks, maskApiKey, prepareMessageContent } from './apiHelpers';
+import { sendMessageToGemini } from './geminiService';
+import { sendMessageToOpenRouter } from './openRouterService';
+import { enhancePrompt, parseCodeResponse } from './codeService';
 
 // Try each API key in order until one works
 export const sendMessageWithFallback = async (
@@ -104,249 +59,21 @@ export const sendMessageWithFallback = async (
   }
 };
 
-// Mask API key for logging/display purposes
-const maskApiKey = (apiKey: string): string => {
-  if (!apiKey) return '';
-  if (apiKey.length <= 8) return '****';
-  return apiKey.substring(0, 4) + '...' + apiKey.substring(apiKey.length - 4);
+// Re-export everything from the modules
+export { 
+  getMessageText, 
+  hasCodeBlocks, 
+  prepareMessageContent, 
+  enhancePrompt, 
+  parseCodeResponse,
+  sendMessageToGemini,
+  sendMessageToOpenRouter
 };
-
-// Send message to Gemini API
-export const sendMessageToGemini = async (messages: Message[]): Promise<string> => {
-  const API_KEY = "AIzaSyAHduoaBafMi6FI9fh6kI_u2hwXkIoAeYY";
-  
-  try {
-    // Format messages for Gemini API
-    const formattedMessages = messages.map(msg => {
-      // Extract text from content if it's an array
-      const text = typeof msg.content === 'string' 
-        ? msg.content 
-        : msg.content.filter(item => item.type === 'text').map(item => item.text).join(' ');
-
-      return {
-        role: msg.role,
-        parts: [{ text }]
-      };
-    });
-    
-    // Keep only the essential parts of the conversation
-    const systemMessage = formattedMessages.find(msg => msg.role === 'system');
-    const userMessages = formattedMessages.filter(msg => msg.role === 'user');
-    const lastUserMessage = userMessages[userMessages.length - 1];
-    
-    // Build request body
-    const requestBody = {
-      contents: [
-        systemMessage, 
-        lastUserMessage
-      ].filter(Boolean), // Filter out undefined values
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 2048,
-      }
-    };
-    
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestBody)
-      }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'Failed to get response from Gemini API');
-    }
-
-    const data = await response.json();
-    
-    if (data.candidates && data.candidates[0] && 
-        data.candidates[0].content && 
-        data.candidates[0].content.parts && 
-        data.candidates[0].content.parts[0]) {
-      return data.candidates[0].content.parts[0].text;
-    }
-    
-    throw new Error('Invalid response format from Gemini API');
-  } catch (error) {
-    console.error('Error sending message to Gemini:', error);
-    throw error;
-  }
-};
-
-// Send message to OpenRouter API
-export const sendMessageToOpenRouter = async (
-  model: AIModel,
-  messages: Message[],
-  apiKey: string
-): Promise<string> => {
-  try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: model.openRouterModel,
-        messages,
-        temperature: 0.7,
-        max_tokens: 2048,
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json() as ErrorResponse;
-      const errorMessage = errorData.error?.message || 'Failed to get response from OpenRouter API';
-      const errorCode = errorData.error?.code || errorData.error?.type;
-      
-      throw new ApiError(errorMessage, apiKey, errorCode);
-    }
-
-    const data = await response.json() as ChatCompletionResponse;
-    
-    if (data.choices && data.choices[0] && data.choices[0].message) {
-      return data.choices[0].message.content;
-    }
-    
-    throw new ApiError('Invalid response format from OpenRouter API', apiKey);
-  } catch (error) {
-    // Re-throw ApiError instances
-    if (error instanceof ApiError) {
-      throw error;
-    }
-    
-    // Wrap other errors as ApiError
-    console.error('Error sending message to OpenRouter:', error);
-    throw new ApiError(
-      error instanceof Error ? error.message : 'Unknown error occurred', 
-      apiKey
-    );
-  }
-};
-
-// Function to enhance user prompt for code generation
-export const enhancePrompt = (prompt: string): string => {
-  return `Generate code for: ${prompt}
-  
-  Respond with well-structured, commented HTML, CSS, and JavaScript code to create this application.
-  Format your response with proper code blocks:
-  
-  \`\`\`html
-  <!-- HTML code here -->
-  \`\`\`
-  
-  \`\`\`css
-  /* CSS code here */
-  \`\`\`
-  
-  \`\`\`javascript
-  // JavaScript code here
-  \`\`\`
-  
-  Do NOT include any explanatory text outside the code blocks. Make sure to provide actual code, not placeholders or code skeleton.`;
-};
-
-// Parse code response into HTML, CSS, and JS
-export const parseCodeResponse = (response: string): GeneratedCode => {
-  const result: GeneratedCode = {};
-  
-  const htmlMatch = response.match(/```html\n([\s\S]*?)```/);
-  if (htmlMatch && htmlMatch[1]) {
-    result.html = htmlMatch[1].trim();
-  }
-  
-  const cssMatch = response.match(/```css\n([\s\S]*?)```/);
-  if (cssMatch && cssMatch[1]) {
-    result.css = cssMatch[1].trim();
-  }
-  
-  const jsMatch = response.match(/```javascript\n([\s\S]*?)```/) || response.match(/```js\n([\s\S]*?)```/);
-  if (jsMatch && jsMatch[1]) {
-    result.js = jsMatch[1].trim();
-  }
-  
-  if (result.html) {
-    result.preview = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>${result.css || ''}</style>
-      </head>
-      <body>
-        ${result.html}
-        <script>${result.js || ''}</script>
-      </body>
-      </html>
-    `;
-  }
-  
-  return result;
-};
-
-// Function to prepare message content with images if needed
-export const prepareMessageContent = (message: string, imageUrl?: string | string[]): string | MessageContent[] => {
-  // If no image, return plain text
-  if (!imageUrl) {
-    return message;
-  }
-  
-  // Create base content with text
-  const content: MessageContent[] = [
-    {
-      type: "text",
-      text: message
-    }
-  ];
-  
-  // Handle single image
-  if (typeof imageUrl === 'string') {
-    content.push({
-      type: "image_url",
-      image_url: {
-        url: imageUrl
-      }
-    });
-  } 
-  // Handle multiple images
-  else if (Array.isArray(imageUrl)) {
-    imageUrl.forEach(url => {
-      content.push({
-        type: "image_url",
-        image_url: {
-          url
-        }
-      });
-    });
-  }
-  
-  return content;
-};
-
-// Helper function to get plain text from message content
-export const getMessageText = (content: string | MessageContent[]): string => {
-  if (typeof content === 'string') {
-    return content;
-  }
-  
-  // Extract text from MessageContent array
-  return content
-    .filter(item => item.type === 'text' && item.text)
-    .map(item => item.text as string)
-    .join(' ');
-};
-
-// Helper function to check if content contains code blocks
-export const hasCodeBlocks = (content: string | MessageContent[]): boolean => {
-  const text = getMessageText(content);
-  return text.includes("```html") || 
-         text.includes("```css") || 
-         text.includes("```js") || 
-         text.includes("```javascript");
+export type { 
+  Message, 
+  MessageContent, 
+  ChatCompletionResponse, 
+  ErrorResponse, 
+  GeneratedCode, 
+  ApiError 
 };
