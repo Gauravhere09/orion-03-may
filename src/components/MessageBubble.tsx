@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { cn } from "@/lib/utils";
 import { Message, getMessageText } from "@/services/api";
-import { Copy, RefreshCw, Check, Eye } from 'lucide-react';
+import { Copy, RefreshCw, Check, Eye, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -14,37 +14,32 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useChatStore } from "@/stores/chatStore";
 
 interface MessageBubbleProps {
   message: Message;
+  messageIndex: number;
   onRegenerate?: () => void;
-  onViewPreview?: (code: string) => void;
+  onViewPreview?: () => void;
   modelName?: string;
-  responseTime?: number;
   isChatMode: boolean;
 }
 
 const MessageBubble = ({ 
   message, 
+  messageIndex,
   onRegenerate, 
   onViewPreview, 
   modelName, 
-  responseTime,
   isChatMode 
 }: MessageBubbleProps) => {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
   const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
   const messageText = getMessageText(message.content);
-  const [startTime] = useState(Date.now());
-  const [displayTime, setDisplayTime] = useState<string | null>(null);
+  const { messageRatings, rateMessage } = useChatStore();
   
-  // Calculate response time once when message is added
-  useEffect(() => {
-    if (!isUser && responseTime) {
-      setDisplayTime(`${responseTime.toFixed(1)}s`);
-    }
-  }, [isUser, responseTime]);
+  const messageRating = messageRatings[messageIndex];
   
   const handleCopy = () => {
     navigator.clipboard.writeText(messageText);
@@ -77,12 +72,6 @@ const MessageBubble = ({
     }
   );
   
-  const handlePreview = () => {
-    if (onViewPreview) {
-      onViewPreview(messageText);
-    }
-  };
-  
   return (
     <div className={cn(
       "flex flex-col w-full mb-4",
@@ -101,17 +90,40 @@ const MessageBubble = ({
         )}
       </div>
       
-      {/* Model info and response time for AI messages - displayed in very small text */}
+      {/* Model info for AI messages */}
       {!isUser && modelName && (
         <div className="mt-1 text-xs text-muted-foreground opacity-70">
-          {modelName} {displayTime ? `· ${displayTime}` : ''}
+          {modelName}
         </div>
       )}
       
       {/* Show buttons for all AI messages */}
       {!isUser && (
-        <div className="flex space-x-2 mt-2">
-          {/* Copy button - icon only */}
+        <div className="flex flex-wrap gap-2 mt-2">
+          {/* Rating buttons (like/dislike) */}
+          <div className="flex space-x-2">
+            <Button 
+              onClick={() => rateMessage(messageIndex, 'like')}
+              size="sm"
+              variant={messageRating === 'like' ? 'default' : 'secondary'}
+              className="w-8 h-8 p-0"
+              title="Like"
+            >
+              <ThumbsUp className="h-3 w-3" />
+            </Button>
+            
+            <Button 
+              onClick={() => rateMessage(messageIndex, 'dislike')}
+              size="sm"
+              variant={messageRating === 'dislike' ? 'destructive' : 'secondary'}
+              className="w-8 h-8 p-0"
+              title="Dislike"
+            >
+              <ThumbsDown className="h-3 w-3" />
+            </Button>
+          </div>
+          
+          {/* Copy button */}
           <Button 
             onClick={handleCopy}
             size="sm"
@@ -126,7 +138,7 @@ const MessageBubble = ({
             )}
           </Button>
           
-          {/* Regenerate button - icon only in all modes */}
+          {/* Regenerate button */}
           {onRegenerate && (
             <Button 
               onClick={() => setRegenerateDialogOpen(true)}
@@ -139,10 +151,10 @@ const MessageBubble = ({
             </Button>
           )}
           
-          {/* Preview button only for code responses and only in code mode */}
-          {hasCode && onViewPreview && !isChatMode && (
+          {/* Preview button for code responses regardless of mode */}
+          {hasCode && onViewPreview && (
             <Button 
-              onClick={handlePreview}
+              onClick={onViewPreview}
               size="sm"
               variant="secondary"
               className="flex items-center space-x-1 text-xs"

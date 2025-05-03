@@ -30,9 +30,6 @@ const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview }: Cha
   const displayMessages = Array.isArray(messages) 
     ? messages.filter(msg => msg && typeof msg === 'object' && msg.role !== 'system') 
     : [];
-  
-  // Mock response time (in a real app, this would be measured)
-  const getRandomResponseTime = () => Math.random() * 3 + 1; // 1-4 seconds
 
   return (
     <div 
@@ -66,13 +63,13 @@ const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview }: Cha
             
           return (
             <MessageBubble 
-              key={index} 
+              key={index}
+              messageIndex={index}
               message={message} 
               onRegenerate={isLastAssistantMessage && !isGenerating && onRegenerate ? onRegenerate : undefined}
               onViewPreview={message.role === 'assistant' && onViewPreview && hasCode
                 ? () => onViewPreview(messageText) : undefined}
               modelName={message.role === 'assistant' ? selectedModel.name : undefined}
-              responseTime={message.role === 'assistant' ? getRandomResponseTime() : undefined}
               isChatMode={isChatMode}
             />
           );

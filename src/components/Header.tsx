@@ -18,8 +18,12 @@ const Header = ({
 }: HeaderProps) => {
   return (
     <header className="flex items-center justify-between p-4 border-b">
-      <div className="flex items-center space-x-2">
-        {/* App name removed as requested */}
+      <div className="flex items-center space-x-3">
+        <img 
+          src="/lovable-uploads/8f162460-5a85-4a8e-82f5-343312051ee5.png" 
+          alt="HABT App" 
+          className="h-10 w-10 rounded-xl"
+        />
       </div>
       
       <div className="flex items-center space-x-2">
@@ -43,14 +47,7 @@ const Header = ({
           <span className="hidden sm:inline">{selectedModel.name} {selectedModel.version}</span>
         </Button>
         
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={onApiKeyManagerClick}
-          title="Manage API Keys"
-        >
-          <KeyRound className="h-4 w-4" />
-        </Button>
+        {/* Admin access button hidden as per request */}
       </div>
     </header>
   );

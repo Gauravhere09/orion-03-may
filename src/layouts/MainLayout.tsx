@@ -6,18 +6,15 @@ import { hasApiKeys } from '@/services/storage';
 import ChatContainer from '@/components/ChatContainer';
 import ChatInput from '@/components/ChatInput';
 import ApiKeyModal from '@/components/ApiKeyModal';
-import ApiKeyManager from '@/components/ApiKeyManager';
 import ModelSelectorDialog from '@/components/ModelSelectorDialog';
 import CodeDisplay from '@/components/CodeDisplay';
 import CodePreview from '@/components/CodePreview';
 import Header from '@/components/Header';
-import ErrorReportButton from '@/components/ErrorReportButton';
+import ErrorReportForm from '@/components/ErrorReportForm';
 import { Button } from '@/components/ui/button';
-import { Code, MessageSquare } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
 import { useModelStore } from '@/stores/modelStore';
 import { useUiStore } from '@/stores/uiStore';
-import { Toggle } from '@/components/ui/toggle';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface MainLayoutProps {
@@ -37,9 +34,9 @@ const MainLayout = ({
   const { selectedModel, handleModelSelect } = useModelStore();
   const { isChatMode, toggleChatMode } = useUiStore();
   
-  const [apiKeyManagerOpen, setApiKeyManagerOpen] = useState(false);
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [errorReportOpen, setErrorReportOpen] = useState(false);
   const lastScrollPosition = useRef(0);
   const headerRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -67,6 +64,13 @@ const MainLayout = ({
     return () => container.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Open error report form when there's an error
+  useEffect(() => {
+    if (lastError) {
+      setErrorReportOpen(true);
+    }
+  }, [lastError]);
+
   // If in preview mode, show the preview component with full screen display
   if (isPreviewMode && generatedCode.preview) {
     return (
@@ -86,7 +90,7 @@ const MainLayout = ({
         <Header 
           selectedModel={selectedModel}
           onModelSelectClick={() => setModelSelectorOpen(true)}
-          onApiKeyManagerClick={() => setApiKeyManagerOpen(true)}
+          onApiKeyManagerClick={() => {}} // API key manager button removed
           onNewChatClick={() => setShowClearChatConfirm(true)}
         />
       </div>
@@ -96,25 +100,6 @@ const MainLayout = ({
           ref={chatContainerRef}
           className="w-full md:w-1/2 flex flex-col overflow-hidden border-r"
         >
-          {lastError && (
-            <div className="bg-red-50 p-3 flex justify-between items-center">
-              <span className="text-sm text-red-700">{lastError}</span>
-              <div className="flex space-x-2">
-                <ErrorReportButton 
-                  error={lastError} 
-                  additionalInfo={{ model: selectedModel.name }}
-                />
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setLastError(null)}
-                >
-                  Dismiss
-                </Button>
-              </div>
-            </div>
-          )}
-          
           <ChatContainer 
             messages={messages} 
             isLoading={isLoading} 
@@ -143,30 +128,6 @@ const MainLayout = ({
           </div>
           
           <div className="relative px-4 border-t mt-auto">
-            {/* Mode toggle positioned at the right side above input */}
-            <div className="flex justify-end py-2">
-              <Toggle
-                pressed={isChatMode}
-                onPressedChange={toggleChatMode}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-1 h-8"
-                title={isChatMode ? "Switch to Code Mode" : "Switch to Chat Mode"}
-              >
-                {isChatMode ? (
-                  <>
-                    <MessageSquare className="h-4 w-4" />
-                    <span>Chat</span>
-                  </>
-                ) : (
-                  <>
-                    <Code className="h-4 w-4" />
-                    <span>Code</span>
-                  </>
-                )}
-              </Toggle>
-            </div>
-            
             <ChatInput 
               onSendMessage={(msg, imageUrls) => handleSendMessage(msg, imageUrls)} 
               disabled={isLoading || !hasApiKeys()}
@@ -174,6 +135,7 @@ const MainLayout = ({
                 ? "Chat with AI assistant..." 
                 : "Describe the code you want to generate..."}
               isChatMode={isChatMode}
+              onToggleChatMode={toggleChatMode}
               onEnhancePrompt={enhanceUserPrompt}
               selectedModel={selectedModel}
             />
@@ -202,11 +164,6 @@ const MainLayout = ({
         onApiKeySaved={() => {}} 
       />
       
-      <ApiKeyManager
-        open={apiKeyManagerOpen}
-        onOpenChange={setApiKeyManagerOpen}
-      />
-      
       <ModelSelectorDialog
         open={modelSelectorOpen}
         onOpenChange={setModelSelectorOpen}
@@ -231,6 +188,14 @@ const MainLayout = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Error Report Form */}
+      <ErrorReportForm
+        open={errorReportOpen && !!lastError}
+        onOpenChange={setErrorReportOpen}
+        error={lastError || ''}
+        onClose={() => setLastError(null)}
+      />
     </div>
   );
 };

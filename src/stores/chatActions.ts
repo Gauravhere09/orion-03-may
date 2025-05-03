@@ -1,7 +1,5 @@
-
 import { Message, GeneratedCode, sendMessageWithFallback, enhancePrompt, parseCodeResponse, getMessageText, prepareMessageContent } from '@/services/api';
-import { hasApiKeys, saveChat } from '@/services/storage';
-import { toast } from '@/components/ui/sonner';
+import { hasApiKeys, saveChat, getChats } from '@/services/storage';
 import { useModelStore } from './modelStore';
 import { useUiStore } from './uiStore';
 
@@ -26,10 +24,23 @@ Focus on creating intuitive and modern user interfaces.`;
 export const getAssistantPrompt = (modelName: string, modelVersion: string) => `You are a helpful AI assistant powered by ${modelName} ${modelVersion}.
 Respond concisely and accurately to questions and provide assistance as needed.`;
 
-// Initialize with a welcome message
+// Initialize with a welcome message or load from storage
 export const initializeChat = () => {
+  // Check for existing chats
+  const chats = getChats();
+  
+  // If there are existing chats, use the most recent one
+  if (chats && chats.length > 0) {
+    const mostRecentChat = chats[0]; // Chats are sorted newest first
+    return {
+      chatId: mostRecentChat.id,
+      messages: mostRecentChat.messages
+    };
+  }
+  
+  // Otherwise create a new chat
   const chatId = Date.now().toString();
-  const welcomeMessage = 'Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you. You can use our default OpenRouter API keys or add your own!';
+  const welcomeMessage = 'Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you.';
   
   return {
     chatId,

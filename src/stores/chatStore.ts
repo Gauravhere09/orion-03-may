@@ -5,6 +5,7 @@ import { hasApiKeys, saveChat, getChatById } from '@/services/storage';
 import { useModelStore } from './modelStore';
 import { useUiStore } from './uiStore';
 import { getCodeGenerationPrompt, getAssistantPrompt, initializeChat, parseCodeFromResponse, enhanceUserPrompt } from './chatActions';
+import { MessageContent } from '@/services/apiTypes';
 
 interface ChatStore {
   messages: Message[];
@@ -32,6 +33,8 @@ interface ChatStore {
   isEnhancingPrompt: boolean;
   setIsEnhancingPrompt: (isEnhancing: boolean) => void;
   loadChatById: (id: string) => boolean;
+  rateMessage: (index: number, rating: 'like' | 'dislike') => void;
+  messageRatings: Record<number, 'like' | 'dislike'>;
 }
 
 export const useChatStore = create<ChatStore>((set, get) => {
@@ -52,6 +55,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
     lastError: null,
     showClearChatConfirm: false,
     isEnhancingPrompt: false,
+    messageRatings: {},
     
     setMessages: (messages) => set({ messages }),
     addMessage: (message) => set(state => ({ messages: [...state.messages, message] })),
@@ -62,6 +66,14 @@ export const useChatStore = create<ChatStore>((set, get) => {
     setLastError: (error) => set({ lastError: error }),
     setShowClearChatConfirm: (show) => set({ showClearChatConfirm: show }),
     setIsEnhancingPrompt: (isEnhancing) => set({ isEnhancingPrompt: isEnhancing }),
+    
+    // Add message rating functionality
+    rateMessage: (index, rating) => set(state => ({
+      messageRatings: {
+        ...state.messageRatings,
+        [index]: rating
+      }
+    })),
     
     confirmClearChat: () => {
       set({ showClearChatConfirm: false });
@@ -313,7 +325,8 @@ export const useChatStore = create<ChatStore>((set, get) => {
           content: prepareMessageContent('Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you.')
         }],
         generatedCode: {},
-        lastError: null
+        lastError: null,
+        messageRatings: {}
       });
     },
     

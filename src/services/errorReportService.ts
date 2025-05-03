@@ -22,13 +22,31 @@ export const prepareErrorReport = (
   };
 };
 
+// Function to get IP address (for better error reporting)
+const getIPAddress = async (): Promise<string | undefined> => {
+  try {
+    const response = await fetch('https://api.ipify.org?format=json');
+    const data = await response.json();
+    return data.ip;
+  } catch (error) {
+    console.error("Failed to get IP address:", error);
+    return undefined;
+  }
+};
+
 // Function to send error report via EmailJS (to be configured later)
 export const sendErrorReport = async (report: ErrorReport): Promise<boolean> => {
   try {
+    // Try to get IP address
+    const ipAddress = await getIPAddress();
+    if (ipAddress) {
+      report.ipAddress = ipAddress;
+    }
+    
     // Log the report for now
     console.log("Error report prepared for sending:", report);
     
-    // This will be implemented with EmailJS later
+    // This will be implemented with EmailJS later when credentials are provided
     // const response = await emailjs.send(
     //   "serviceId",
     //   "templateId",
@@ -37,6 +55,7 @@ export const sendErrorReport = async (report: ErrorReport): Promise<boolean> => 
     //     timestamp: report.timestamp,
     //     userAgent: report.userAgent,
     //     url: report.url,
+    //     ipAddress: report.ipAddress || "Unknown",
     //     additionalInfo: JSON.stringify(report.additionalInfo || {})
     //   },
     //   "userID"

@@ -2,8 +2,9 @@
 import { FormEvent, useState, useRef, ChangeEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Image, Sparkles } from 'lucide-react';
+import { Image, Sparkles, Code, MessageSquare } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Toggle } from '@/components/ui/toggle';
 import { AIModel } from '@/data/models';
 
 interface ChatInputProps {
@@ -11,6 +12,7 @@ interface ChatInputProps {
   disabled: boolean;
   placeholder?: string;
   isChatMode: boolean;
+  onToggleChatMode: () => void;
   onEnhancePrompt?: (prompt: string) => string;
   selectedModel?: AIModel;
 }
@@ -20,6 +22,7 @@ const ChatInput = ({
   disabled, 
   placeholder = "Type your message...", 
   isChatMode,
+  onToggleChatMode,
   onEnhancePrompt,
   selectedModel
 }: ChatInputProps) => {
@@ -134,9 +137,30 @@ const ChatInput = ({
         )}
         
         <div className="flex-col max-w-3xl mx-auto">
-          {/* Mode toggle and image button above input */}
-          <div className="flex justify-end py-2 space-x-2">
-            {images.length < 2 && (
+          {/* Mode toggle and image button above input in row */}
+          <div className="flex justify-between items-center py-2">
+            <Toggle
+              pressed={isChatMode}
+              onPressedChange={onToggleChatMode}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1 h-8"
+              title={isChatMode ? "Switch to Code Mode" : "Switch to Chat Mode"}
+            >
+              {isChatMode ? (
+                <>
+                  <MessageSquare className="h-4 w-4" />
+                  <span>Chat</span>
+                </>
+              ) : (
+                <>
+                  <Code className="h-4 w-4" />
+                  <span>Code</span>
+                </>
+              )}
+            </Toggle>
+            
+            {isChatMode && images.length < 2 && (
               <>
                 <input 
                   type="file"

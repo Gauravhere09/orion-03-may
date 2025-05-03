@@ -15,7 +15,6 @@ export const sendMessageWithFallback = async (
 ): Promise<string> => {
   const apiKeys = getAllApiKeys();
   if (!apiKeys || apiKeys.length === 0) {
-    toast.error("No API keys available. Please add API keys in settings.");
     throw new Error('No API keys available');
   }
   
@@ -54,7 +53,7 @@ export const sendMessageWithFallback = async (
         console.error(`API key ${maskApiKey(error.apiKey)} failed:`, error.message);
         
         // If the error is a rate limit, log but don't show toast
-        if (error.message.includes("Rate limit") || error.code === 429) {
+        if (error.message.includes("Rate limit") || error.code === "429") {
           console.log(`Rate limit exceeded for API key ${maskApiKey(error.apiKey)}. Trying next key...`);
         }
         // Continue to next API key
