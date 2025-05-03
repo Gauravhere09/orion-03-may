@@ -1,6 +1,5 @@
-
 import { useState, useEffect, useRef } from 'react';
-import { Message, sendMessageWithFallback, enhancePrompt, parseCodeResponse, GeneratedCode, getMessageText } from '@/services/api';
+import { Message, sendMessageWithFallback, enhancePrompt, parseCodeResponse, GeneratedCode, getMessageText, prepareMessageContent } from '@/services/api';
 import { aiModels, AIModel } from '@/data/models';
 import { initializeApiKeys, hasApiKeys, saveChat, getChats } from '@/services/storage';
 
@@ -134,8 +133,9 @@ const Index = () => {
         return newMessages;
       });
       
-      // Parse code from response
-      const parsedCode = parseCodeResponse(response);
+      // Fix for line 196: Parse code from response using getMessageText
+      const codeText = typeof response === 'string' ? response : getMessageText(response);
+      const parsedCode = parseCodeResponse(codeText);
       setGeneratedCode(parsedCode);
       
     } catch (error) {
@@ -192,8 +192,13 @@ const Index = () => {
       newMessages.push(tempMessage);
       setMessages(newMessages);
 
+      // Get content from the last user message, ensuring we handle potential MessageContent[] type
+      const lastUserContent = typeof messages[lastUserIndex].content === 'string' 
+        ? messages[lastUserIndex].content as string
+        : getMessageText(messages[lastUserIndex].content);
+
       // Enhanced prompt for code generation
-      const enhancedContent = enhancePrompt(messages[lastUserIndex].content);
+      const enhancedContent = enhancePrompt(lastUserContent);
       
       // Create messages array with system prompt and the user request
       const messagesForApi: Message[] = [
@@ -211,8 +216,9 @@ const Index = () => {
         return updatedMessages;
       });
       
-      // Parse code from response
-      const parsedCode = parseCodeResponse(response);
+      // Fix for handling string or MessageContent[] response
+      const codeText = typeof response === 'string' ? response : getMessageText(response);
+      const parsedCode = parseCodeResponse(codeText);
       setGeneratedCode(parsedCode);
       
       toast("Code regenerated", {
