@@ -38,7 +38,13 @@ export const sendMessageToGroq = async (
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'Failed to get response from Groq API');
+      const errorMessage = errorData.error?.message || 'Failed to get response from Groq API';
+      
+      if (errorData.error?.code === "model_not_found" || errorData.error?.code === "model_decommissioned") {
+        throw new Error(`Model unavailable: ${errorMessage}`);
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const data = await response.json() as ChatCompletionResponse;
@@ -47,4 +53,16 @@ export const sendMessageToGroq = async (
     console.error('Error sending message to Groq:', error);
     throw error;
   }
+};
+
+// Helper function to regenerate a response
+export const regenerateResponse = async (
+  model: AIModel,
+  messages: Message[],
+  apiKey: string,
+  lastUserMessageIndex: number
+): Promise<string> => {
+  // Remove the assistant's last message if it exists
+  const messagesToSend = messages.slice(0, lastUserMessageIndex + 1);
+  return sendMessageToGroq(model, messagesToSend, apiKey);
 };

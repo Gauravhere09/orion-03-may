@@ -35,11 +35,22 @@ export const aiModels: AIModel[] = [
     strengths: ["Strong reasoning", "Content generation", "Knowledge"]
   },
   {
-    id: "mixtral-8x7b",
+    id: "llama2-70b",
+    name: "Llama 2",
+    provider: "Meta",
+    description: "Previous generation of Meta's powerful open model.",
+    version: "70B",
+    maxTokens: 4096,
+    groqModel: "llama2-70b-4096",
+    gradient: "from-blue-500 via-indigo-500 to-purple-500",
+    strengths: ["Versatile", "Well-documented", "Stable"]
+  },
+  {
+    id: "mixtral-medium",
     name: "Mixtral",
     provider: "Mistral AI",
     description: "A mixture of experts model with strong capabilities.",
-    version: "8x7B",
+    version: "Medium",
     maxTokens: 32768,
     groqModel: "mixtral-8x7b-32768",
     gradient: "from-emerald-500 via-teal-500 to-green-500",
@@ -55,38 +66,5 @@ export const aiModels: AIModel[] = [
     groqModel: "gemma-7b-it",
     gradient: "from-amber-500 via-orange-500 to-red-500",
     strengths: ["Efficient", "Fast responses", "Good instruction following"]
-  },
-  {
-    id: "claude3-opus",
-    name: "Claude 3",
-    provider: "Anthropic",
-    description: "Flagship model from Anthropic with strong reasoning.",
-    version: "Opus",
-    maxTokens: 102400,
-    groqModel: "claude-3-opus-20240229",
-    gradient: "from-cyan-500 via-blue-500 to-indigo-500",
-    strengths: ["Advanced reasoning", "Very long context", "Nuanced responses"]
-  },
-  {
-    id: "claude3-sonnet",
-    name: "Claude 3",
-    provider: "Anthropic",
-    description: "Balance of intelligence and speed from Anthropic.",
-    version: "Sonnet",
-    maxTokens: 102400,
-    groqModel: "claude-3-sonnet-20240229",
-    gradient: "from-sky-400 via-blue-400 to-indigo-400",
-    strengths: ["Fast responses", "Long context", "Good value"]
-  },
-  {
-    id: "command-r",
-    name: "Command R",
-    provider: "Cohere",
-    description: "Specialized for reasoning and advanced tasks.",
-    version: "Plus",
-    maxTokens: 128000,
-    groqModel: "command-r-plus",
-    gradient: "from-pink-500 via-red-500 to-yellow-500",
-    strengths: ["Task automation", "Summarization", "Analysis"]
   }
 ];
