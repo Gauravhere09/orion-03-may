@@ -2,14 +2,18 @@
 import { FormEvent, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { MessageSquare, Code } from 'lucide-react';
+import { Toggle } from '@/components/ui/toggle';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
   disabled: boolean;
   placeholder?: string;
+  isChatMode: boolean;
+  onToggleChatMode: () => void;
 }
 
-const ChatInput = ({ onSendMessage, disabled, placeholder = "Type your message..." }: ChatInputProps) => {
+const ChatInput = ({ onSendMessage, disabled, placeholder = "Type your message...", isChatMode, onToggleChatMode }: ChatInputProps) => {
   const [input, setInput] = useState('');
 
   const handleSubmit = (e: FormEvent) => {
@@ -30,14 +34,32 @@ const ChatInput = ({ onSendMessage, disabled, placeholder = "Type your message..
   return (
     <form onSubmit={handleSubmit} className="p-4 border-t border-muted">
       <div className="flex space-x-2 relative max-w-3xl mx-auto">
+        <div className="absolute left-2 bottom-2 flex items-center h-10 z-10">
+          <Toggle
+            pressed={isChatMode}
+            onPressedChange={onToggleChatMode}
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 rounded-full p-0 flex items-center justify-center"
+            title={isChatMode ? "Chat Mode" : "Code Mode"}
+          >
+            {isChatMode ? (
+              <MessageSquare className="h-4 w-4" />
+            ) : (
+              <Code className="h-4 w-4" />
+            )}
+          </Toggle>
+        </div>
+        
         <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="resize-none min-h-[60px] rounded-full pr-14"
+          className="resize-none min-h-[60px] rounded-full pl-12 pr-14"
           disabled={disabled}
         />
+        
         <Button 
           type="submit" 
           size="icon" 

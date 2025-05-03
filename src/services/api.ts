@@ -164,7 +164,7 @@ export const enhancePrompt = (prompt: string): string => {
   // JavaScript code here
   \`\`\`
   
-  Do NOT include any explanatory text outside the code blocks.`;
+  Do NOT include any explanatory text outside the code blocks. Make sure to provide actual code, not placeholders or code skeleton.`;
 };
 
 // Parse code response into HTML, CSS, and JS

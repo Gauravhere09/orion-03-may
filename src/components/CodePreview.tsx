@@ -26,7 +26,7 @@ const CodePreview: React.FC<CodePreviewProps> = ({ code, onBack }) => {
   }, [code.preview]);
   
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-screen w-screen fixed inset-0 z-50 bg-background">
       <div className="flex items-center justify-between p-4 border-b bg-background">
         <Button 
           variant="outline" 
