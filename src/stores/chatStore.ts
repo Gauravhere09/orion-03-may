@@ -1,5 +1,6 @@
+
 import { create } from 'zustand';
-import { Message, GeneratedCode, sendMessageWithFallback, enhancePrompt, parseCodeResponse, getMessageText } from '@/services/api';
+import { Message, GeneratedCode, sendMessageWithFallback, enhancePrompt, parseCodeResponse, getMessageText, MessageContent } from '@/services/api';
 import { hasApiKeys, saveChat } from '@/services/storage';
 import { toast } from '@/components/ui/sonner';
 import { useModelStore } from './modelStore';
