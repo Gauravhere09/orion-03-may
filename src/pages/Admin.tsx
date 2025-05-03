@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ExclamationTriangleIcon, CheckCircledIcon } from '@radix-ui/react-icons';
+import { AlertTriangle, CheckCircle } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 
 const AdminPage = () => {
@@ -38,18 +38,18 @@ const AdminPage = () => {
     if (!emailjsData.serviceId || !emailjsData.templateId || !emailjsData.publicKey) {
       toast("Missing EmailJS details", {
         description: "Please fill in all EmailJS configuration fields",
-        icon: <ExclamationTriangleIcon className="h-5 w-5" />
+        icon: <AlertTriangle className="h-5 w-5" />
       });
       return;
     }
     
     setEmailjsStatus('testing');
-    // Simulate API request
+    // Simulate connection test
     setTimeout(() => {
       setEmailjsStatus('configured');
       toast("EmailJS configured successfully", {
         description: "Your EmailJS integration is now ready to use",
-        icon: <CheckCircledIcon className="h-5 w-5" />
+        icon: <CheckCircle className="h-5 w-5" />
       });
     }, 1500);
   };
@@ -58,18 +58,18 @@ const AdminPage = () => {
     if (!supabaseData.url || !supabaseData.anonKey) {
       toast("Missing Supabase details", {
         description: "Please fill in all Supabase configuration fields",
-        icon: <ExclamationTriangleIcon className="h-5 w-5" />
+        icon: <AlertTriangle className="h-5 w-5" />
       });
       return;
     }
     
     setSupabaseStatus('testing');
-    // Simulate API request
+    // Simulate connection test
     setTimeout(() => {
       setSupabaseStatus('configured');
       toast("Supabase configured successfully", {
         description: "Your Supabase integration is now ready to use",
-        icon: <CheckCircledIcon className="h-5 w-5" />
+        icon: <CheckCircle className="h-5 w-5" />
       });
     }, 1500);
   };
@@ -138,7 +138,7 @@ const AdminPage = () => {
               
               {emailjsStatus === 'configured' && (
                 <Alert variant="default" className="bg-green-500/10 text-green-500 border-green-500/20">
-                  <CheckCircledIcon className="h-4 w-4" />
+                  <CheckCircle className="h-4 w-4" />
                   <AlertTitle>Connected</AlertTitle>
                   <AlertDescription>
                     EmailJS is configured and ready to use.
@@ -203,7 +203,7 @@ const AdminPage = () => {
               
               {supabaseStatus === 'configured' && (
                 <Alert variant="default" className="bg-green-500/10 text-green-500 border-green-500/20">
-                  <CheckCircledIcon className="h-4 w-4" />
+                  <CheckCircle className="h-4 w-4" />
                   <AlertTitle>Connected</AlertTitle>
                   <AlertDescription>
                     Supabase is configured and ready to use.

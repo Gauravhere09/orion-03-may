@@ -16,14 +16,15 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
       return response;
     } catch (secondError) {
       console.error("Error with fallback Gemini model:", secondError);
-      throw new Error("Unable to get response from Gemini API. Please try again later.");
+      throw new Error("Unable to get response from Gemini. Please try again later.");
     }
   }
 };
 
 // Shared function to send messages to different Gemini models
 const sendToGeminiModel = async (messages: Message[], modelId: string): Promise<string> => {
-  const API_KEY = "AIzaSyAHduoaBafMi6FI9fh6kI_u2hwXkIoAeYY"; // Hardcoded for demo
+  // Hardcoded demo API key (this would normally be stored more securely)
+  const API_KEY = "AIzaSyAHduoaBafMi6FI9fh6kI_u2hwXkIoAeYY"; 
   
   try {
     // Format messages for Gemini API
@@ -46,7 +47,7 @@ const sendToGeminiModel = async (messages: Message[], modelId: string): Promise<
     const lastUserMessage = userMessages[userMessages.length - 1];
     
     if (!lastUserMessage) {
-      throw new Error('No user message found for Gemini API request');
+      throw new Error('No user message found for request');
     }
     
     // Find the system message
@@ -66,7 +67,7 @@ const sendToGeminiModel = async (messages: Message[], modelId: string): Promise<
       }
     };
     
-    console.log(`Sending request to Gemini API (${modelId}):`, JSON.stringify(requestBody));
+    console.log(`Sending request to Gemini (${modelId}):`, JSON.stringify(requestBody));
     
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${API_KEY}`,
@@ -80,7 +81,7 @@ const sendToGeminiModel = async (messages: Message[], modelId: string): Promise<
     );
 
     const responseText = await response.text();
-    console.log(`Gemini API (${modelId}) raw response:`, responseText);
+    console.log(`Gemini (${modelId}) raw response:`, responseText);
     
     // Try to parse the response as JSON
     let data;
@@ -88,7 +89,7 @@ const sendToGeminiModel = async (messages: Message[], modelId: string): Promise<
       data = JSON.parse(responseText);
     } catch (e) {
       console.error(`Failed to parse Gemini (${modelId}) response as JSON:`, e);
-      throw new Error(`Failed to parse Gemini response: ${responseText.substring(0, 100)}...`);
+      throw new Error(`Failed to parse response: ${responseText.substring(0, 100)}...`);
     }
 
     if (!response.ok) {
