@@ -1,5 +1,9 @@
 
-interface ErrorReport {
+import emailjs from '@emailjs/browser';
+import { EMAILJS_SERVICE_ID, EMAILJS_ERROR_TEMPLATE_ID } from '@/utils/emailjs';
+import { addStoredErrorReport } from '@/utils/localStorageBackup';
+
+export interface ErrorReport {
   error: string;
   timestamp: string;
   userAgent: string;
@@ -43,23 +47,32 @@ export const sendErrorReport = async (report: ErrorReport): Promise<boolean> => 
       report.ipAddress = ipAddress;
     }
     
-    // Log the report for now
+    // Log the report for debugging
     console.log("Error report prepared for sending:", report);
     
-    // This will be implemented with EmailJS later when credentials are provided
-    // const response = await emailjs.send(
-    //   "serviceId",
-    //   "templateId",
-    //   {
-    //     error: report.error,
-    //     timestamp: report.timestamp,
-    //     userAgent: report.userAgent,
-    //     url: report.url,
-    //     ipAddress: report.ipAddress || "Unknown",
-    //     additionalInfo: JSON.stringify(report.additionalInfo || {})
-    //   },
-    //   "userID"
-    // );
+    try {
+      // Send the error report via EmailJS
+      const response = await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_ERROR_TEMPLATE_ID,
+        {
+          error: report.error,
+          timestamp: report.timestamp,
+          userAgent: report.userAgent,
+          url: report.url,
+          ipAddress: report.ipAddress || "Unknown",
+          additionalInfo: JSON.stringify(report.additionalInfo || {})
+        }
+      );
+      console.log("Error report sent successfully", response);
+    } catch (emailError) {
+      console.error("EmailJS failed to send error report:", emailError);
+      
+      // Store error reports locally as backup using our utility function
+      addStoredErrorReport(report);
+      
+      console.log("Error report saved locally");
+    }
     
     // Return true to indicate success (this will work with real EmailJS implementation)
     return true;

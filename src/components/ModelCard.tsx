@@ -16,7 +16,7 @@ const ModelCard = ({ model, isSelected, onClick }: ModelCardProps) => {
       className={cn(
         'w-full rounded-xl overflow-hidden cursor-pointer transition-all duration-200 border-0',
         'hover:translate-y-[-5px]',
-        isSelected ? 'ring-2 ring-primary scale-105' : 'opacity-70 scale-100'
+        isSelected ? 'ring-2 ring-primary' : 'opacity-70'
       )}
       onClick={onClick}
     >
