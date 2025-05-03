@@ -5,18 +5,15 @@ import MessageBubble from '@/components/MessageBubble';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useModelStore } from '@/stores/modelStore';
 import { useUiStore } from '@/stores/uiStore';
-import { Button } from './ui/button';
-import { Plus } from 'lucide-react';
 
 interface ChatContainerProps {
   messages: Message[];
   isLoading: boolean;
   onRegenerate?: () => void;
   onViewPreview?: (code: string) => void;
-  onNewChat?: () => void;
 }
 
-const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview, onNewChat }: ChatContainerProps) => {
+const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview }: ChatContainerProps) => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { selectedModel } = useModelStore();
@@ -46,16 +43,6 @@ const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview, onNew
             <p className="text-muted-foreground text-sm">
               Describe the application or component you want to create, and I'll generate the code for you.
             </p>
-            {onNewChat && (
-              <Button 
-                variant="outline" 
-                className="border-2 border-border/50 rounded-full"
-                onClick={onNewChat}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Start New Chat
-              </Button>
-            )}
           </div>
         </div>
       ) : (

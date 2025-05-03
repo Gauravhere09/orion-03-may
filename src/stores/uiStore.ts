@@ -7,12 +7,10 @@ interface UiStore {
   isChatMode: boolean;
   isDarkMode: boolean;
   logoUrl: string;
-  chatHistoryVisible: boolean;
   setIsPreviewMode: (isPreviewMode: boolean) => void;
   toggleChatMode: () => void;
   toggleDarkMode: () => void;
   setLogoUrl: (logoUrl: string) => void;
-  toggleChatHistory: () => void;
 }
 
 export const useUiStore = create<UiStore>()(
@@ -22,7 +20,6 @@ export const useUiStore = create<UiStore>()(
       isChatMode: false,
       isDarkMode: true,
       logoUrl: "/lovable-uploads/b8b23fd4-5e37-45df-a71f-69c1687f384b.png",
-      chatHistoryVisible: true,
       
       setIsPreviewMode: (isPreviewMode: boolean) => set({ isPreviewMode }),
       toggleChatMode: () => set(state => ({ isChatMode: !state.isChatMode })),
@@ -37,8 +34,7 @@ export const useUiStore = create<UiStore>()(
           logoUrl
         };
       }),
-      setLogoUrl: (logoUrl: string) => set({ logoUrl }),
-      toggleChatHistory: () => set(state => ({ chatHistoryVisible: !state.chatHistoryVisible }))
+      setLogoUrl: (logoUrl: string) => set({ logoUrl })
     }),
     {
       name: 'ui-store',

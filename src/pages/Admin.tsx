@@ -1,158 +1,201 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, CheckCircle, Plus, Trash2 } from 'lucide-react';
-import { toast } from '@/components/ui/sonner';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Plus, Save, Trash } from 'lucide-react';
+import { ApiKey, getAllApiKeys, saveApiKey, removeApiKey, reorderApiKeys } from '@/services/storage';
+import { useUiStore } from '@/stores/uiStore';
 
-interface ApiKey {
-  name: string;
-  key: string;
-}
+// Sample credentials (to be replaced later with Supabase)
+const ADMIN_EMAIL = "admin@orion.ai";
+const ADMIN_PASSWORD = "admin123";
 
 const AdminPage = () => {
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([
-    { name: 'Default API Key', key: 'sk-xxxx-xxxx-xxxx-xxxx' }
-  ]);
+  const navigate = useNavigate();
+  const { isDarkMode } = useUiStore();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [newApiKey, setNewApiKey] = useState('');
   
-  const [newApiKey, setNewApiKey] = useState({
-    name: '',
-    key: ''
-  });
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setNewApiKey(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const addApiKey = () => {
-    if (!newApiKey.name || !newApiKey.key) {
-      toast("Missing API Key details", {
-        description: "Please provide both a name and key",
-        icon: <AlertTriangle className="h-5 w-5" />
-      });
-      return;
+  useEffect(() => {
+    // Load API keys if authenticated
+    if (isAuthenticated) {
+      const keys = getAllApiKeys();
+      setApiKeys(keys || []);
     }
-    
-    setApiKeys(prev => [...prev, newApiKey]);
-    setNewApiKey({ name: '', key: '' });
-    
-    toast("API Key added successfully", {
-      description: "Your new API key has been added",
-      icon: <CheckCircle className="h-5 w-5" />
-    });
+  }, [isAuthenticated]);
+  
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+      setLoginError('');
+    } else {
+      setLoginError('Invalid email or password');
+    }
   };
   
-  const deleteApiKey = (index: number) => {
-    setApiKeys(prev => prev.filter((_, i) => i !== index));
+  const handleAddApiKey = () => {
+    if (newApiKey.trim() === '') return;
     
-    toast("API Key removed", {
-      description: "The API key has been removed",
-      icon: <CheckCircle className="h-5 w-5" />
-    });
+    try {
+      saveApiKey(newApiKey);
+      const updatedKeys = getAllApiKeys();
+      setApiKeys(updatedKeys || []);
+      setNewApiKey('');
+    } catch (error) {
+      console.error('Error adding key:', error);
+      if (error instanceof Error) {
+        alert(error.message);
+      }
+    }
   };
+  
+  const handleRemoveKey = (key: string) => {
+    removeApiKey(key);
+    const updatedKeys = getAllApiKeys();
+    setApiKeys(updatedKeys || []);
+  };
+  
+  const handleReorderApiKeys = (keys: ApiKey[]) => {
+    reorderApiKeys(keys);
+    setApiKeys(getAllApiKeys() || []);
+  };
+  
+  const moveKeyUp = (index: number) => {
+    if (index <= 0) return;
+    const newKeys = [...apiKeys];
+    [newKeys[index], newKeys[index - 1]] = [newKeys[index - 1], newKeys[index]];
+    handleReorderApiKeys(newKeys);
+  };
+  
+  const moveKeyDown = (index: number) => {
+    if (index >= apiKeys.length - 1) return;
+    const newKeys = [...apiKeys];
+    [newKeys[index], newKeys[index + 1]] = [newKeys[index + 1], newKeys[index]];
+    handleReorderApiKeys(newKeys);
+  };
+  
+  if (!isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="w-full max-w-md glass-morphism">
+          <CardHeader>
+            <CardTitle className="text-2xl text-gradient">Admin Login</CardTitle>
+            <CardDescription>
+              Enter your credentials to access the admin panel
+            </CardDescription>
+          </CardHeader>
+          <form onSubmit={handleLogin}>
+            <CardContent className="space-y-4">
+              {loginError && (
+                <div className="p-3 text-sm text-red-500 bg-red-100 dark:bg-red-900/20 rounded-md">
+                  {loginError}
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="border-primary/20"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="border-primary/20"
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button type="submit" className="w-full cyan-glow">Login</Button>
+            </CardFooter>
+          </form>
+        </Card>
+      </div>
+    );
+  }
   
   return (
-    <div className="container mx-auto p-6 pt-24">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">API Keys Management</h1>
-        <p className="text-muted-foreground mt-2">
-          Add, edit or remove API keys for AI model integration
-        </p>
+    <div className="container mx-auto py-8 px-4 max-w-3xl">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-gradient">Admin Dashboard</h1>
+        <Button variant="outline" onClick={() => navigate('/')} className="border-primary/20">
+          Return to App
+        </Button>
       </div>
       
-      <Card className="glass-morphism border-2 border-border/50">
+      <Card className="mb-6 glass-morphism">
         <CardHeader>
-          <CardTitle>API Keys</CardTitle>
+          <CardTitle>Key Management</CardTitle>
           <CardDescription>
-            Manage your API keys for various AI models
+            Manage keys for the application. Keys are ordered by priority.
           </CardDescription>
         </CardHeader>
-        
-        <CardContent className="space-y-6">
-          {/* Add new API key section */}
-          <div className="grid gap-4 p-4 rounded-lg bg-background/40 border border-border">
-            <h3 className="text-lg font-medium">Add New API Key</h3>
-            
-            <div className="grid gap-4 sm:grid-cols-[1fr_2fr_auto]">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Key Name</Label>
-                <Input 
-                  id="name" 
-                  name="name"
-                  placeholder="OpenAI Key" 
-                  value={newApiKey.name}
-                  onChange={handleInputChange}
-                  className="border-2 border-border/50"
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="key">API Key</Label>
-                <Input 
-                  id="key" 
-                  name="key"
-                  placeholder="sk-..." 
-                  value={newApiKey.key}
-                  onChange={handleInputChange}
-                  className="border-2 border-border/50"
-                  type="password"
-                />
-              </div>
-              
-              <div className="flex items-end">
-                <Button 
-                  onClick={addApiKey} 
-                  className="bg-cyan-600 hover:bg-cyan-700"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Key
-                </Button>
-              </div>
+        <CardContent>
+          <div className="mb-6">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter new key"
+                value={newApiKey}
+                onChange={(e) => setNewApiKey(e.target.value)}
+                className="flex-1 border-primary/20"
+              />
+              <Button onClick={handleAddApiKey} className="cyan-glow">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Key
+              </Button>
             </div>
           </div>
           
-          {/* List of API keys */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Your API Keys</h3>
-            
+          <div className="space-y-2">
             {apiKeys.length === 0 ? (
-              <div className="text-center p-6 border border-dashed rounded-lg border-border">
-                <p className="text-muted-foreground">No API keys added yet</p>
+              <div className="text-center p-6 text-muted-foreground">
+                No keys added yet
               </div>
             ) : (
-              <div className="space-y-2">
-                {apiKeys.map((apiKey, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-background/40 border border-border">
-                    <div>
-                      <p className="font-medium">{apiKey.name}</p>
-                      <p className="text-muted-foreground text-sm">
-                        {apiKey.key.substring(0, 3)}...{apiKey.key.substring(apiKey.key.length - 4)}
-                      </p>
+              apiKeys.map((apiKey, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-secondary/20 rounded-md">
+                  <div className="overflow-hidden">
+                    <div className="font-mono text-sm truncate">
+                      {apiKey.key.substring(0, 8)}...{apiKey.key.substring(apiKey.key.length - 8)}
                     </div>
-                    <Button 
-                      variant="destructive" 
-                      size="sm"
-                      onClick={() => deleteApiKey(index)}
-                    >
-                      <Trash2 className="h-4 w-4" />
+                    <div className="text-xs text-muted-foreground">
+                      Priority: {apiKey.priority} {apiKey.isDefault ? '(Default)' : ''}
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => moveKeyUp(index)} disabled={index === 0}>
+                      ↑
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => moveKeyDown(index)} disabled={index === apiKeys.length - 1}>
+                      ↓
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => handleRemoveKey(apiKey.key)} disabled={apiKey.isDefault}>
+                      <Trash className="h-4 w-4" />
                     </Button>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))
             )}
           </div>
         </CardContent>
-        
-        <CardFooter className="flex justify-between border-t border-border p-4 bg-background/40">
-          <p className="text-xs text-muted-foreground">
-            Your API keys are stored securely in your browser's local storage.
-          </p>
-        </CardFooter>
       </Card>
     </div>
   );

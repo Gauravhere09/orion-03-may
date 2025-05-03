@@ -4,27 +4,7 @@ import { getMessageText } from './apiHelpers';
 
 // Send message to Gemini API
 export const sendMessageToGemini = async (messages: Message[]): Promise<string> => {
-  // First try with Gemini 2.0 Flash model
-  try {
-    const response = await sendToGeminiModel(messages, "models/gemini-1.5-flash");
-    return response;
-  } catch (error) {
-    console.error("Error with primary Gemini model, falling back to alternative:", error);
-    // If failed, try with Gemini 1.5 Pro
-    try {
-      const response = await sendToGeminiModel(messages, "models/gemini-1.5-pro");
-      return response;
-    } catch (secondError) {
-      console.error("Error with fallback Gemini model:", secondError);
-      throw new Error("Unable to get response from Gemini. Please try again later.");
-    }
-  }
-};
-
-// Shared function to send messages to different Gemini models
-const sendToGeminiModel = async (messages: Message[], modelId: string): Promise<string> => {
-  // Hardcoded demo API key (this would normally be stored more securely)
-  const API_KEY = "AIzaSyDdu5wZQHH6ORVSm0aIqDBit6qTJHAz0B4"; 
+  const API_KEY = "AIzaSyAHduoaBafMi6FI9fh6kI_u2hwXkIoAeYY";
   
   try {
     // Format messages for Gemini API
@@ -40,17 +20,24 @@ const sendToGeminiModel = async (messages: Message[], modelId: string): Promise<
       };
     });
     
+    // Find the user message
+    const userMessages = formattedMessages.filter(msg => msg.role === 'user');
+    
+    // Get the last user message
+    const lastUserMessage = userMessages[userMessages.length - 1];
+    
+    if (!lastUserMessage) {
+      throw new Error('No user message found for Gemini API request');
+    }
+    
     // Find the system message
     const systemMessage = formattedMessages.find(msg => msg.role === 'system');
     
-    // Find all user messages - use all conversation history
-    const userMessages = formattedMessages.filter(msg => msg.role === 'user' || msg.role === 'model');
-    
-    // Build request body for the specified Gemini model
+    // Build request body for Gemini-2.0-flash model
     const requestBody = {
       contents: [
         ...(systemMessage ? [systemMessage] : []),
-        ...userMessages
+        lastUserMessage
       ],
       generationConfig: {
         temperature: 0.7,
@@ -60,10 +47,10 @@ const sendToGeminiModel = async (messages: Message[], modelId: string): Promise<
       }
     };
     
-    console.log(`Sending request to Gemini (${modelId}):`, JSON.stringify(requestBody));
+    console.log('Sending request to Gemini API:', JSON.stringify(requestBody));
     
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/${modelId}:generateContent?key=${API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
       {
         method: 'POST',
         headers: {
@@ -74,19 +61,19 @@ const sendToGeminiModel = async (messages: Message[], modelId: string): Promise<
     );
 
     const responseText = await response.text();
-    console.log(`Gemini (${modelId}) raw response:`, responseText);
+    console.log('Gemini API raw response:', responseText);
     
     // Try to parse the response as JSON
     let data;
     try {
       data = JSON.parse(responseText);
     } catch (e) {
-      console.error(`Failed to parse Gemini (${modelId}) response as JSON:`, e);
-      throw new Error(`Failed to parse response: ${responseText.substring(0, 100)}...`);
+      console.error("Failed to parse Gemini response as JSON:", e);
+      throw new Error(`Failed to parse Gemini response: ${responseText.substring(0, 100)}...`);
     }
 
     if (!response.ok) {
-      let errorMessage = `Failed to get response from Gemini (${modelId})`;
+      let errorMessage = 'Failed to get response from Gemini API';
       if (data.error) {
         errorMessage = data.error.message || errorMessage;
       }
@@ -105,9 +92,9 @@ const sendToGeminiModel = async (messages: Message[], modelId: string): Promise<
       return data.candidates[0].content.parts[0].text || '';
     }
     
-    throw new Error(`Invalid response format from Gemini (${modelId})`);
+    throw new Error('Invalid response format from Gemini API');
   } catch (error) {
-    console.error(`Error sending message to Gemini (${modelId}):`, error);
+    console.error('Error sending message to Gemini:', error);
     throw error;
   }
 };

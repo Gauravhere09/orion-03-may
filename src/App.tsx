@@ -4,23 +4,19 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
+import AdminPage from './pages/Admin';
 import { useEffect } from "react";
 import { useUiStore } from "./stores/uiStore";
-import Dashboard from "./pages/Dashboard";
-import Chat from "./pages/Chat";
-import Community from "./pages/Community";
-import Navigation from "./components/Navigation";
-import AdminPage from './pages/Admin';
-import NotFound from "./pages/NotFound";
 
-// Create a query client for React Query
 const queryClient = new QueryClient();
 
 function App() {
   const { isDarkMode, logoUrl } = useUiStore();
   
-  // Apply dark mode class to html element
   useEffect(() => {
+    // Apply dark mode class to html element
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
     } else {
@@ -42,18 +38,11 @@ function App() {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="flex h-screen w-full">
-            <Navigation />
-            <div className="flex-1">
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/chat" element={<Chat />} />
-                <Route path="/community" element={<Community />} />
-                <Route path="/admin" element={<AdminPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </div>
-          </div>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/admin" element={<AdminPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
