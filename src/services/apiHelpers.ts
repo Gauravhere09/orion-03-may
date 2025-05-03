@@ -14,7 +14,7 @@ export const getMessageText = (content: string | MessageContent[]): string => {
   
   return content
     .filter(item => item && item.type === 'text' && item.text)
-    .map(item => item.text || '')
+    .map(item => (item.text || ''))
     .join(' ');
 };
 

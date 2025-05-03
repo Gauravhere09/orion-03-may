@@ -9,8 +9,12 @@ export const sendMessageToOpenRouter = async (
   apiKey: string
 ): Promise<string> => {
   try {
-    // Ensure there's always a model ID
-    const modelId = model.openRouterModel || 'anthropic/claude-3-opus:beta';
+    // Use the model ID from the data source
+    const modelId = model.openRouterModel;
+    
+    if (!modelId || modelId === 'custom-gemini') {
+      throw new Error(`Invalid model ID for OpenRouter: ${modelId}`);
+    }
     
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -47,7 +51,7 @@ export const sendMessageToOpenRouter = async (
     const data = await response.json() as ChatCompletionResponse;
     
     if (data.choices && data.choices[0] && data.choices[0].message) {
-      return data.choices[0].message.content;
+      return data.choices[0].message.content || '';
     }
     
     throw new ApiError('Invalid response format from OpenRouter API', apiKey);

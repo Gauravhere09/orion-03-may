@@ -1,4 +1,6 @@
+
 import { Message } from './apiTypes';
+import { getMessageText } from './apiHelpers';
 
 // Send message to Gemini API
 export const sendMessageToGemini = async (messages: Message[]): Promise<string> => {
@@ -10,10 +12,10 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
       // Extract text from content if it's an array
       const text = typeof msg.content === 'string' 
         ? msg.content 
-        : msg.content.filter(item => item.type === 'text').map(item => item.text).join(' ');
+        : getMessageText(msg.content);
 
       return {
-        role: msg.role,
+        role: msg.role === 'assistant' ? 'model' : msg.role, // Convert 'assistant' role to 'model' for Gemini
         parts: [{ text }]
       };
     });
@@ -22,6 +24,10 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
     const systemMessage = formattedMessages.find(msg => msg.role === 'system');
     const userMessages = formattedMessages.filter(msg => msg.role === 'user');
     const lastUserMessage = userMessages[userMessages.length - 1];
+    
+    if (!lastUserMessage) {
+      throw new Error('No user message found for Gemini API request');
+    }
     
     // Build request body
     const requestBody = {
@@ -35,6 +41,8 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
       }
     };
     
+    console.log('Sending request to Gemini API:', JSON.stringify(requestBody));
+    
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
       {
@@ -47,17 +55,29 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
     );
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'Failed to get response from Gemini API');
+      const errorText = await response.text();
+      console.error('Gemini API error response:', errorText);
+      
+      let errorMessage = 'Failed to get response from Gemini API';
+      try {
+        const errorData = JSON.parse(errorText);
+        errorMessage = errorData.error?.message || errorMessage;
+      } catch (e) {
+        // If parsing fails, use the status text
+        errorMessage = `${errorMessage}: ${response.status} ${response.statusText}`;
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
+    console.log('Gemini API response:', JSON.stringify(data));
     
     if (data.candidates && data.candidates[0] && 
         data.candidates[0].content && 
         data.candidates[0].content.parts && 
         data.candidates[0].content.parts[0]) {
-      return data.candidates[0].content.parts[0].text;
+      return data.candidates[0].content.parts[0].text || '';
     }
     
     throw new Error('Invalid response format from Gemini API');
