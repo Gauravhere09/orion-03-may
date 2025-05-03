@@ -15,7 +15,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { format } from 'date-fns';
 
 interface MessageBubbleProps {
   message: Message;
@@ -95,15 +94,16 @@ const MessageBubble = ({
         )}
       </div>
       
-      {/* Model info and response time for AI messages */}
+      {/* Model info and response time for AI messages - displayed in very small text */}
       {!isUser && modelName && (
-        <div className="mt-1 text-xs text-muted-foreground">
+        <div className="mt-1 text-xs text-muted-foreground opacity-70">
           {modelName} {responseTime ? `· ${responseTime.toFixed(1)}s` : ''}
         </div>
       )}
       
       {!isUser && (hasCode || isChatMode) && (
         <div className="flex space-x-2 mt-2">
+          {/* Copy button with icon only */}
           <Button 
             onClick={handleCopy}
             size="sm"
@@ -118,18 +118,23 @@ const MessageBubble = ({
             )}
           </Button>
           
+          {/* Regenerate button - text only in code mode, icon only in chat mode */}
           {onRegenerate && (
             <Button 
               onClick={() => setRegenerateDialogOpen(true)}
               size="sm"
               variant="secondary"
-              className="flex items-center space-x-1 text-xs"
+              className={cn(
+                "flex items-center",
+                isChatMode ? "w-8 h-8 p-0" : "space-x-1 text-xs"
+              )}
             >
               <RefreshCw className="h-3 w-3" />
               {!isChatMode && <span>Regenerate</span>}
             </Button>
           )}
           
+          {/* Preview button only for code responses */}
           {hasCode && onViewPreview && (
             <Button 
               onClick={handlePreview}

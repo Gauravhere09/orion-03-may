@@ -15,12 +15,14 @@ interface ChatContainerProps {
 
 const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview }: ChatContainerProps) => {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { selectedModel } = useModelStore();
   const { isChatMode } = useUiStore();
 
+  // Scroll to bottom whenever messages change or loading state changes
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isLoading]);
 
   // Filter out system messages from display
   const displayMessages = messages.filter(msg => msg.role !== 'system');
@@ -29,7 +31,10 @@ const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview }: Cha
   const getRandomResponseTime = () => Math.random() * 3 + 1; // 1-4 seconds
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 rounded-lg space-y-4 scrollbar-none">
+    <div 
+      ref={containerRef}
+      className="flex-1 overflow-y-auto p-4 rounded-lg space-y-4 scrollbar-none"
+    >
       {displayMessages.length === 0 ? (
         <div className="flex items-center justify-center h-full">
           <div className="text-center space-y-4 max-w-md">

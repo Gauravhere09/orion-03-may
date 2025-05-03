@@ -1,6 +1,6 @@
 
 import { create } from 'zustand';
-import { Message, GeneratedCode, sendMessageWithFallback, enhancePrompt, parseCodeResponse, getMessageText, MessageContent } from '@/services/api';
+import { Message, GeneratedCode, sendMessageWithFallback, enhancePrompt, parseCodeResponse, getMessageText, MessageContent, prepareMessageContent } from '@/services/api';
 import { hasApiKeys, saveChat } from '@/services/storage';
 import { toast } from '@/components/ui/sonner';
 import { useModelStore } from './modelStore';
@@ -59,7 +59,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
   return {
     messages: [{
       role: 'assistant',
-      content: 'Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you. You can use our default OpenRouter API keys or add your own!' as unknown as MessageContent[] | string
+      content: prepareMessageContent('Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you. You can use our default OpenRouter API keys or add your own!')
     }],
     isLoading: false,
     isGenerating: false,
@@ -113,8 +113,8 @@ export const useChatStore = create<ChatStore>((set, get) => {
         const tempMessage: Message = { 
           role: 'assistant', 
           content: isChatMode 
-            ? `Thinking...` as unknown as MessageContent[] | string
-            : `Generating code for your ${content.split(' ').slice(0, 3).join(' ')}...` as unknown as MessageContent[] | string
+            ? prepareMessageContent('Thinking...') 
+            : prepareMessageContent(`Generating code for your ${content.split(' ').slice(0, 3).join(' ')}...`)
         };
         
         set(state => ({ messages: [...state.messages, tempMessage] }));
@@ -195,8 +195,8 @@ export const useChatStore = create<ChatStore>((set, get) => {
         const tempMessage: Message = { 
           role: 'assistant', 
           content: isChatMode 
-            ? 'Thinking...' as unknown as MessageContent[] | string
-            : 'Regenerating code...' as unknown as MessageContent[] | string
+            ? prepareMessageContent('Thinking...') 
+            : prepareMessageContent('Regenerating code...')
         };
         
         // Remove the previous assistant message and add temp message
@@ -273,9 +273,11 @@ export const useChatStore = create<ChatStore>((set, get) => {
           const messages = state.messages;
           
           // Remove the temporary generating message
-          if (messages[messages.length - 1].content.includes('Generating') || 
+          if (messages.length > 0 && 
+              typeof messages[messages.length - 1].content === 'string' &&
+              (messages[messages.length - 1].content.includes('Generating') || 
               messages[messages.length - 1].content.includes('Thinking') || 
-              messages[messages.length - 1].content.includes('Regenerating')) {
+              messages[messages.length - 1].content.includes('Regenerating'))) {
             return { 
               messages: messages.slice(0, messages.length - 1),
               isGenerating: false,
@@ -297,7 +299,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
         chatId: Date.now().toString(),
         messages: [{
           role: 'assistant',
-          content: 'Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you.' as unknown as MessageContent[] | string
+          content: prepareMessageContent('Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you.')
         }],
         generatedCode: {}
       });
