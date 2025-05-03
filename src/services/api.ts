@@ -39,7 +39,7 @@ export const sendMessageToGroq = async (
         model: model.groqModel,
         messages,
         temperature: 0.7,
-        max_tokens: 1024,
+        max_tokens: 2048,
       })
     });
 
@@ -62,64 +62,29 @@ export const sendMessageToGroq = async (
   }
 };
 
-export const generateCode = async (
-  model: AIModel,
-  prompt: string,
-  apiKey: string
-): Promise<string> => {
-  const messages: Message[] = [
-    {
-      role: 'system',
-      content: `You are an expert web developer specializing in HTML, CSS, and JavaScript. 
-      Generate clean, well-commented code based on the user's request.
-      Format your response as follows:
-      
-      \`\`\`html
-      <!-- HTML code here with detailed comments -->
-      <!-- Structure the HTML document with standard doctype, head, body -->
-      \`\`\`
-      
-      \`\`\`css
-      /* CSS code here with detailed comments */
-      /* Use modern CSS practices and provide clear styling */
-      \`\`\`
-      
-      \`\`\`javascript
-      // JavaScript code here with detailed comments
-      // Ensure the code is functional and well-structured
-      \`\`\`
-      
-      Ensure your code is:
-      1. Well-commented with explanations
-      2. Properly formatted and indented
-      3. Using best practices for each language
-      4. Responsive for different screen sizes
-      5. Cross-browser compatible
-      
-      If the request is unclear, create a reasonable interpretation based on common web patterns.`
-    },
-    {
-      role: 'user',
-      content: prompt
-    }
-  ];
-
-  return await sendMessageToGroq(model, messages, apiKey);
+// Function to enhance user prompt for code generation
+export const enhancePrompt = (prompt: string): string => {
+  return `Generate code for: ${prompt}
+  
+  Respond with well-structured, commented HTML, CSS, and JavaScript code to create this application.
+  Format your response with proper code blocks:
+  
+  \`\`\`html
+  <!-- HTML code here -->
+  \`\`\`
+  
+  \`\`\`css
+  /* CSS code here */
+  \`\`\`
+  
+  \`\`\`javascript
+  // JavaScript code here
+  \`\`\`
+  
+  Do NOT include any explanatory text outside the code blocks.`;
 };
 
-// Helper function to regenerate a response
-export const regenerateResponse = async (
-  model: AIModel,
-  messages: Message[],
-  apiKey: string,
-  lastUserMessageIndex: number
-): Promise<string> => {
-  // Remove the assistant's last message if it exists
-  const messagesToSend = messages.slice(0, lastUserMessageIndex + 1);
-  return sendMessageToGroq(model, messagesToSend, apiKey);
-};
-
-// Function to parse code response into HTML, CSS, and JS
+// Parse code response into HTML, CSS, and JS
 export const parseCodeResponse = (response: string): GeneratedCode => {
   const result: GeneratedCode = {};
   
@@ -138,18 +103,18 @@ export const parseCodeResponse = (response: string): GeneratedCode => {
     result.js = jsMatch[1].trim();
   }
   
-  if (result.html && result.css && result.js) {
+  if (result.html) {
     result.preview = `
       <!DOCTYPE html>
       <html lang="en">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>${result.css}</style>
+        <style>${result.css || ''}</style>
       </head>
       <body>
         ${result.html}
-        <script>${result.js}</script>
+        <script>${result.js || ''}</script>
       </body>
       </html>
     `;
@@ -158,7 +123,14 @@ export const parseCodeResponse = (response: string): GeneratedCode => {
   return result;
 };
 
-export const abortRequest = () => {
-  // This would need to be implemented with an AbortController
-  // For now, we'll just provide a function signature
+// Helper function to regenerate a response
+export const regenerateResponse = async (
+  model: AIModel,
+  messages: Message[],
+  apiKey: string,
+  lastUserMessageIndex: number
+): Promise<string> => {
+  // Remove the assistant's last message if it exists
+  const messagesToSend = messages.slice(0, lastUserMessageIndex + 1);
+  return sendMessageToGroq(model, messagesToSend, apiKey);
 };

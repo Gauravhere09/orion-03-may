@@ -12,6 +12,7 @@ interface CodeDisplayProps {
 
 const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
   const copyToClipboard = (text: string, label: string) => {
+    if (!text) return;
     navigator.clipboard.writeText(text);
     toast(`${label} copied to clipboard`);
   };

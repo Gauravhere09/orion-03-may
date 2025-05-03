@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { Message, sendMessageToGroq, regenerateResponse, parseCodeResponse, GeneratedCode } from '@/services/api';
+import { Message, sendMessageToGroq, enhancePrompt, parseCodeResponse, GeneratedCode } from '@/services/api';
 import { aiModels, AIModel } from '@/data/models';
 import { getApiKey, hasApiKey, saveChat, getChats } from '@/services/storage';
 
@@ -30,7 +30,8 @@ const Index = () => {
   // System message for code generation
   const codeGenerationSystemPrompt = `You are an AI code generator assistant powered by ${selectedModel.name} ${selectedModel.version}. 
   Generate clean, well-structured HTML, CSS, and JavaScript code based on user requests.
-  Always format your code responses with proper markdown code blocks:
+  Always provide your response ONLY with the code blocks - no extra text.
+  Format your code with:
   \`\`\`html
   <!-- HTML code here -->
   \`\`\`
@@ -40,7 +41,7 @@ const Index = () => {
   \`\`\`javascript
   // JavaScript code here
   \`\`\`
-  Use detailed comments to explain the code sections and ensure it's well-organized and follows best practices.`;
+  Use detailed comments in the code and ensure it's well-organized.`;
   
   // Check if API key exists on initial load
   useEffect(() => {
@@ -54,6 +55,19 @@ const Index = () => {
         if (latestChat && latestChat.messages) {
           setMessages(latestChat.messages);
           setChatId(latestChat.id);
+          
+          // Check if there's code in the last message
+          const lastAssistantMessage = latestChat.messages
+            .filter(msg => msg.role === 'assistant')
+            .pop();
+            
+          if (lastAssistantMessage && 
+              (lastAssistantMessage.content.includes("```html") || 
+               lastAssistantMessage.content.includes("```css") || 
+               lastAssistantMessage.content.includes("```js"))) {
+            const parsedCode = parseCodeResponse(lastAssistantMessage.content);
+            setGeneratedCode(parsedCode);
+          }
         }
       }
     }
@@ -90,29 +104,40 @@ const Index = () => {
       const apiKey = getApiKey();
       if (!apiKey) throw new Error('No API key found');
 
+      // Add a temporary "generating" message
+      const tempMessage: Message = { 
+        role: 'assistant', 
+        content: `Generating code for your ${content.split(' ').slice(0, 3).join(' ')}...` 
+      };
+      setMessages(prev => [...prev, tempMessage]);
+      
+      // Enhanced prompt for code generation
+      const enhancedContent = enhancePrompt(content);
+      
       // Create new messages array with system prompt and chat history
       const messagesForApi: Message[] = [
-        { 
-          role: 'system', 
-          content: codeGenerationSystemPrompt
-        },
-        ...messages,
-        userMessage
+        { role: 'system', content: codeGenerationSystemPrompt },
+        { role: 'user', content: enhancedContent }
       ];
 
       abortControllerRef.current = new AbortController();
       const response = await sendMessageToGroq(selectedModel, messagesForApi, apiKey);
       
-      const assistantMessage: Message = { role: 'assistant', content: response };
-      setMessages((prev) => [...prev, assistantMessage]);
+      // Replace the temporary message with the actual response
+      setMessages(prev => {
+        const newMessages = [...prev.slice(0, prev.length - 1)];
+        newMessages.push({ role: 'assistant', content: response });
+        return newMessages;
+      });
       
-      // Parse code from response if it contains code blocks
-      if (response.includes("```html") || response.includes("```css") || response.includes("```js")) {
-        const parsedCode = parseCodeResponse(response);
-        setGeneratedCode(parsedCode);
-      }
+      // Parse code from response
+      const parsedCode = parseCodeResponse(response);
+      setGeneratedCode(parsedCode);
+      
     } catch (error) {
       console.error('Error sending message:', error);
+      // Remove the temporary message if there was an error
+      setMessages(prev => prev.slice(0, prev.length - 1));
       toast("Error", { 
         description: error instanceof Error ? error.message : "Failed to get a response",
       });
@@ -143,42 +168,63 @@ const Index = () => {
     try {
       const apiKey = getApiKey();
       if (!apiKey) throw new Error('No API key found');
-
-      // Get the latest user message index
-      const lastUserIndex = lastUserMessageIndexRef.current;
       
-      // Create messages array with system prompt and chat history up to the last user message
+      // Find the last user message
+      let lastUserIndex = -1;
+      for (let i = messages.length - 1; i >= 0; i--) {
+        if (messages[i].role === 'user') {
+          lastUserIndex = i;
+          break;
+        }
+      }
+      
+      if (lastUserIndex === -1) return;
+      
+      // Add a temporary "regenerating" message
+      const tempMessage: Message = { 
+        role: 'assistant', 
+        content: 'Regenerating code...' 
+      };
+      
+      // Remove the previous assistant message and add temp message
+      const newMessages = messages.filter((_, index) => index <= lastUserIndex);
+      newMessages.push(tempMessage);
+      setMessages(newMessages);
+
+      // Enhanced prompt for code generation
+      const enhancedContent = enhancePrompt(messages[lastUserIndex].content);
+      
+      // Create messages array with system prompt and the user request
       const messagesForApi: Message[] = [
-        { 
-          role: 'system', 
-          content: codeGenerationSystemPrompt
-        },
-        ...messages.slice(0, lastUserIndex + 1)
+        { role: 'system', content: codeGenerationSystemPrompt },
+        { role: 'user', content: enhancedContent }
       ];
 
       abortControllerRef.current = new AbortController();
       const response = await sendMessageToGroq(selectedModel, messagesForApi, apiKey);
       
-      // Replace the last assistant message or add a new one
-      const newMessages = messages.filter((_, index) => index <= lastUserIndex);
-      const assistantMessage: Message = { role: 'assistant', content: response };
-      
-      setMessages([...newMessages, assistantMessage]);
+      // Replace the temporary message with the actual response
+      setMessages(prev => {
+        const updatedMessages = [...prev.slice(0, prev.length - 1)];
+        updatedMessages.push({ role: 'assistant', content: response });
+        return updatedMessages;
+      });
       
       // Parse code from response
-      if (response.includes("```html") || response.includes("```css") || response.includes("```js")) {
-        const parsedCode = parseCodeResponse(response);
-        setGeneratedCode(parsedCode);
-      }
+      const parsedCode = parseCodeResponse(response);
+      setGeneratedCode(parsedCode);
       
-      toast("Response regenerated", {
-        description: `Generated a new response using ${selectedModel.name} ${selectedModel.version}`
+      toast("Code regenerated", {
+        description: `Generated new code using ${selectedModel.name} ${selectedModel.version}`
       });
     } catch (error) {
       console.error('Error regenerating response:', error);
       toast("Error", { 
         description: error instanceof Error ? error.message : "Failed to regenerate response",
       });
+      
+      // Remove the temporary message if there was an error
+      setMessages(prev => prev.filter((_, index) => index <= lastUserMessageIndexRef.current));
     } finally {
       setIsLoading(false);
       setIsGenerating(false);
@@ -192,6 +238,16 @@ const Index = () => {
       abortControllerRef.current = null;
       setIsGenerating(false);
       setIsLoading(false);
+      
+      // Remove the temporary generating message
+      setMessages(prev => {
+        if (prev[prev.length - 1].content.includes('Generating') || 
+            prev[prev.length - 1].content.includes('Regenerating')) {
+          return prev.slice(0, prev.length - 1);
+        }
+        return prev;
+      });
+      
       toast("Generation stopped", {
         description: "The code generation process has been stopped."
       });
@@ -207,19 +263,6 @@ const Index = () => {
       toast("Preview not available", {
         description: "Could not generate preview from the code response."
       });
-    }
-  };
-
-  // Find the last assistant message for copying
-  const handleCopyLastMessage = () => {
-    for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === 'assistant') {
-        navigator.clipboard.writeText(messages[i].content);
-        toast("Copied to clipboard", {
-          description: "The last assistant message has been copied to your clipboard."
-        });
-        break;
-      }
     }
   };
 

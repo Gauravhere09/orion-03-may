@@ -33,14 +33,21 @@ const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview }: Cha
           </div>
         </div>
       ) : (
-        displayMessages.map((message, index) => (
-          <MessageBubble 
-            key={index} 
-            message={message} 
-            onRegenerate={message.role === 'assistant' && onRegenerate ? onRegenerate : undefined}
-            onViewPreview={message.role === 'assistant' && onViewPreview ? onViewPreview : undefined}
-          />
-        ))
+        displayMessages.map((message, index) => {
+          const isLastAssistantMessage = message.role === 'assistant' && 
+            displayMessages.slice(index + 1).every(m => m.role !== 'assistant');
+            
+          return (
+            <MessageBubble 
+              key={index} 
+              message={message} 
+              onRegenerate={isLastAssistantMessage && !message.content.includes('Generating') && onRegenerate ? onRegenerate : undefined}
+              onViewPreview={message.role === 'assistant' && onViewPreview && 
+                (message.content.includes("```html") || message.content.includes("```css") || message.content.includes("```js")) 
+                ? () => onViewPreview(message.content) : undefined}
+            />
+          );
+        })
       )}
       {isLoading && (
         <div className="flex items-start">

@@ -40,7 +40,7 @@ const CodePreview: React.FC<CodePreviewProps> = ({ code, onBack }) => {
         <h2 className="text-lg font-medium">Preview</h2>
       </div>
       
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden bg-white">
         <iframe 
           ref={iframeRef}
           className="w-full h-full border-0"

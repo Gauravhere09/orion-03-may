@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import { Message } from "@/services/api";
 import { Copy, RefreshCw, Check, Eye } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
-import { parseCodeResponse } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -33,7 +32,6 @@ const MessageBubble = ({ message, onRegenerate, onViewPreview }: MessageBubblePr
     setCopied(true);
     toast("Copied to clipboard");
     
-    // Reset the copied state after 2 seconds
     setTimeout(() => {
       setCopied(false);
     }, 2000);
@@ -51,7 +49,6 @@ const MessageBubble = ({ message, onRegenerate, onViewPreview }: MessageBubblePr
                  message.content.includes("```js") ||
                  message.content.includes("```javascript");
   
-  // Format code blocks with proper syntax highlighting
   const formattedContent = message.content.replace(
     /```(html|css|javascript|js)([\s\S]*?)```/g, 
     (match, language, code) => {
@@ -63,7 +60,7 @@ const MessageBubble = ({ message, onRegenerate, onViewPreview }: MessageBubblePr
   );
   
   const handlePreview = () => {
-    if (hasCode && onViewPreview) {
+    if (onViewPreview) {
       onViewPreview(message.content);
     }
   };
@@ -86,12 +83,13 @@ const MessageBubble = ({ message, onRegenerate, onViewPreview }: MessageBubblePr
         )}
       </div>
       
-      {!isUser && (
+      {!isUser && hasCode && (
         <div className="flex space-x-2 mt-2">
-          <button 
+          <Button 
             onClick={handleCopy}
-            className="flex items-center space-x-1 text-xs py-1 px-2 text-muted-foreground hover:text-foreground rounded-full bg-secondary/50 hover:bg-secondary/80"
-            aria-label="Copy message"
+            size="sm"
+            variant="secondary"
+            className="flex items-center space-x-1 text-xs"
           >
             {copied ? (
               <Check className="h-3 w-3" />
@@ -99,28 +97,30 @@ const MessageBubble = ({ message, onRegenerate, onViewPreview }: MessageBubblePr
               <Copy className="h-3 w-3" />
             )}
             <span>Copy</span>
-          </button>
+          </Button>
           
           {onRegenerate && (
-            <button 
+            <Button 
               onClick={() => setRegenerateDialogOpen(true)}
-              className="flex items-center space-x-1 text-xs py-1 px-2 text-muted-foreground hover:text-foreground rounded-full bg-secondary/50 hover:bg-secondary/80"
-              aria-label="Regenerate response"
+              size="sm"
+              variant="secondary"
+              className="flex items-center space-x-1 text-xs"
             >
               <RefreshCw className="h-3 w-3" />
               <span>Regenerate</span>
-            </button>
+            </Button>
           )}
           
           {hasCode && onViewPreview && (
-            <button 
+            <Button 
               onClick={handlePreview}
-              className="flex items-center space-x-1 text-xs py-1 px-2 text-muted-foreground hover:text-foreground rounded-full bg-secondary/50 hover:bg-secondary/80"
-              aria-label="Preview code"
+              size="sm"
+              variant="secondary"
+              className="flex items-center space-x-1 text-xs"
             >
               <Eye className="h-3 w-3" />
               <span>Preview</span>
-            </button>
+            </Button>
           )}
         </div>
       )}
