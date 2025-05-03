@@ -1,9 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GeneratedCode } from '@/services/api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Copy, Save } from 'lucide-react';
+import { Copy, Save, Edit, Check } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { Textarea } from '@/components/ui/textarea';
 import { useChatStore } from '@/stores/chatStore';
@@ -16,8 +16,19 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
   const [editableHtml, setEditableHtml] = useState(code.html || '');
   const [editableCss, setEditableCss] = useState(code.css || '');
   const [editableJs, setEditableJs] = useState(code.js || '');
+  const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState('html');
 
   const { setGeneratedCode } = useChatStore();
+  
+  // Update editable content when code prop changes
+  useEffect(() => {
+    if (!isEditing) {
+      setEditableHtml(code.html || '');
+      setEditableCss(code.css || '');
+      setEditableJs(code.js || '');
+    }
+  }, [code, isEditing]);
   
   const copyToClipboard = (text: string, label: string) => {
     if (!text) return;
@@ -50,35 +61,77 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
     toast("Changes saved", {
       description: "Your code changes have been applied to the preview"
     });
+    
+    if (isEditing) {
+      setIsEditing(false);
+    }
+  };
+  
+  const toggleEditMode = () => {
+    setIsEditing(!isEditing);
+    if (!isEditing) {
+      toast("Edit mode enabled", {
+        description: "You can now edit the code"
+      });
+    }
   };
   
   return (
-    <Tabs defaultValue="html" className="h-full flex flex-col">
-      <TabsList className="grid grid-cols-3 mx-auto">
-        <TabsTrigger value="html">HTML</TabsTrigger>
-        <TabsTrigger value="css">CSS</TabsTrigger>
-        <TabsTrigger value="js">JavaScript</TabsTrigger>
-      </TabsList>
+    <Tabs 
+      value={activeTab} 
+      onValueChange={setActiveTab}
+      className="h-full flex flex-col"
+    >
+      <div className="flex justify-between items-center px-2">
+        <TabsList className="grid grid-cols-3">
+          <TabsTrigger value="html">HTML</TabsTrigger>
+          <TabsTrigger value="css">CSS</TabsTrigger>
+          <TabsTrigger value="js">JavaScript</TabsTrigger>
+        </TabsList>
+        
+        <div className="flex gap-1">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-1 h-8"
+            onClick={toggleEditMode}
+          >
+            {isEditing ? (
+              <>
+                <Check className="h-3.5 w-3.5" />
+                <span>Done</span>
+              </>
+            ) : (
+              <>
+                <Edit className="h-3.5 w-3.5" />
+                <span>Edit</span>
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
       
       <TabsContent value="html" className="flex-1 overflow-auto p-1 flex flex-col">
         <div className="flex justify-end mb-2 gap-2">
+          {isEditing && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-1"
+              onClick={handleSaveChanges}
+            >
+              <Save className="h-3.5 w-3.5" />
+              <span>Save</span>
+            </Button>
+          )}
           <Button 
             variant="outline" 
             size="sm" 
-            className="flex items-center gap-1"
-            onClick={handleSaveChanges}
-          >
-            <Save className="h-3.5 w-3.5" />
-            <span>Save</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex items-center gap-1"
+            className="w-8 h-8 p-0"
             onClick={() => copyToClipboard(editableHtml, 'HTML')}
+            title="Copy HTML"
           >
             <Copy className="h-3.5 w-3.5" />
-            <span>Copy</span>
           </Button>
         </div>
         <Textarea
@@ -87,28 +140,34 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
           className="font-mono text-sm flex-1 h-full bg-muted rounded-md p-4 resize-none focus:outline-none"
           placeholder="No HTML code generated"
           spellCheck={false}
+          readOnly={!isEditing}
+          style={{ 
+            backgroundColor: isEditing ? 'hsl(var(--background))' : 'hsl(var(--muted))'
+          }}
         />
       </TabsContent>
       
       <TabsContent value="css" className="flex-1 overflow-auto p-1 flex flex-col">
         <div className="flex justify-end mb-2 gap-2">
+          {isEditing && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-1"
+              onClick={handleSaveChanges}
+            >
+              <Save className="h-3.5 w-3.5" />
+              <span>Save</span>
+            </Button>
+          )}
           <Button 
             variant="outline" 
             size="sm" 
-            className="flex items-center gap-1"
-            onClick={handleSaveChanges}
-          >
-            <Save className="h-3.5 w-3.5" />
-            <span>Save</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex items-center gap-1"
+            className="w-8 h-8 p-0"
             onClick={() => copyToClipboard(editableCss, 'CSS')}
+            title="Copy CSS"
           >
             <Copy className="h-3.5 w-3.5" />
-            <span>Copy</span>
           </Button>
         </div>
         <Textarea
@@ -117,28 +176,34 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
           className="font-mono text-sm flex-1 h-full bg-muted rounded-md p-4 resize-none focus:outline-none"
           placeholder="No CSS code generated"
           spellCheck={false}
+          readOnly={!isEditing}
+          style={{ 
+            backgroundColor: isEditing ? 'hsl(var(--background))' : 'hsl(var(--muted))'
+          }}
         />
       </TabsContent>
       
       <TabsContent value="js" className="flex-1 overflow-auto p-1 flex flex-col">
         <div className="flex justify-end mb-2 gap-2">
+          {isEditing && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-1"
+              onClick={handleSaveChanges}
+            >
+              <Save className="h-3.5 w-3.5" />
+              <span>Save</span>
+            </Button>
+          )}
           <Button 
             variant="outline" 
-            size="sm" 
-            className="flex items-center gap-1"
-            onClick={handleSaveChanges}
-          >
-            <Save className="h-3.5 w-3.5" />
-            <span>Save</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex items-center gap-1"
+            size="sm"
+            className="w-8 h-8 p-0" 
             onClick={() => copyToClipboard(editableJs, 'JavaScript')}
+            title="Copy JavaScript"
           >
             <Copy className="h-3.5 w-3.5" />
-            <span>Copy</span>
           </Button>
         </div>
         <Textarea
@@ -147,6 +212,10 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
           className="font-mono text-sm flex-1 h-full bg-muted rounded-md p-4 resize-none focus:outline-none"
           placeholder="No JavaScript code generated"
           spellCheck={false}
+          readOnly={!isEditing}
+          style={{ 
+            backgroundColor: isEditing ? 'hsl(var(--background))' : 'hsl(var(--muted))'
+          }}
         />
       </TabsContent>
     </Tabs>

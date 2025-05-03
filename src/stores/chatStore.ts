@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { Message, GeneratedCode, sendMessageWithFallback, enhancePrompt, parseCodeResponse, getMessageText, MessageContent, prepareMessageContent } from '@/services/api';
-import { hasApiKeys, saveChat } from '@/services/storage';
+import { hasApiKeys, saveChat, getChatById, deleteChat } from '@/services/storage';
 import { toast } from '@/components/ui/sonner';
 import { useModelStore } from './modelStore';
 import { useUiStore } from './uiStore';
@@ -18,7 +18,7 @@ interface ChatStore {
   setIsGenerating: (isGenerating: boolean) => void;
   setGeneratedCode: (code: GeneratedCode) => void;
   setChatId: (id: string) => void;
-  handleSendMessage: (content: string) => Promise<void>;
+  handleSendMessage: (content: string, imageUrls?: string[]) => Promise<void>;
   handleRegenerateResponse: () => Promise<void>;
   handleStopGeneration: () => void;
   handleNewChat: () => void;
@@ -56,15 +56,28 @@ export const useChatStore = create<ChatStore>((set, get) => {
   const abortControllerRef: { current: AbortController | null } = { current: null };
   let lastUserMessageIndexRef = -1;
   
+  // Initialize with stored chat if available, otherwise use default welcome message
+  const initializeChat = () => {
+    const chatId = Date.now().toString();
+    const welcomeMessage = 'Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you. You can use our default OpenRouter API keys or add your own!';
+    
+    return {
+      chatId,
+      messages: [{
+        role: 'assistant',
+        content: prepareMessageContent(welcomeMessage)
+      }]
+    };
+  };
+  
+  const initialState = initializeChat();
+  
   return {
-    messages: [{
-      role: 'assistant',
-      content: prepareMessageContent('Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you. You can use our default OpenRouter API keys or add your own!')
-    }],
+    messages: initialState.messages,
     isLoading: false,
     isGenerating: false,
     generatedCode: {},
-    chatId: Date.now().toString(),
+    chatId: initialState.chatId,
     showClearChatConfirm: false,
     isEnhancingPrompt: false,
     
@@ -88,7 +101,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
       return `Create a well-structured, responsive design with the following requirements:\n\n${prompt}\n\nPlease include detailed comments and ensure the code is clean and maintainable.`;
     },
     
-    handleSendMessage: async (content) => {
+    handleSendMessage: async (content, imageUrls = []) => {
       if (!hasApiKeys()) {
         toast("API Keys Required", {
           description: "Please add API keys to continue"
@@ -99,7 +112,12 @@ export const useChatStore = create<ChatStore>((set, get) => {
       const { isChatMode } = useUiStore.getState();
       const { selectedModel } = useModelStore.getState();
       
-      const userMessage: Message = { role: 'user', content };
+      // Prepare message content with images if provided
+      const messageContent = imageUrls.length > 0 
+        ? prepareMessageContent(content, imageUrls) 
+        : content;
+      
+      const userMessage: Message = { role: 'user', content: messageContent };
       set(state => ({ 
         messages: [...state.messages, userMessage],
         isLoading: true,
@@ -113,7 +131,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
         const tempMessage: Message = { 
           role: 'assistant', 
           content: isChatMode 
-            ? prepareMessageContent('Thinking...') 
+            ? prepareMessageContent("Thinking...") 
             : prepareMessageContent(`Generating code for your ${content.split(' ').slice(0, 3).join(' ')}...`)
         };
         
@@ -130,8 +148,14 @@ export const useChatStore = create<ChatStore>((set, get) => {
         // Create new messages array with system prompt and chat history
         const messagesForApi: Message[] = [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: processedContent }
         ];
+        
+        // Add image content if in chat mode and images exist
+        if (isChatMode && imageUrls.length > 0) {
+          messagesForApi.push({ role: 'user', content: messageContent });
+        } else {
+          messagesForApi.push({ role: 'user', content: processedContent });
+        }
 
         abortControllerRef.current = new AbortController();
         const response = await sendMessageWithFallback(selectedModel, messagesForApi);
@@ -149,7 +173,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
         
         // Parse code from response if not in chat mode
         if (!isChatMode) {
-          const codeText = typeof response === 'string' ? response : getMessageText(response);
+          const codeText = getMessageText(response);
           const parsedCode = parseCodeResponse(codeText);
           set({ generatedCode: parsedCode });
         }
@@ -195,8 +219,8 @@ export const useChatStore = create<ChatStore>((set, get) => {
         const tempMessage: Message = { 
           role: 'assistant', 
           content: isChatMode 
-            ? prepareMessageContent('Thinking...') 
-            : prepareMessageContent('Regenerating code...')
+            ? prepareMessageContent("Thinking...") 
+            : prepareMessageContent("Regenerating code...")
         };
         
         // Remove the previous assistant message and add temp message
@@ -206,21 +230,18 @@ export const useChatStore = create<ChatStore>((set, get) => {
 
         // Get content from the last user message
         const lastUserContent = typeof state.messages[lastUserIndex].content === 'string' 
-          ? state.messages[lastUserIndex].content as string
-          : getMessageText(state.messages[lastUserIndex].content);
+          ? state.messages[lastUserIndex].content 
+          : state.messages[lastUserIndex].content;
 
         // Get the appropriate system message based on mode
         const systemPrompt = isChatMode 
           ? getAssistantPrompt(selectedModel.name, selectedModel.version)
           : getCodeGenerationPrompt(selectedModel.name, selectedModel.version);
         
-        // Process content based on mode
-        const processedContent = isChatMode ? lastUserContent : enhancePrompt(lastUserContent);
-        
         // Create messages array with system prompt and the user request
         const messagesForApi: Message[] = [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: processedContent }
+          { role: 'user', content: lastUserContent }
         ];
 
         abortControllerRef.current = new AbortController();
@@ -239,7 +260,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
         
         // Parse code if not in chat mode
         if (!isChatMode) {
-          const codeText = typeof response === 'string' ? response : getMessageText(response);
+          const codeText = getMessageText(response);
           const parsedCode = parseCodeResponse(codeText);
           set({ generatedCode: parsedCode });
         }
@@ -273,16 +294,20 @@ export const useChatStore = create<ChatStore>((set, get) => {
           const messages = state.messages;
           
           // Remove the temporary generating message
-          if (messages.length > 0 && 
-              typeof messages[messages.length - 1].content === 'string' &&
-              (messages[messages.length - 1].content.includes('Generating') || 
-              messages[messages.length - 1].content.includes('Thinking') || 
-              messages[messages.length - 1].content.includes('Regenerating'))) {
-            return { 
-              messages: messages.slice(0, messages.length - 1),
-              isGenerating: false,
-              isLoading: false
-            };
+          if (messages.length > 0) {
+            const lastMessage = messages[messages.length - 1];
+            const lastMessageText = getMessageText(lastMessage.content);
+            
+            if (lastMessage.role === 'assistant' && 
+                (lastMessageText.includes('Generating') || 
+                lastMessageText.includes('Thinking') || 
+                lastMessageText.includes('Regenerating'))) {
+              return { 
+                messages: messages.slice(0, messages.length - 1),
+                isGenerating: false,
+                isLoading: false
+              };
+            }
           }
           
           return { isGenerating: false, isLoading: false };
@@ -295,8 +320,10 @@ export const useChatStore = create<ChatStore>((set, get) => {
     },
     
     handleNewChat: () => {
+      const { chatId } = initializeChat();
+      
       set({
-        chatId: Date.now().toString(),
+        chatId: chatId,
         messages: [{
           role: 'assistant',
           content: prepareMessageContent('Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you.')

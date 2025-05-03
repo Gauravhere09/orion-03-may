@@ -21,6 +21,12 @@ const CodePreview: React.FC<CodePreviewProps> = ({ code, onBack }) => {
         iframeDoc.open();
         iframeDoc.write(code.preview);
         iframeDoc.close();
+        
+        // Ensure styles don't leak into the main app
+        iframe.style.border = 'none';
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.backgroundColor = 'white';
       }
     }
   }, [code.preview]);
@@ -43,9 +49,14 @@ const CodePreview: React.FC<CodePreviewProps> = ({ code, onBack }) => {
       <div className="flex-1 overflow-hidden bg-white">
         <iframe 
           ref={iframeRef}
-          className="w-full h-full border-0"
+          className="w-full h-full"
           title="Code Preview"
           sandbox="allow-scripts allow-same-origin"
+          style={{
+            border: 'none',
+            width: '100%',
+            height: '100%'
+          }}
         />
       </div>
     </div>

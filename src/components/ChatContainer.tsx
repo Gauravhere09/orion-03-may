@@ -21,7 +21,9 @@ const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview }: Cha
 
   // Scroll to bottom whenever messages change or loading state changes
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, isLoading]);
 
   // Filter out system messages from display
@@ -51,7 +53,7 @@ const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview }: Cha
             
           const messageText = getMessageText(message.content);
           const hasCode = hasCodeBlocks(message.content);
-          const isGenerating = messageText.includes('Generating') || messageText.includes('Regenerating');
+          const isGenerating = messageText.includes('Generating') || messageText.includes('Regenerating') || messageText.includes('Thinking');
             
           return (
             <MessageBubble 

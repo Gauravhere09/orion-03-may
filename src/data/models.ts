@@ -2,87 +2,74 @@
 export interface AIModel {
   id: string;
   name: string;
+  version: string;
   provider: string;
   description: string;
-  version: string;
-  maxTokens: number;
   openRouterModel: string;
-  gradient: string;
-  strengths: string[];
-  visionCapable?: boolean;
+  contextWindow: number;
+  image: string;
 }
 
+// AI models available for code generation and chat
 export const aiModels: AIModel[] = [
   {
-    id: "llama-4-maverick",
-    name: "Llama 4",
-    provider: "Meta",
-    description: "Meta's latest open model with powerful vision capabilities.",
-    version: "Maverick",
-    maxTokens: 4096,
-    openRouterModel: "meta-llama/llama-4-maverick:free",
-    gradient: "from-blue-600 via-indigo-600 to-purple-600",
-    strengths: ["Vision", "Reasoning", "Latest model"],
-    visionCapable: true
+    id: 'llama-3-70b',
+    name: 'Llama 3',
+    version: '70B',
+    provider: 'Meta',
+    description: 'A powerful open-source large language model by Meta.',
+    openRouterModel: 'meta-llama/llama-3-70b-instruct:free',
+    contextWindow: 8192,
+    image: '/placeholder.svg' // Use appropriate image when available
   },
   {
-    id: "gemini-2-flash",
-    name: "Gemini",
-    provider: "Google",
-    description: "Google's multimodal model with vision capabilities.",
-    version: "2.0 Flash",
-    maxTokens: 4096,
-    openRouterModel: "google/gemini-2.0-flash-exp:free",
-    gradient: "from-amber-500 via-orange-500 to-red-500",
-    strengths: ["Vision", "Fast responses", "Knowledge"],
-    visionCapable: true
+    id: 'claude-3-5',
+    name: 'Claude',
+    version: '3.5 Sonnet',
+    provider: 'Anthropic',
+    description: 'Claude is designed to be helpful, harmless, and honest.',
+    openRouterModel: 'anthropic/claude-3-5-sonnet:free',
+    contextWindow: 16384,
+    image: '/placeholder.svg'
   },
   {
-    id: "deepseek-chat-v3",
-    name: "DeepSeek Chat",
-    provider: "DeepSeek",
-    description: "Latest DeepSeek chat model with high performance.",
-    version: "v3",
-    maxTokens: 8192,
-    openRouterModel: "deepseek/deepseek-chat-v3-0324:free",
-    gradient: "from-emerald-500 via-teal-500 to-green-500",
-    strengths: ["Reasoning", "Context understanding", "Knowledge"],
-    visionCapable: false
+    id: 'gpt-4',
+    name: 'GPT-4',
+    version: 'Turbo',
+    provider: 'OpenAI',
+    description: 'Advanced language processing for complex tasks.',
+    openRouterModel: 'openai/gpt-4-turbo:free',
+    contextWindow: 128000,
+    image: '/placeholder.svg'
   },
   {
-    id: "deepseek-chat",
-    name: "DeepSeek Chat",
-    provider: "DeepSeek",
-    description: "Reliable DeepSeek chat model for various tasks.",
-    version: "Standard",
-    maxTokens: 8192,
-    openRouterModel: "deepseek/deepseek-chat:free",
-    gradient: "from-sky-500 via-cyan-500 to-blue-600",
-    strengths: ["General purpose", "Code generation", "Knowledge"],
-    visionCapable: false
+    id: 'mistral-large',
+    name: 'Mistral',
+    version: 'Large',
+    provider: 'Mistral AI',
+    description: 'Powerful, efficient language model for various tasks.',
+    openRouterModel: 'mistral/mistral-large-latest:free',
+    contextWindow: 32768,
+    image: '/placeholder.svg'
   },
   {
-    id: "deepseek-r1",
-    name: "DeepSeek R1",
-    provider: "DeepSeek",
-    description: "Advanced reasoning model with code understanding.",
-    version: "R1",
-    maxTokens: 8192,
-    openRouterModel: "deepseek/deepseek-r1:free",
-    gradient: "from-purple-500 via-pink-500 to-rose-500",
-    strengths: ["Code generation", "Reasoning", "Knowledge"],
-    visionCapable: false
+    id: 'gemini',
+    name: 'Gemini',
+    version: '2.0 Flash',
+    provider: 'Google',
+    description: 'Google\'s multimodal AI system with advanced reasoning capabilities.',
+    openRouterModel: 'custom-gemini', // Not used directly with OpenRouter
+    contextWindow: 16384,
+    image: '/placeholder.svg'
   },
   {
-    id: "nemotron-ultra",
-    name: "Nemotron Ultra",
-    provider: "NVIDIA",
-    description: "NVIDIA's Llama 3.1 Nemotron Ultra model with powerful capabilities.",
-    version: "253B", 
-    maxTokens: 8192,
-    openRouterModel: "nvidia/llama-3.1-nemotron-ultra-253b-v1:free",
-    gradient: "from-green-600 via-teal-600 to-cyan-600",
-    strengths: ["Task versatility", "Reasoning", "Advanced capabilities"],
-    visionCapable: false
-  }
+    id: 'deepseek-coder',
+    name: 'DeepSeek',
+    version: 'Coder',
+    provider: 'DeepSeek',
+    description: 'Specialized model for code generation and understanding.',
+    openRouterModel: 'deepseek/deepseek-coder:free',
+    contextWindow: 16384,
+    image: '/placeholder.svg'
+  },
 ];

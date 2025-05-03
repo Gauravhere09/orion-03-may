@@ -6,7 +6,7 @@ import { Image, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface ChatInputProps {
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, imageUrls?: string[]) => void;
   disabled: boolean;
   placeholder?: string;
   isChatMode: boolean;
@@ -29,7 +29,7 @@ const ChatInput = ({
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (input.trim() && !disabled) {
-      onSendMessage(input.trim());
+      onSendMessage(input.trim(), images);
       setInput('');
       setImages([]);
     }
@@ -55,7 +55,9 @@ const ChatInput = ({
     Array.from(files).forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImages(prev => [...prev, reader.result as string]);
+        if (typeof reader.result === 'string') {
+          setImages(prev => [...prev, reader.result as string]);
+        }
       };
       reader.readAsDataURL(file);
     });
@@ -85,7 +87,7 @@ const ChatInput = ({
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="mb-4">
+      <form onSubmit={handleSubmit} className="mb-4 sticky bottom-0 bg-background pb-2">
         {/* Image previews */}
         {images.length > 0 && (
           <div className="flex gap-2 mb-2 flex-wrap">

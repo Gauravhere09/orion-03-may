@@ -41,11 +41,15 @@ const MainLayout = ({
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const lastScrollPosition = useRef(0);
   const headerRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   
   // Handle scroll behavior for header
   useEffect(() => {
+    const container = chatContainerRef.current;
+    if (!container) return;
+    
     const handleScroll = () => {
-      const currentScrollPos = window.scrollY;
+      const currentScrollPos = container.scrollTop;
       const isScrollingDown = currentScrollPos > lastScrollPosition.current;
       
       // Only hide header after scrolling down a bit
@@ -58,8 +62,8 @@ const MainLayout = ({
       lastScrollPosition.current = currentScrollPos;
     };
     
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
   }, []);
 
   // If in preview mode, show the preview component with full screen display
@@ -89,7 +93,10 @@ const MainLayout = ({
       </div>
       
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        <div className="w-full md:w-1/2 flex flex-col overflow-hidden border-r">
+        <div 
+          ref={chatContainerRef}
+          className="w-full md:w-1/2 flex flex-col overflow-hidden border-r"
+        >
           <ChatContainer 
             messages={messages} 
             isLoading={isLoading} 
@@ -118,7 +125,7 @@ const MainLayout = ({
           </div>
           
           <div className="relative px-4 border-t mt-auto">
-            {/* Mode toggle moved to just above input */}
+            {/* Mode toggle positioned at the right side above input */}
             <div className="flex justify-end py-2">
               <Toggle
                 pressed={isChatMode}
@@ -143,7 +150,7 @@ const MainLayout = ({
             </div>
             
             <ChatInput 
-              onSendMessage={handleSendMessage} 
+              onSendMessage={(msg, imageUrls) => handleSendMessage(msg, imageUrls)} 
               disabled={isLoading || !hasApiKeys()}
               placeholder={isChatMode 
                 ? "Chat with AI assistant..." 
@@ -194,14 +201,14 @@ const MainLayout = ({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Clear Chat History?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will clear your current chat and start a new one. This action cannot be undone.
+              This will clear your current chat and start a new one. Any unsaved code will be lost.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmClearChat}>Continue</AlertDialogAction>
+            <AlertDialogAction onClick={confirmClearChat}>Yes, Clear Chat</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
