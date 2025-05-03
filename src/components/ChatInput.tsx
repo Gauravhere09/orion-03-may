@@ -2,7 +2,7 @@
 import { FormEvent, useState, useRef, ChangeEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Image, Sparkles, Code, MessageSquare } from 'lucide-react';
+import { Image, Sparkles, Code, MessageSquare, Send } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Toggle } from '@/components/ui/toggle';
 import { AIModel } from '@/data/models';
@@ -106,8 +106,9 @@ const ChatInput = ({
     setEnhanceDialogOpen(false);
   };
 
+  // Fixed positioning for mobile devices
   const inputContainerClasses = isMobile 
-    ? "mobile-input-container" 
+    ? "fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4 z-50" 
     : "mb-4 sticky bottom-0 bg-background pb-2";
 
   return (
@@ -117,7 +118,7 @@ const ChatInput = ({
         {images.length > 0 && (
           <div className="flex gap-2 mb-2 flex-wrap">
             {images.map((img, index) => (
-              <div key={index} className="relative w-16 h-16 rounded overflow-hidden border border-primary/20">
+              <div key={index} className="relative w-20 h-20 rounded overflow-hidden border border-primary/20">
                 <img 
                   src={img} 
                   alt={`Uploaded ${index + 1}`} 
@@ -197,43 +198,31 @@ const ChatInput = ({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
-              className="resize-none min-h-[60px] rounded-lg pl-4 pr-14 border-primary/20"
+              className="resize-none min-h-[60px] rounded-2xl pl-4 pr-14 border-primary/20 focus:ring-primary/30"
               disabled={disabled}
             />
             
-            <div className="absolute right-2 bottom-2 flex space-x-1">
+            <div className="absolute right-3 bottom-2.5 flex space-x-1">
               {!isChatMode && input.trim() && (
                 <Button
                   type="button"
                   size="icon"
                   variant="ghost"
-                  className="h-7 w-7 rounded-full"
+                  className="h-8 w-8 rounded-full"
                   onClick={handleEnhanceClick}
                   title="Enhance Prompt"
                 >
-                  <Sparkles className="h-3.5 w-3.5" />
+                  <Sparkles className="h-4 w-4" />
                 </Button>
               )}
               
               <Button 
                 type="submit" 
                 size="icon" 
-                className="h-7 w-7 rounded-full cyan-glow"
+                className="h-8 w-8 rounded-full cyan-glow flex items-center justify-center"
                 disabled={!input.trim() || disabled}
               >
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2"
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  className="h-3.5 w-3.5"
-                >
-                  <path d="m22 2-7 20-4-9-9-4Z" />
-                  <path d="M22 2 11 13" />
-                </svg>
+                <Send className="h-4 w-4" />
               </Button>
             </div>
           </div>

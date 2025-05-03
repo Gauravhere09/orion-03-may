@@ -50,7 +50,7 @@ const AdminPage = () => {
       setApiKeys(updatedKeys || []);
       setNewApiKey('');
     } catch (error) {
-      console.error('Error adding API key:', error);
+      console.error('Error adding key:', error);
       if (error instanceof Error) {
         alert(error.message);
       }
@@ -142,16 +142,16 @@ const AdminPage = () => {
       
       <Card className="mb-6 glass-morphism">
         <CardHeader>
-          <CardTitle>API Keys Management</CardTitle>
+          <CardTitle>Key Management</CardTitle>
           <CardDescription>
-            Manage API keys for the application. Keys are ordered by priority.
+            Manage keys for the application. Keys are ordered by priority.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="mb-6">
             <div className="flex gap-2">
               <Input
-                placeholder="Enter new API key"
+                placeholder="Enter new key"
                 value={newApiKey}
                 onChange={(e) => setNewApiKey(e.target.value)}
                 className="flex-1 border-primary/20"
@@ -166,7 +166,7 @@ const AdminPage = () => {
           <div className="space-y-2">
             {apiKeys.length === 0 ? (
               <div className="text-center p-6 text-muted-foreground">
-                No API keys added yet
+                No keys added yet
               </div>
             ) : (
               apiKeys.map((apiKey, index) => (
@@ -197,41 +197,6 @@ const AdminPage = () => {
           </div>
         </CardContent>
       </Card>
-      
-      {/* Sample credentials cards */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card className="glass-morphism">
-          <CardHeader>
-            <CardTitle>Supabase Credentials</CardTitle>
-            <CardDescription>Add these later</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 opacity-60">
-            <Label>Supabase URL</Label>
-            <Input value="https://your-project.supabase.co" disabled />
-            <Label>Supabase Key</Label>
-            <Input value="your-supabase-key" type="password" disabled />
-          </CardContent>
-          <CardFooter>
-            <Button disabled className="w-full">Save (Coming Soon)</Button>
-          </CardFooter>
-        </Card>
-        
-        <Card className="glass-morphism">
-          <CardHeader>
-            <CardTitle>EmailJS Credentials</CardTitle>
-            <CardDescription>Add these later</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 opacity-60">
-            <Label>Service ID</Label>
-            <Input value="your-emailjs-service-id" disabled />
-            <Label>Template ID</Label>
-            <Input value="your-emailjs-template-id" disabled />
-          </CardContent>
-          <CardFooter>
-            <Button disabled className="w-full">Save (Coming Soon)</Button>
-          </CardFooter>
-        </Card>
-      </div>
     </div>
   );
 };

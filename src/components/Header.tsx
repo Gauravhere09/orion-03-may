@@ -17,13 +17,13 @@ const Header = ({
   onApiKeyManagerClick, 
   onNewChatClick
 }: HeaderProps) => {
-  const { isDarkMode, toggleDarkMode } = useUiStore();
+  const { isDarkMode, toggleDarkMode, logoUrl } = useUiStore();
   
   return (
     <header className="flex items-center justify-between p-4 border-b glass-morphism">
       <div className="flex items-center space-x-3">
         <img 
-          src="/lovable-uploads/b8b23fd4-5e37-45df-a71f-69c1687f384b.png" 
+          src={logoUrl}
           alt="Orion.AI" 
           className="h-10 w-auto"
         />

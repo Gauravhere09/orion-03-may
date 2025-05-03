@@ -13,7 +13,7 @@ import { useUiStore } from "./stores/uiStore";
 const queryClient = new QueryClient();
 
 function App() {
-  const { isDarkMode } = useUiStore();
+  const { isDarkMode, logoUrl } = useUiStore();
   
   useEffect(() => {
     // Apply dark mode class to html element
@@ -23,6 +23,14 @@ function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [isDarkMode]);
+  
+  // Set favicon based on theme
+  useEffect(() => {
+    const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+    if (link) {
+      link.href = logoUrl;
+    }
+  }, [logoUrl]);
   
   return (
     <QueryClientProvider client={queryClient}>

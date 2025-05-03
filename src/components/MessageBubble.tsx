@@ -107,7 +107,7 @@ const MessageBubble = ({
               onClick={() => rateMessage(messageIndex, 'like')}
               size="sm"
               variant={messageRating === 'like' ? 'default' : 'secondary'}
-              className="w-6 h-6 p-0"
+              className="w-5 h-5 p-0"
               title="Like"
             >
               <ThumbsUp className="h-2.5 w-2.5" />
@@ -117,7 +117,7 @@ const MessageBubble = ({
               onClick={() => rateMessage(messageIndex, 'dislike')}
               size="sm"
               variant={messageRating === 'dislike' ? 'destructive' : 'secondary'}
-              className="w-6 h-6 p-0"
+              className="w-5 h-5 p-0"
               title="Dislike"
             >
               <ThumbsDown className="h-2.5 w-2.5" />
@@ -129,7 +129,7 @@ const MessageBubble = ({
             onClick={handleCopy}
             size="sm"
             variant="secondary"
-            className="w-6 h-6 p-0"
+            className="w-5 h-5 p-0"
             title="Copy"
           >
             {copied ? (
@@ -145,7 +145,7 @@ const MessageBubble = ({
               onClick={() => setRegenerateDialogOpen(true)}
               size="sm"
               variant="secondary" 
-              className="w-6 h-6 p-0"
+              className="w-5 h-5 p-0"
               title="Regenerate"
             >
               <RefreshCw className="h-2.5 w-2.5" />
@@ -158,7 +158,7 @@ const MessageBubble = ({
               onClick={onViewPreview}
               size="sm"
               variant="outline"
-              className="flex items-center space-x-1 text-xs h-6 border-primary/20"
+              className="flex items-center space-x-1 text-xs h-5 border-primary/20"
             >
               <Eye className="h-2.5 w-2.5 mr-1" />
               <span>Preview</span>
