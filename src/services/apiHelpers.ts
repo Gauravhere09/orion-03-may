@@ -3,6 +3,10 @@ import { Message, MessageContent } from './apiTypes';
 
 // Helper function to get plain text from message content
 export const getMessageText = (content: string | MessageContent[]): string => {
+  if (!content) {
+    return '';
+  }
+  
   if (typeof content === 'string') {
     return content;
   }

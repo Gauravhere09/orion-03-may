@@ -42,6 +42,19 @@ export const aiModels: AIModel[] = [
     strengths: ['Reasoning', 'Precise', 'Efficient']
   },
   {
+    id: 'deepseek-chat-v3',
+    name: 'DeepSeek',
+    version: 'Chat v3',
+    provider: 'DeepSeek',
+    description: 'Latest DeepSeek Chat model with enhanced conversational abilities.',
+    openRouterModel: 'deepseek/deepseek-chat-v3-0324:free',
+    contextWindow: 32768,
+    image: '/placeholder.svg',
+    gradient: 'from-purple-400 to-purple-600',
+    visionCapable: false,
+    strengths: ['Chat', 'Knowledge', 'Reasoning']
+  },
+  {
     id: 'deepseek-r1',
     name: 'DeepSeek',
     version: 'R1',

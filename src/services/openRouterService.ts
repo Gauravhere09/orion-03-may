@@ -16,11 +16,15 @@ export const sendMessageToOpenRouter = async (
       throw new Error(`Invalid model ID for OpenRouter: ${modelId}`);
     }
     
+    console.log(`Sending request to OpenRouter with model: ${modelId}`);
+    
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'AI Code Generator'
       },
       body: JSON.stringify({
         model: modelId,
@@ -33,28 +37,41 @@ export const sendMessageToOpenRouter = async (
       })
     });
 
-    if (!response.ok) {
-      let errorMessage = `Failed to get response from OpenRouter API: ${response.status} ${response.statusText}`;
-      let errorCode = undefined;
-      
-      try {
-        const errorData = await response.json() as ErrorResponse;
-        errorMessage = errorData.error?.message || errorMessage;
-        errorCode = errorData.error?.code || errorData.error?.type;
-      } catch (e) {
-        console.error("Error parsing error response:", e);
-      }
-      
-      throw new ApiError(errorMessage, apiKey, errorCode);
+    const responseText = await response.text();
+    
+    // Log the raw response for debugging
+    console.log('OpenRouter raw response:', responseText);
+    
+    // Try to parse the response as JSON
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.error("Failed to parse OpenRouter response as JSON:", e);
+      throw new ApiError(`Failed to parse OpenRouter response: ${responseText.substring(0, 100)}...`, apiKey);
     }
 
-    const data = await response.json() as ChatCompletionResponse;
-    
-    if (data.choices && data.choices[0] && data.choices[0].message) {
-      return data.choices[0].message.content || '';
+    // Check if the response contains an error
+    if (data.error) {
+      const errorMessage = data.error.message || 'Unknown error from OpenRouter API';
+      const errorCode = data.error.code || data.error.type;
+      console.error('OpenRouter API returned an error:', errorMessage, errorCode);
+      throw new ApiError(errorMessage, apiKey, errorCode);
     }
     
-    throw new ApiError('Invalid response format from OpenRouter API', apiKey);
+    // Check if the response has the expected structure
+    if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+      console.error('Invalid response format from OpenRouter API. Missing choices array:', data);
+      throw new ApiError('Invalid response format from OpenRouter API: Missing choices', apiKey);
+    }
+    
+    const choice = data.choices[0];
+    if (!choice.message) {
+      console.error('Invalid response format from OpenRouter API. Missing message in choice:', choice);
+      throw new ApiError('Invalid response format from OpenRouter API: Missing message', apiKey);
+    }
+    
+    return choice.message.content || '';
   } catch (error) {
     // Re-throw ApiError instances
     if (error instanceof ApiError) {

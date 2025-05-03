@@ -32,9 +32,9 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
     // Build request body
     const requestBody = {
       contents: [
-        systemMessage, 
+        ...(systemMessage ? [systemMessage] : []),
         lastUserMessage
-      ].filter(Boolean), // Filter out undefined values
+      ],
       generationConfig: {
         temperature: 0.7,
         maxOutputTokens: 2048,
@@ -54,25 +54,26 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
       }
     );
 
+    const responseText = await response.text();
+    console.log('Gemini API raw response:', responseText);
+    
+    // Try to parse the response as JSON
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.error("Failed to parse Gemini response as JSON:", e);
+      throw new Error(`Failed to parse Gemini response: ${responseText.substring(0, 100)}...`);
+    }
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Gemini API error response:', errorText);
-      
       let errorMessage = 'Failed to get response from Gemini API';
-      try {
-        const errorData = JSON.parse(errorText);
-        errorMessage = errorData.error?.message || errorMessage;
-      } catch (e) {
-        // If parsing fails, use the status text
-        errorMessage = `${errorMessage}: ${response.status} ${response.statusText}`;
+      if (data.error) {
+        errorMessage = data.error.message || errorMessage;
       }
-      
       throw new Error(errorMessage);
     }
 
-    const data = await response.json();
-    console.log('Gemini API response:', JSON.stringify(data));
-    
     if (data.candidates && data.candidates[0] && 
         data.candidates[0].content && 
         data.candidates[0].content.parts && 

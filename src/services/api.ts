@@ -6,6 +6,7 @@ import { getMessageText, hasCodeBlocks, maskApiKey, prepareMessageContent } from
 import { sendMessageToGemini } from './geminiService';
 import { sendMessageToOpenRouter } from './openRouterService';
 import { enhancePrompt, parseCodeResponse } from './codeService';
+import { toast } from '@/components/ui/sonner';
 
 // Try each API key in order until one works
 export const sendMessageWithFallback = async (
@@ -14,6 +15,7 @@ export const sendMessageWithFallback = async (
 ): Promise<string> => {
   const apiKeys = getAllApiKeys();
   if (!apiKeys || apiKeys.length === 0) {
+    toast.error("No API keys available. Please add API keys in settings.");
     throw new Error('No API keys available');
   }
   
@@ -25,38 +27,53 @@ export const sendMessageWithFallback = async (
   // Check if we should use Gemini API
   if (model.id === 'gemini') {
     try {
+      console.log("Using Gemini API directly");
       return await sendMessageToGemini(messages);
     } catch (error) {
+      console.error("Gemini API error:", error);
       if (error instanceof Error) {
+        toast.error(`Gemini API error: ${error.message}`);
         throw new Error(`Gemini API error: ${error.message}`);
       }
       throw error;
     }
   }
   
+  console.log(`Attempting to use OpenRouter with model: ${model.name}, ${model.openRouterModel}`);
+  console.log(`Available API keys: ${sortedKeys.length}`);
+  
   // Try each API key in order until one works
   for (const apiKey of sortedKeys) {
     try {
+      console.log(`Trying API key: ${maskApiKey(apiKey.key)}`);
       const response = await sendMessageToOpenRouter(model, messages, apiKey.key);
+      console.log("Got successful response from OpenRouter");
       return response;
     } catch (error) {
       if (error instanceof ApiError) {
         lastError = error;
         console.error(`API key ${maskApiKey(error.apiKey)} failed:`, error.message);
+        
+        // If the error is a rate limit, show specific toast
+        if (error.message.includes("Rate limit") || (error.code === 429)) {
+          toast.error(`Rate limit exceeded for API key ${maskApiKey(error.apiKey)}. Trying next key...`);
+        }
         // Continue to next API key
       } else {
         // For non-API errors, throw immediately
+        console.error("Unexpected error:", error);
         throw error;
       }
     }
   }
   
   // If we get here, all API keys failed
-  if (lastError) {
-    throw new Error(`All API keys failed. Last error: ${lastError.message}`);
-  } else {
-    throw new Error('All API keys failed with unknown errors');
-  }
+  const errorMessage = lastError 
+    ? `All API keys failed. Last error: ${lastError.message}` 
+    : 'All API keys failed with unknown errors';
+  
+  toast.error(errorMessage);
+  throw new Error(errorMessage);
 };
 
 // Re-export everything from the modules

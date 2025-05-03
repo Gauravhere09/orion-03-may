@@ -26,9 +26,9 @@ const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview }: Cha
     }
   }, [messages, isLoading]);
 
-  // Filter out system messages from display
+  // Filter out system messages from display and validate message structure
   const displayMessages = Array.isArray(messages) 
-    ? messages.filter(msg => msg && msg.role !== 'system') 
+    ? messages.filter(msg => msg && typeof msg === 'object' && msg.role !== 'system') 
     : [];
   
   // Mock response time (in a real app, this would be measured)
@@ -50,13 +50,16 @@ const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview }: Cha
         </div>
       ) : (
         displayMessages.map((message, index) => {
-          if (!message) return null;
+          // Skip invalid messages
+          if (!message || typeof message !== 'object') return null;
           
           const isLastAssistantMessage = message.role === 'assistant' && 
             displayMessages.slice(index + 1).every(m => m && m.role !== 'assistant');
             
-          const messageText = getMessageText(message.content || '');
-          const hasCode = hasCodeBlocks(message.content || '');
+          // Safely get message text
+          const messageContent = message.content || '';
+          const messageText = getMessageText(messageContent);
+          const hasCode = hasCodeBlocks(messageContent);
           const isGenerating = messageText.includes('Generating') || 
                               messageText.includes('Regenerating') || 
                               messageText.includes('Thinking');
