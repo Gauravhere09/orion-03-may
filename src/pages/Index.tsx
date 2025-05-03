@@ -10,7 +10,7 @@ import ChatInput from '@/components/ChatInput';
 import ApiKeyModal from '@/components/ApiKeyModal';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
-import { ArrowRefreshCw, Copy } from 'lucide-react';
+import { RefreshCw, Copy } from 'lucide-react';
 
 const Index = () => {
   const [selectedModel, setSelectedModel] = useState<AIModel>(aiModels[0]);
@@ -120,7 +120,15 @@ const Index = () => {
   };
 
   const handleCopyLastMessage = () => {
-    const lastMessage = messages.findLast(message => message.role === 'assistant');
+    // Fix for the findLast method not being available
+    let lastMessage = null;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'assistant') {
+        lastMessage = messages[i];
+        break;
+      }
+    }
+
     if (lastMessage) {
       navigator.clipboard.writeText(lastMessage.content);
       toast("Copied to clipboard", {
@@ -173,7 +181,7 @@ const Index = () => {
                 onClick={handleRegenerateResponse}
                 disabled={isLoading || messages.length === 0}
               >
-                <ArrowRefreshCw className="h-4 w-4 mr-2" /> Regenerate
+                <RefreshCw className="h-4 w-4 mr-2" /> Regenerate
               </Button>
             </>
           )}
@@ -195,3 +203,4 @@ const Index = () => {
 };
 
 export default Index;
+
