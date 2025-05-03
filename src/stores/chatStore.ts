@@ -26,6 +26,9 @@ interface ChatStore {
   confirmClearChat: () => void;
   showClearChatConfirm: boolean;
   setShowClearChatConfirm: (show: boolean) => void;
+  enhanceUserPrompt: (prompt: string) => string;
+  isEnhancingPrompt: boolean;
+  setIsEnhancingPrompt: (isEnhancing: boolean) => void;
 }
 
 // System message for code generation
@@ -56,13 +59,14 @@ export const useChatStore = create<ChatStore>((set, get) => {
   return {
     messages: [{
       role: 'assistant',
-      content: 'Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you. You can use our default OpenRouter API keys or add your own!' as string | MessageContent[]
+      content: 'Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you. You can use our default OpenRouter API keys or add your own!' as unknown as MessageContent[] | string
     }],
     isLoading: false,
     isGenerating: false,
     generatedCode: {},
     chatId: Date.now().toString(),
     showClearChatConfirm: false,
+    isEnhancingPrompt: false,
     
     setMessages: (messages) => set({ messages }),
     addMessage: (message) => set(state => ({ messages: [...state.messages, message] })),
@@ -71,10 +75,17 @@ export const useChatStore = create<ChatStore>((set, get) => {
     setGeneratedCode: (code) => set({ generatedCode: code }),
     setChatId: (id) => set({ chatId: id }),
     setShowClearChatConfirm: (show) => set({ showClearChatConfirm: show }),
+    setIsEnhancingPrompt: (isEnhancing) => set({ isEnhancingPrompt: isEnhancing }),
     
     confirmClearChat: () => {
       set({ showClearChatConfirm: false });
       get().handleNewChat();
+    },
+    
+    enhanceUserPrompt: (prompt) => {
+      // A simple enhancement logic could be implemented here
+      // For now, we'll just add some structuring to the prompt
+      return `Create a well-structured, responsive design with the following requirements:\n\n${prompt}\n\nPlease include detailed comments and ensure the code is clean and maintainable.`;
     },
     
     handleSendMessage: async (content) => {
@@ -102,8 +113,8 @@ export const useChatStore = create<ChatStore>((set, get) => {
         const tempMessage: Message = { 
           role: 'assistant', 
           content: isChatMode 
-            ? `Thinking...` as string | MessageContent[]
-            : `Generating code for your ${content.split(' ').slice(0, 3).join(' ')}...` as string | MessageContent[]
+            ? `Thinking...` as unknown as MessageContent[] | string
+            : `Generating code for your ${content.split(' ').slice(0, 3).join(' ')}...` as unknown as MessageContent[] | string
         };
         
         set(state => ({ messages: [...state.messages, tempMessage] }));
@@ -183,7 +194,9 @@ export const useChatStore = create<ChatStore>((set, get) => {
         // Add a temporary "regenerating" message
         const tempMessage: Message = { 
           role: 'assistant', 
-          content: isChatMode ? 'Thinking...' : 'Regenerating code...'
+          content: isChatMode 
+            ? 'Thinking...' as unknown as MessageContent[] | string
+            : 'Regenerating code...' as unknown as MessageContent[] | string
         };
         
         // Remove the previous assistant message and add temp message
@@ -284,7 +297,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
         chatId: Date.now().toString(),
         messages: [{
           role: 'assistant',
-          content: 'Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you.' as string | MessageContent[]
+          content: 'Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you.' as unknown as MessageContent[] | string
         }],
         generatedCode: {}
       });

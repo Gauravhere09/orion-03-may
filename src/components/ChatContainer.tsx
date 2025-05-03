@@ -3,6 +3,8 @@ import { useEffect, useRef } from 'react';
 import { Message, getMessageText, hasCodeBlocks } from '@/services/api';
 import MessageBubble from '@/components/MessageBubble';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useModelStore } from '@/stores/modelStore';
+import { useUiStore } from '@/stores/uiStore';
 
 interface ChatContainerProps {
   messages: Message[];
@@ -13,6 +15,8 @@ interface ChatContainerProps {
 
 const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview }: ChatContainerProps) => {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const { selectedModel } = useModelStore();
+  const { isChatMode } = useUiStore();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -20,6 +24,9 @@ const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview }: Cha
 
   // Filter out system messages from display
   const displayMessages = messages.filter(msg => msg.role !== 'system');
+  
+  // Mock response time (in a real app, this would be measured)
+  const getRandomResponseTime = () => Math.random() * 3 + 1; // 1-4 seconds
 
   return (
     <div className="flex-1 overflow-y-auto p-4 rounded-lg space-y-4 scrollbar-none">
@@ -48,6 +55,9 @@ const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview }: Cha
               onRegenerate={isLastAssistantMessage && !isGenerating && onRegenerate ? onRegenerate : undefined}
               onViewPreview={message.role === 'assistant' && onViewPreview && hasCode
                 ? () => onViewPreview(messageText) : undefined}
+              modelName={message.role === 'assistant' ? selectedModel.name : undefined}
+              responseTime={message.role === 'assistant' ? getRandomResponseTime() : undefined}
+              isChatMode={isChatMode}
             />
           );
         })

@@ -1,7 +1,6 @@
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Message } from '@/services/api';
-import { aiModels, AIModel } from '@/data/models';
 import { hasApiKeys } from '@/services/storage';
 
 import ChatContainer from '@/components/ChatContainer';
@@ -13,7 +12,7 @@ import CodeDisplay from '@/components/CodeDisplay';
 import CodePreview from '@/components/CodePreview';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
-import { Eye, Code, MessageSquare } from 'lucide-react';
+import { Code, MessageSquare } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
 import { useModelStore } from '@/stores/modelStore';
 import { useUiStore } from '@/stores/uiStore';
@@ -33,12 +32,35 @@ const MainLayout = ({
   isPreviewMode,
   onExitPreview
 }: MainLayoutProps) => {
-  const { messages, isLoading, isGenerating, handleSendMessage, handleRegenerateResponse, handleStopGeneration, handleNewChat, generatedCode, showClearChatConfirm, setShowClearChatConfirm, confirmClearChat } = useChatStore();
+  const { messages, isLoading, isGenerating, handleSendMessage, handleRegenerateResponse, handleStopGeneration, handleNewChat, generatedCode, showClearChatConfirm, setShowClearChatConfirm, confirmClearChat, enhanceUserPrompt } = useChatStore();
   const { selectedModel, handleModelSelect } = useModelStore();
   const { isChatMode, toggleChatMode } = useUiStore();
   
   const [apiKeyManagerOpen, setApiKeyManagerOpen] = useState(false);
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const lastScrollPosition = useRef(0);
+  const headerRef = useRef<HTMLDivElement>(null);
+  
+  // Handle scroll behavior for header
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollPos = window.scrollY;
+      const isScrollingDown = currentScrollPos > lastScrollPosition.current;
+      
+      // Only hide header after scrolling down a bit
+      if (isScrollingDown && currentScrollPos > 60) {
+        setIsHeaderVisible(false);
+      } else {
+        setIsHeaderVisible(true);
+      }
+      
+      lastScrollPosition.current = currentScrollPos;
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // If in preview mode, show the preview component with full screen display
   if (isPreviewMode && generatedCode.preview) {
@@ -52,14 +74,19 @@ const MainLayout = ({
 
   return (
     <div className="flex flex-col h-screen max-h-screen overflow-hidden">
-      <Header 
-        selectedModel={selectedModel}
-        onModelSelectClick={() => setModelSelectorOpen(true)}
-        onApiKeyManagerClick={() => setApiKeyManagerOpen(true)}
-        onNewChatClick={() => setShowClearChatConfirm(true)}
-        onPreviewClick={() => generatedCode.preview ? useUiStore.getState().setIsPreviewMode(true) : null}
-        hasPreview={!!generatedCode.preview}
-      />
+      <div 
+        ref={headerRef}
+        className={`transition-transform duration-300 ease-in-out ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'} sticky top-0 z-10`}
+      >
+        <Header 
+          selectedModel={selectedModel}
+          onModelSelectClick={() => setModelSelectorOpen(true)}
+          onApiKeyManagerClick={() => setApiKeyManagerOpen(true)}
+          onNewChatClick={() => setShowClearChatConfirm(true)}
+          onPreviewClick={() => generatedCode.preview ? useUiStore.getState().setIsPreviewMode(true) : null}
+          hasPreview={!!generatedCode.preview}
+        />
+      </div>
       
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         <div className="w-full md:w-1/2 flex flex-col overflow-hidden border-r">
@@ -90,8 +117,8 @@ const MainLayout = ({
             )}
           </div>
           
-          <div className="relative px-4 border-t">
-            {/* Mode toggle added above input */}
+          <div className="relative px-4 border-t mt-auto">
+            {/* Mode toggle moved to just above input */}
             <div className="flex justify-end py-2">
               <Toggle
                 pressed={isChatMode}
@@ -122,6 +149,7 @@ const MainLayout = ({
                 ? "Chat with AI assistant..." 
                 : "Describe the code you want to generate..."}
               isChatMode={isChatMode}
+              onEnhancePrompt={enhanceUserPrompt}
             />
           </div>
         </div>

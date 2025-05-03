@@ -15,14 +15,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { format } from 'date-fns';
 
 interface MessageBubbleProps {
   message: Message;
   onRegenerate?: () => void;
   onViewPreview?: (code: string) => void;
+  modelName?: string;
+  responseTime?: number;
+  isChatMode: boolean;
 }
 
-const MessageBubble = ({ message, onRegenerate, onViewPreview }: MessageBubbleProps) => {
+const MessageBubble = ({ 
+  message, 
+  onRegenerate, 
+  onViewPreview, 
+  modelName, 
+  responseTime,
+  isChatMode 
+}: MessageBubbleProps) => {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
   const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
@@ -84,20 +95,27 @@ const MessageBubble = ({ message, onRegenerate, onViewPreview }: MessageBubblePr
         )}
       </div>
       
-      {!isUser && hasCode && (
+      {/* Model info and response time for AI messages */}
+      {!isUser && modelName && (
+        <div className="mt-1 text-xs text-muted-foreground">
+          {modelName} {responseTime ? `· ${responseTime.toFixed(1)}s` : ''}
+        </div>
+      )}
+      
+      {!isUser && (hasCode || isChatMode) && (
         <div className="flex space-x-2 mt-2">
           <Button 
             onClick={handleCopy}
             size="sm"
             variant="secondary"
-            className="flex items-center space-x-1 text-xs"
+            className="w-8 h-8 p-0"
+            title="Copy"
           >
             {copied ? (
               <Check className="h-3 w-3" />
             ) : (
               <Copy className="h-3 w-3" />
             )}
-            <span>Copy</span>
           </Button>
           
           {onRegenerate && (
@@ -108,7 +126,7 @@ const MessageBubble = ({ message, onRegenerate, onViewPreview }: MessageBubblePr
               className="flex items-center space-x-1 text-xs"
             >
               <RefreshCw className="h-3 w-3" />
-              <span>Regenerate</span>
+              {!isChatMode && <span>Regenerate</span>}
             </Button>
           )}
           
