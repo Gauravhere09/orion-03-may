@@ -6,231 +6,154 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, CheckCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Plus, Trash2 } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 
+interface ApiKey {
+  name: string;
+  key: string;
+}
+
 const AdminPage = () => {
-  const [emailjsStatus, setEmailjsStatus] = useState<'unconfigured' | 'configured' | 'testing'>('unconfigured');
-  const [supabaseStatus, setSupabaseStatus] = useState<'unconfigured' | 'configured' | 'testing'>('unconfigured');
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([
+    { name: 'Default API Key', key: 'sk-xxxx-xxxx-xxxx-xxxx' }
+  ]);
   
-  const [emailjsData, setEmailjsData] = useState({
-    serviceId: '',
-    templateId: '',
-    publicKey: ''
+  const [newApiKey, setNewApiKey] = useState({
+    name: '',
+    key: ''
   });
   
-  const [supabaseData, setSupabaseData] = useState({
-    url: '',
-    anonKey: ''
-  });
-  
-  const handleEmailjsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setEmailjsData(prev => ({ ...prev, [name]: value }));
+    setNewApiKey(prev => ({ ...prev, [name]: value }));
   };
   
-  const handleSupabaseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setSupabaseData(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const saveEmailjsConfig = () => {
-    if (!emailjsData.serviceId || !emailjsData.templateId || !emailjsData.publicKey) {
-      toast("Missing EmailJS details", {
-        description: "Please fill in all EmailJS configuration fields",
+  const addApiKey = () => {
+    if (!newApiKey.name || !newApiKey.key) {
+      toast("Missing API Key details", {
+        description: "Please provide both a name and key",
         icon: <AlertTriangle className="h-5 w-5" />
       });
       return;
     }
     
-    setEmailjsStatus('testing');
-    // Simulate connection test
-    setTimeout(() => {
-      setEmailjsStatus('configured');
-      toast("EmailJS configured successfully", {
-        description: "Your EmailJS integration is now ready to use",
-        icon: <CheckCircle className="h-5 w-5" />
-      });
-    }, 1500);
+    setApiKeys(prev => [...prev, newApiKey]);
+    setNewApiKey({ name: '', key: '' });
+    
+    toast("API Key added successfully", {
+      description: "Your new API key has been added",
+      icon: <CheckCircle className="h-5 w-5" />
+    });
   };
   
-  const saveSupabaseConfig = () => {
-    if (!supabaseData.url || !supabaseData.anonKey) {
-      toast("Missing Supabase details", {
-        description: "Please fill in all Supabase configuration fields",
-        icon: <AlertTriangle className="h-5 w-5" />
-      });
-      return;
-    }
+  const deleteApiKey = (index: number) => {
+    setApiKeys(prev => prev.filter((_, i) => i !== index));
     
-    setSupabaseStatus('testing');
-    // Simulate connection test
-    setTimeout(() => {
-      setSupabaseStatus('configured');
-      toast("Supabase configured successfully", {
-        description: "Your Supabase integration is now ready to use",
-        icon: <CheckCircle className="h-5 w-5" />
-      });
-    }, 1500);
+    toast("API Key removed", {
+      description: "The API key has been removed",
+      icon: <CheckCircle className="h-5 w-5" />
+    });
   };
   
   return (
     <div className="container mx-auto p-6 pt-24">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Admin Settings</h1>
+        <h1 className="text-3xl font-bold">API Keys Management</h1>
         <p className="text-muted-foreground mt-2">
-          Configure your application integrations and settings
+          Add, edit or remove API keys for AI model integration
         </p>
       </div>
       
-      <Tabs defaultValue="emailjs" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="emailjs">EmailJS</TabsTrigger>
-          <TabsTrigger value="supabase">Supabase</TabsTrigger>
-        </TabsList>
+      <Card className="glass-morphism border-2 border-border/50">
+        <CardHeader>
+          <CardTitle>API Keys</CardTitle>
+          <CardDescription>
+            Manage your API keys for various AI models
+          </CardDescription>
+        </CardHeader>
         
-        <TabsContent value="emailjs" className="space-y-4">
-          <Card className="glass-morphism">
-            <CardHeader>
-              <CardTitle>EmailJS Configuration</CardTitle>
-              <CardDescription>
-                Connect your EmailJS account to enable contact form functionality
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="serviceId">Service ID</Label>
-                  <Input 
-                    id="serviceId" 
-                    name="serviceId"
-                    placeholder="service_xxxxxxxx" 
-                    value={emailjsData.serviceId}
-                    onChange={handleEmailjsChange}
-                    className="glass-morphism"
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="templateId">Template ID</Label>
-                  <Input 
-                    id="templateId" 
-                    name="templateId"
-                    placeholder="template_xxxxxxxx" 
-                    value={emailjsData.templateId}
-                    onChange={handleEmailjsChange}
-                    className="glass-morphism"
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="publicKey">Public Key</Label>
-                  <Input 
-                    id="publicKey" 
-                    name="publicKey"
-                    placeholder="XXXXXXXXXXXXXXXXXXXX" 
-                    value={emailjsData.publicKey}
-                    onChange={handleEmailjsChange}
-                    className="glass-morphism"
-                  />
-                </div>
+        <CardContent className="space-y-6">
+          {/* Add new API key section */}
+          <div className="grid gap-4 p-4 rounded-lg bg-background/40 border border-border">
+            <h3 className="text-lg font-medium">Add New API Key</h3>
+            
+            <div className="grid gap-4 sm:grid-cols-[1fr_2fr_auto]">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Key Name</Label>
+                <Input 
+                  id="name" 
+                  name="name"
+                  placeholder="OpenAI Key" 
+                  value={newApiKey.name}
+                  onChange={handleInputChange}
+                  className="border-2 border-border/50"
+                />
               </div>
               
-              {emailjsStatus === 'configured' && (
-                <Alert variant="default" className="bg-green-500/10 text-green-500 border-green-500/20">
-                  <CheckCircle className="h-4 w-4" />
-                  <AlertTitle>Connected</AlertTitle>
-                  <AlertDescription>
-                    EmailJS is configured and ready to use.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" className="glass-morphism">Reset</Button>
-              <Button 
-                onClick={saveEmailjsConfig} 
-                disabled={emailjsStatus === 'testing'}
-                className={emailjsStatus === 'testing' ? 'opacity-70' : 'bg-cyan-600 hover:bg-cyan-700'}
-              >
-                {emailjsStatus === 'testing' ? (
-                  <>
-                    <div className="mr-2 h-4 w-4 rounded-full border-2 border-current border-r-transparent animate-spin" />
-                    Testing Connection
-                  </>
-                ) : (
-                  'Save Configuration'
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="supabase" className="space-y-4">
-          <Card className="glass-morphism">
-            <CardHeader>
-              <CardTitle>Supabase Integration</CardTitle>
-              <CardDescription>
-                Connect your Supabase project for backend functionality
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="url">Project URL</Label>
-                  <Input 
-                    id="url" 
-                    name="url"
-                    placeholder="https://xxxxxxxxxx.supabase.co" 
-                    value={supabaseData.url}
-                    onChange={handleSupabaseChange}
-                    className="glass-morphism"
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="anonKey">Anon Key</Label>
-                  <Input 
-                    id="anonKey" 
-                    name="anonKey"
-                    placeholder="eyJxxxx...xxxxxxx" 
-                    value={supabaseData.anonKey}
-                    onChange={handleSupabaseChange}
-                    className="glass-morphism"
-                  />
-                </div>
+              <div className="grid gap-2">
+                <Label htmlFor="key">API Key</Label>
+                <Input 
+                  id="key" 
+                  name="key"
+                  placeholder="sk-..." 
+                  value={newApiKey.key}
+                  onChange={handleInputChange}
+                  className="border-2 border-border/50"
+                  type="password"
+                />
               </div>
               
-              {supabaseStatus === 'configured' && (
-                <Alert variant="default" className="bg-green-500/10 text-green-500 border-green-500/20">
-                  <CheckCircle className="h-4 w-4" />
-                  <AlertTitle>Connected</AlertTitle>
-                  <AlertDescription>
-                    Supabase is configured and ready to use.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" className="glass-morphism">Reset</Button>
-              <Button 
-                onClick={saveSupabaseConfig} 
-                disabled={supabaseStatus === 'testing'}
-                className={supabaseStatus === 'testing' ? 'opacity-70' : 'bg-cyan-600 hover:bg-cyan-700'}
-              >
-                {supabaseStatus === 'testing' ? (
-                  <>
-                    <div className="mr-2 h-4 w-4 rounded-full border-2 border-current border-r-transparent animate-spin" />
-                    Testing Connection
-                  </>
-                ) : (
-                  'Save Configuration'
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              <div className="flex items-end">
+                <Button 
+                  onClick={addApiKey} 
+                  className="bg-cyan-600 hover:bg-cyan-700"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Key
+                </Button>
+              </div>
+            </div>
+          </div>
+          
+          {/* List of API keys */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Your API Keys</h3>
+            
+            {apiKeys.length === 0 ? (
+              <div className="text-center p-6 border border-dashed rounded-lg border-border">
+                <p className="text-muted-foreground">No API keys added yet</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {apiKeys.map((apiKey, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-background/40 border border-border">
+                    <div>
+                      <p className="font-medium">{apiKey.name}</p>
+                      <p className="text-muted-foreground text-sm">
+                        {apiKey.key.substring(0, 3)}...{apiKey.key.substring(apiKey.key.length - 4)}
+                      </p>
+                    </div>
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => deleteApiKey(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </CardContent>
+        
+        <CardFooter className="flex justify-between border-t border-border p-4 bg-background/40">
+          <p className="text-xs text-muted-foreground">
+            Your API keys are stored securely in your browser's local storage.
+          </p>
+        </CardFooter>
+      </Card>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Code, FileImage, PlusCircle, SendHorizonal, Send, MessageSquare, Wand } from 'lucide-react';
+import { Code, FileImage, Send, MessageSquare, Wand } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AIModel } from '@/data/models';
@@ -124,13 +124,118 @@ const ChatInput: React.FC<ChatInputProps> = ({
   
   return (
     <div className="relative space-y-2">
+      {/* Controls Bar */}
+      <div className="flex items-center justify-between mb-2 px-2">
+        <div className="flex items-center space-x-2">
+          {/* Toggle between Chat and Code mode */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-full border-2 border-border/50"
+            onClick={onToggleChatMode}
+            disabled={disabled}
+            title={isChatMode ? "Switch to Code Generation" : "Switch to Chat Mode"}
+          >
+            {isChatMode ? <Code className="h-4 w-4 mr-1" /> : <MessageSquare className="h-4 w-4 mr-1" />}
+            {isChatMode ? "Code Mode" : "Chat Mode"}
+          </Button>
+          
+          {/* File upload button */}
+          {selectedModel.supportsImages && isChatMode && (
+            <>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                className="hidden"
+                accept="image/*"
+                multiple
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-full border-2 border-border/50"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={disabled || isUploading}
+                title="Attach images"
+              >
+                {isUploading ? (
+                  <div className="h-4 w-4 mr-1 rounded-full border-2 border-current border-r-transparent animate-spin" />
+                ) : (
+                  <FileImage className="h-4 w-4 mr-1" />
+                )}
+                Attach Images
+              </Button>
+            </>
+          )}
+        </div>
+        
+        {/* Enhance prompt button (for code mode) */}
+        {!isChatMode && (
+          <>
+            {isMobile ? (
+              <Drawer open={enhanceDrawerOpen} onOpenChange={setEnhanceDrawerOpen}>
+                <DrawerTrigger asChild>
+                  <Button
+                    type="button"
+                    variant={enhanceActive ? "default" : "outline"}
+                    size="sm"
+                    className={`rounded-full ${enhanceActive ? "bg-cyan-600 text-white" : "border-2 border-border/50"}`}
+                    disabled={disabled}
+                    title="Enhance prompt with additional details"
+                  >
+                    <Wand className="h-4 w-4 mr-1" />
+                    Enhance Prompt
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent className="border-2 border-border/50">
+                  <div className="p-4 space-y-4">
+                    <h3 className="text-lg font-medium">Enhance your prompt</h3>
+                    <p className="text-sm text-muted-foreground">
+                      This will add additional details to your prompt to help the AI generate better code.
+                    </p>
+                    <Button 
+                      className="w-full bg-cyan-600" 
+                      onClick={() => {
+                        setEnhanceActive(true);
+                        setEnhanceDrawerOpen(false);
+                        const enhancedPrompt = onEnhancePrompt(message);
+                        setMessage(enhancedPrompt);
+                      }}
+                    >
+                      <Wand className="mr-2 h-4 w-4" />
+                      Enhance Prompt
+                    </Button>
+                  </div>
+                </DrawerContent>
+              </Drawer>
+            ) : (
+              <Button
+                type="button"
+                variant={enhanceActive ? "default" : "outline"}
+                size="sm"
+                className={`rounded-full ${enhanceActive ? "bg-cyan-600 text-white" : "border-2 border-border/50"}`}
+                onClick={handleEnhancePrompt}
+                disabled={disabled}
+                title="Enhance prompt with additional details"
+              >
+                <Wand className="h-4 w-4 mr-1" />
+                Enhance Prompt
+              </Button>
+            )}
+          </>
+        )}
+      </div>
+      
       {/* Image Previews */}
       {imagePreviewUrls.length > 0 && (
         <div className="flex gap-2 flex-wrap mb-2">
           {imagePreviewUrls.map((url, index) => (
             <div 
               key={index} 
-              className="relative w-16 h-16 rounded-md overflow-hidden border border-border group"
+              className="relative w-16 h-16 rounded-md overflow-hidden border-2 border-border/50 group"
             >
               <img 
                 src={url} 
@@ -149,7 +254,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
       )}
       
       {/* Main Input Area */}
-      <div className="flex items-end space-x-2 glass-morphism rounded-2xl pl-4 pr-2 py-2">
+      <div className="flex items-end space-x-2 glass-morphism rounded-2xl border-2 border-border/50 pl-4 pr-2 py-2">
         <div className="flex-1 min-h-10">
           <Textarea
             ref={textareaRef}
@@ -162,113 +267,15 @@ const ChatInput: React.FC<ChatInputProps> = ({
           />
         </div>
         
-        <div className="flex items-center gap-1 py-1">
-          {/* Toggle between Chat and Code mode */}
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="rounded-full h-8 w-8 text-muted-foreground hover:text-foreground"
-            onClick={onToggleChatMode}
-            disabled={disabled}
-            title={isChatMode ? "Switch to Code Generation" : "Switch to Chat Mode"}
-          >
-            {isChatMode ? <Code className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
-          </Button>
-          
-          {/* File upload button */}
-          {selectedModel.supportsImages && isChatMode && (
-            <>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileSelect}
-                className="hidden"
-                accept="image/*"
-                multiple
-              />
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                className="rounded-full h-8 w-8 text-muted-foreground hover:text-foreground"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={disabled || isUploading}
-                title="Attach images"
-              >
-                {isUploading ? (
-                  <div className="h-4 w-4 rounded-full border-2 border-current border-r-transparent animate-spin" />
-                ) : (
-                  <FileImage className="h-4 w-4" />
-                )}
-              </Button>
-            </>
-          )}
-          
-          {/* Enhance prompt button (for code mode) */}
-          {!isChatMode && (
-            <>
-              {isMobile ? (
-                <Drawer open={enhanceDrawerOpen} onOpenChange={setEnhanceDrawerOpen}>
-                  <DrawerTrigger asChild>
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant={enhanceActive ? "default" : "ghost"}
-                      className={`rounded-full h-8 w-8 ${enhanceActive ? "text-primary-foreground bg-cyan-600" : "text-muted-foreground hover:text-foreground"}`}
-                      disabled={disabled}
-                      title="Enhance prompt with additional details"
-                    >
-                      <Wand className="h-4 w-4" />
-                    </Button>
-                  </DrawerTrigger>
-                  <DrawerContent>
-                    <div className="p-4 space-y-4">
-                      <h3 className="text-lg font-medium">Enhance your prompt</h3>
-                      <p className="text-sm text-muted-foreground">
-                        This will add additional details to your prompt to help the AI generate better code.
-                      </p>
-                      <Button 
-                        className="w-full bg-cyan-600" 
-                        onClick={() => {
-                          setEnhanceActive(true);
-                          setEnhanceDrawerOpen(false);
-                          const enhancedPrompt = onEnhancePrompt(message);
-                          setMessage(enhancedPrompt);
-                        }}
-                      >
-                        <Wand className="mr-2 h-4 w-4" />
-                        Enhance Prompt
-                      </Button>
-                    </div>
-                  </DrawerContent>
-                </Drawer>
-              ) : (
-                <Button
-                  type="button"
-                  size="icon"
-                  variant={enhanceActive ? "default" : "ghost"}
-                  className={`rounded-full h-8 w-8 ${enhanceActive ? "text-primary-foreground bg-cyan-600" : "text-muted-foreground hover:text-foreground"}`}
-                  onClick={handleEnhancePrompt}
-                  disabled={disabled}
-                  title="Enhance prompt with additional details"
-                >
-                  <Wand className="h-4 w-4" />
-                </Button>
-              )}
-            </>
-          )}
-          
-          {/* Send button */}
-          <Button
-            type="button"
-            className={`rounded-full h-9 w-9 bg-cyan-600 hover:bg-cyan-700 text-white`}
-            onClick={handleSend}
-            disabled={disabled || message.trim() === ''}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
+        {/* Send button */}
+        <Button
+          type="button"
+          className="rounded-full h-9 w-9 bg-cyan-600 hover:bg-cyan-700 text-white flex-shrink-0"
+          onClick={handleSend}
+          disabled={disabled || message.trim() === ''}
+        >
+          <Send className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );

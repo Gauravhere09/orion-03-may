@@ -21,11 +21,11 @@
     --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 214.3 31.8% 75.4%; /* Made darker for visibility */
+    --input: 214.3 31.8% 75.4%; /* Made darker for visibility */
     --ring: 196 80% 30%;
     --sidebar: 0 0% 100%;
-    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-border: 214.3 31.8% 75.4%; /* Made darker for visibility */
     --sidebar-foreground: 222.2 84% 4.9%;
     --sidebar-accent: 196 80% 95%;
     --sidebar-accent-foreground: 222.2 47.4% 11.2%;
@@ -50,11 +50,11 @@
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 217.2 32.6% 30%; /* Made brighter for visibility */
+    --input: 217.2 32.6% 30%; /* Made brighter for visibility */
     --ring: 196 80% 50%;
     --sidebar: 222.2 84% 4.9%;
-    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-border: 217.2 32.6% 30%; /* Made brighter for visibility */
     --sidebar-foreground: 210 40% 98%;
     --sidebar-accent: 217.2 32.6% 17.5%;
     --sidebar-accent-foreground: 210 40% 98%;
@@ -74,6 +74,16 @@
   html {
     @apply scroll-smooth;
   }
+  
+  /* Make input borders more visible */
+  input, textarea, select {
+    @apply border-2 border-border/50;
+  }
+  
+  /* Make modal borders more visible */
+  [role="dialog"] {
+    @apply border-2 border-border/50;
+  }
 }
 
 @layer utilities {
@@ -87,11 +97,11 @@
   }
 
   .glass-morphism {
-    @apply backdrop-blur-xl bg-white/5 border border-white/10 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.1)];
+    @apply backdrop-blur-xl bg-white/5 border-2 border-white/10 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.1)];
   }
   
   .dark .glass-morphism {
-    @apply backdrop-blur-xl bg-black/20 border border-white/10 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3)];
+    @apply backdrop-blur-xl bg-black/20 border-2 border-white/10 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3)];
   }
   
   .text-gradient {
@@ -134,6 +144,7 @@ pre code {
   counter-reset: line;
   padding: 16px !important;
   border-radius: 8px;
+  @apply border-2 border-border/30;
 }
 
 code {

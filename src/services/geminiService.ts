@@ -6,13 +6,13 @@ import { getMessageText } from './apiHelpers';
 export const sendMessageToGemini = async (messages: Message[]): Promise<string> => {
   // First try with Gemini 2.0 Flash model
   try {
-    const response = await sendToGeminiModel(messages, "gemini-2.0-flash");
+    const response = await sendToGeminiModel(messages, "models/gemini-1.5-flash");
     return response;
   } catch (error) {
     console.error("Error with primary Gemini model, falling back to alternative:", error);
     // If failed, try with Gemini 1.5 Pro
     try {
-      const response = await sendToGeminiModel(messages, "gemini-1.5-pro-latest");
+      const response = await sendToGeminiModel(messages, "models/gemini-1.5-pro");
       return response;
     } catch (secondError) {
       console.error("Error with fallback Gemini model:", secondError);
@@ -24,7 +24,7 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
 // Shared function to send messages to different Gemini models
 const sendToGeminiModel = async (messages: Message[], modelId: string): Promise<string> => {
   // Hardcoded demo API key (this would normally be stored more securely)
-  const API_KEY = "AIzaSyAHduoaBafMi6FI9fh6kI_u2hwXkIoAeYY"; 
+  const API_KEY = "AIzaSyDdu5wZQHH6ORVSm0aIqDBit6qTJHAz0B4"; 
   
   try {
     // Format messages for Gemini API
@@ -40,24 +40,17 @@ const sendToGeminiModel = async (messages: Message[], modelId: string): Promise<
       };
     });
     
-    // Find the user message
-    const userMessages = formattedMessages.filter(msg => msg.role === 'user');
-    
-    // Get the last user message
-    const lastUserMessage = userMessages[userMessages.length - 1];
-    
-    if (!lastUserMessage) {
-      throw new Error('No user message found for request');
-    }
-    
     // Find the system message
     const systemMessage = formattedMessages.find(msg => msg.role === 'system');
+    
+    // Find all user messages - use all conversation history
+    const userMessages = formattedMessages.filter(msg => msg.role === 'user' || msg.role === 'model');
     
     // Build request body for the specified Gemini model
     const requestBody = {
       contents: [
         ...(systemMessage ? [systemMessage] : []),
-        lastUserMessage
+        ...userMessages
       ],
       generationConfig: {
         temperature: 0.7,
@@ -70,7 +63,7 @@ const sendToGeminiModel = async (messages: Message[], modelId: string): Promise<
     console.log(`Sending request to Gemini (${modelId}):`, JSON.stringify(requestBody));
     
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/${modelId}:generateContent?key=${API_KEY}`,
       {
         method: 'POST',
         headers: {
