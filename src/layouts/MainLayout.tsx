@@ -1,7 +1,7 @@
-
 import { useState } from 'react';
 import { Message } from '@/services/api';
 import { aiModels, AIModel } from '@/data/models';
+import { hasApiKeys } from '@/services/storage';
 
 import ChatContainer from '@/components/ChatContainer';
 import ChatInput from '@/components/ChatInput';
