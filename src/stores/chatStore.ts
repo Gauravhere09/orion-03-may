@@ -23,6 +23,9 @@ interface ChatStore {
   handleStopGeneration: () => void;
   handleNewChat: () => void;
   parseCodeFromResponse: (content: string) => GeneratedCode;
+  confirmClearChat: () => void;
+  showClearChatConfirm: boolean;
+  setShowClearChatConfirm: (show: boolean) => void;
 }
 
 // System message for code generation
@@ -39,7 +42,9 @@ Format your code with:
 \`\`\`javascript
 // JavaScript code here
 \`\`\`
-Use detailed comments in the code and ensure it's well-organized.`;
+Use detailed comments in the code and ensure it's well-organized.
+Make the code look visually appealing with good styling and responsive design.
+Focus on creating intuitive and modern user interfaces.`;
 
 const getAssistantPrompt = (modelName: string, modelVersion: string) => `You are a helpful AI assistant powered by ${modelName} ${modelVersion}.
 Respond concisely and accurately to questions and provide assistance as needed.`;
@@ -51,12 +56,13 @@ export const useChatStore = create<ChatStore>((set, get) => {
   return {
     messages: [{
       role: 'assistant',
-      content: 'Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you. You can use our default OpenRouter API keys or add your own!'
+      content: 'Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you. You can use our default OpenRouter API keys or add your own!' as string | MessageContent[]
     }],
     isLoading: false,
     isGenerating: false,
     generatedCode: {},
     chatId: Date.now().toString(),
+    showClearChatConfirm: false,
     
     setMessages: (messages) => set({ messages }),
     addMessage: (message) => set(state => ({ messages: [...state.messages, message] })),
@@ -64,6 +70,12 @@ export const useChatStore = create<ChatStore>((set, get) => {
     setIsGenerating: (isGenerating) => set({ isGenerating }),
     setGeneratedCode: (code) => set({ generatedCode: code }),
     setChatId: (id) => set({ chatId: id }),
+    setShowClearChatConfirm: (show) => set({ showClearChatConfirm: show }),
+    
+    confirmClearChat: () => {
+      set({ showClearChatConfirm: false });
+      get().handleNewChat();
+    },
     
     handleSendMessage: async (content) => {
       if (!hasApiKeys()) {
@@ -90,8 +102,8 @@ export const useChatStore = create<ChatStore>((set, get) => {
         const tempMessage: Message = { 
           role: 'assistant', 
           content: isChatMode 
-            ? `Thinking...` 
-            : `Generating code for your ${content.split(' ').slice(0, 3).join(' ')}...`
+            ? `Thinking...` as string | MessageContent[]
+            : `Generating code for your ${content.split(' ').slice(0, 3).join(' ')}...` as string | MessageContent[]
         };
         
         set(state => ({ messages: [...state.messages, tempMessage] }));
@@ -272,7 +284,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
         chatId: Date.now().toString(),
         messages: [{
           role: 'assistant',
-          content: 'Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you.'
+          content: 'Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you.' as string | MessageContent[]
         }],
         generatedCode: {}
       });

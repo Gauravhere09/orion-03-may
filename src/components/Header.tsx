@@ -1,8 +1,7 @@
 
 import { AIModel } from '@/data/models';
 import { Button } from '@/components/ui/button';
-import { Toggle } from '@/components/ui/toggle';
-import { Eye, Code, KeyRound, Sparkles, MessageSquare } from 'lucide-react';
+import { Eye, KeyRound, Sparkles } from 'lucide-react';
 
 interface HeaderProps {
   selectedModel: AIModel;
@@ -11,8 +10,6 @@ interface HeaderProps {
   onNewChatClick: () => void;
   onPreviewClick: () => void;
   hasPreview: boolean;
-  isChatMode: boolean;
-  onToggleChatMode: () => void;
 }
 
 const Header = ({ 
@@ -21,36 +18,12 @@ const Header = ({
   onApiKeyManagerClick, 
   onNewChatClick, 
   onPreviewClick,
-  hasPreview,
-  isChatMode,
-  onToggleChatMode
+  hasPreview
 }: HeaderProps) => {
   return (
     <header className="flex items-center justify-between p-4 border-b">
       <div className="flex items-center space-x-2">
-        <h1 className="text-xl font-bold">AI Code Generator</h1>
-        <div className="ml-4 flex gap-1 p-1 border rounded-md bg-background">
-          <Toggle
-            pressed={isChatMode}
-            onPressedChange={onToggleChatMode}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-          >
-            <MessageSquare className="h-4 w-4" />
-            <span className="hidden sm:inline">Chat</span>
-          </Toggle>
-          <Toggle
-            pressed={!isChatMode}
-            onPressedChange={() => onToggleChatMode()}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-          >
-            <Code className="h-4 w-4" />
-            <span className="hidden sm:inline">Code</span>
-          </Toggle>
-        </div>
+        {/* App name removed as requested */}
       </div>
       
       <div className="flex items-center space-x-2">
@@ -72,8 +45,7 @@ const Header = ({
           className="flex items-center space-x-2"
           onClick={onNewChatClick}
         >
-          <Code className="h-4 w-4" />
-          <span className="hidden sm:inline">New Chat</span>
+          <span>New Chat</span>
         </Button>
         
         <Button 

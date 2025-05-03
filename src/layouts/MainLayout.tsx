@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Message } from '@/services/api';
 import { aiModels, AIModel } from '@/data/models';
@@ -12,10 +13,12 @@ import CodeDisplay from '@/components/CodeDisplay';
 import CodePreview from '@/components/CodePreview';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
-import { Eye, Code } from 'lucide-react';
+import { Eye, Code, MessageSquare } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
 import { useModelStore } from '@/stores/modelStore';
 import { useUiStore } from '@/stores/uiStore';
+import { Toggle } from '@/components/ui/toggle';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface MainLayoutProps {
   apiKeyModalOpen: boolean;
@@ -30,7 +33,7 @@ const MainLayout = ({
   isPreviewMode,
   onExitPreview
 }: MainLayoutProps) => {
-  const { messages, isLoading, isGenerating, handleSendMessage, handleRegenerateResponse, handleStopGeneration, handleNewChat, generatedCode } = useChatStore();
+  const { messages, isLoading, isGenerating, handleSendMessage, handleRegenerateResponse, handleStopGeneration, handleNewChat, generatedCode, showClearChatConfirm, setShowClearChatConfirm, confirmClearChat } = useChatStore();
   const { selectedModel, handleModelSelect } = useModelStore();
   const { isChatMode, toggleChatMode } = useUiStore();
   
@@ -53,11 +56,9 @@ const MainLayout = ({
         selectedModel={selectedModel}
         onModelSelectClick={() => setModelSelectorOpen(true)}
         onApiKeyManagerClick={() => setApiKeyManagerOpen(true)}
-        onNewChatClick={handleNewChat}
+        onNewChatClick={() => setShowClearChatConfirm(true)}
         onPreviewClick={() => generatedCode.preview ? useUiStore.getState().setIsPreviewMode(true) : null}
         hasPreview={!!generatedCode.preview}
-        isChatMode={isChatMode}
-        onToggleChatMode={toggleChatMode}
       />
       
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
@@ -89,15 +90,40 @@ const MainLayout = ({
             )}
           </div>
           
-          <ChatInput 
-            onSendMessage={handleSendMessage} 
-            disabled={isLoading || !hasApiKeys()}
-            placeholder={isChatMode 
-              ? "Chat with AI assistant..." 
-              : "Describe the code you want to generate..."}
-            isChatMode={isChatMode}
-            onToggleChatMode={toggleChatMode}
-          />
+          <div className="relative px-4 border-t">
+            {/* Mode toggle added above input */}
+            <div className="flex justify-end py-2">
+              <Toggle
+                pressed={isChatMode}
+                onPressedChange={toggleChatMode}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1 h-8"
+                title={isChatMode ? "Switch to Code Mode" : "Switch to Chat Mode"}
+              >
+                {isChatMode ? (
+                  <>
+                    <MessageSquare className="h-4 w-4" />
+                    <span>Chat</span>
+                  </>
+                ) : (
+                  <>
+                    <Code className="h-4 w-4" />
+                    <span>Code</span>
+                  </>
+                )}
+              </Toggle>
+            </div>
+            
+            <ChatInput 
+              onSendMessage={handleSendMessage} 
+              disabled={isLoading || !hasApiKeys()}
+              placeholder={isChatMode 
+                ? "Chat with AI assistant..." 
+                : "Describe the code you want to generate..."}
+              isChatMode={isChatMode}
+            />
+          </div>
         </div>
         
         <div className="hidden md:flex md:w-1/2 overflow-hidden flex-col">
@@ -133,6 +159,24 @@ const MainLayout = ({
         selectedModel={selectedModel}
         onModelSelect={handleModelSelect}
       />
+      
+      <AlertDialog 
+        open={showClearChatConfirm} 
+        onOpenChange={setShowClearChatConfirm}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will clear your current chat and start a new one. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmClearChat}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
