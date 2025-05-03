@@ -5,8 +5,10 @@ import { persist } from 'zustand/middleware';
 interface UiStore {
   isPreviewMode: boolean;
   isChatMode: boolean;
+  isDarkMode: boolean;
   setIsPreviewMode: (isPreviewMode: boolean) => void;
   toggleChatMode: () => void;
+  toggleDarkMode: () => void;
 }
 
 export const useUiStore = create<UiStore>()(
@@ -14,9 +16,11 @@ export const useUiStore = create<UiStore>()(
     (set) => ({
       isPreviewMode: false,
       isChatMode: false,
+      isDarkMode: true,
       
       setIsPreviewMode: (isPreviewMode: boolean) => set({ isPreviewMode }),
-      toggleChatMode: () => set(state => ({ isChatMode: !state.isChatMode }))
+      toggleChatMode: () => set(state => ({ isChatMode: !state.isChatMode })),
+      toggleDarkMode: () => set(state => ({ isDarkMode: !state.isDarkMode }))
     }),
     {
       name: 'ui-store',

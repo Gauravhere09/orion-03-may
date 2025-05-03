@@ -6,6 +6,7 @@ import { Image, Sparkles, Code, MessageSquare } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Toggle } from '@/components/ui/toggle';
 import { AIModel } from '@/data/models';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ChatInputProps {
   onSendMessage: (message: string, imageUrls?: string[]) => void;
@@ -32,6 +33,7 @@ const ChatInput = ({
   const [enhancedPrompt, setEnhancedPrompt] = useState('');
   const [showVisionWarning, setShowVisionWarning] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -104,14 +106,18 @@ const ChatInput = ({
     setEnhanceDialogOpen(false);
   };
 
+  const inputContainerClasses = isMobile 
+    ? "mobile-input-container" 
+    : "mb-4 sticky bottom-0 bg-background pb-2";
+
   return (
     <>
-      <form onSubmit={handleSubmit} className="mb-4 sticky bottom-0 bg-background pb-2">
+      <form onSubmit={handleSubmit} className={inputContainerClasses}>
         {/* Image previews */}
         {images.length > 0 && (
           <div className="flex gap-2 mb-2 flex-wrap">
             {images.map((img, index) => (
-              <div key={index} className="relative w-16 h-16 rounded overflow-hidden border">
+              <div key={index} className="relative w-16 h-16 rounded overflow-hidden border border-primary/20">
                 <img 
                   src={img} 
                   alt={`Uploaded ${index + 1}`} 
@@ -131,12 +137,12 @@ const ChatInput = ({
         
         {/* Vision model warning */}
         {showVisionWarning && (
-          <div className="text-amber-600 text-xs mb-2 px-2 py-1 bg-amber-100 rounded-md">
+          <div className="text-amber-600 dark:text-amber-400 text-xs mb-2 px-2 py-1 bg-amber-100 dark:bg-amber-900/20 rounded-md">
             You've added images. Consider switching to a vision-capable model like Llama 4 or Gemini for better results.
           </div>
         )}
         
-        <div className="flex-col max-w-3xl mx-auto">
+        <div className="flex-col max-w-3xl mx-auto glass-morphism rounded-xl p-2">
           {/* Mode toggle and image button above input in row */}
           <div className="flex justify-between items-center py-2">
             <Toggle
@@ -144,17 +150,17 @@ const ChatInput = ({
               onPressedChange={onToggleChatMode}
               variant="outline"
               size="sm"
-              className="flex items-center gap-1 h-8"
+              className="flex items-center gap-1 h-7 border-primary/20"
               title={isChatMode ? "Switch to Code Mode" : "Switch to Chat Mode"}
             >
               {isChatMode ? (
                 <>
-                  <MessageSquare className="h-4 w-4" />
+                  <MessageSquare className="h-3.5 w-3.5" />
                   <span>Chat</span>
                 </>
               ) : (
                 <>
-                  <Code className="h-4 w-4" />
+                  <Code className="h-3.5 w-3.5" />
                   <span>Code</span>
                 </>
               )}
@@ -175,10 +181,10 @@ const ChatInput = ({
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 h-7 border-primary/20"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <Image className="h-4 w-4" />
+                  <Image className="h-3.5 w-3.5" />
                   <span className="text-xs">Add Image</span>
                 </Button>
               </>
@@ -191,7 +197,7 @@ const ChatInput = ({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
-              className="resize-none min-h-[60px] rounded-lg pl-4 pr-14"
+              className="resize-none min-h-[60px] rounded-lg pl-4 pr-14 border-primary/20"
               disabled={disabled}
             />
             
@@ -201,18 +207,18 @@ const ChatInput = ({
                   type="button"
                   size="icon"
                   variant="ghost"
-                  className="h-8 w-8 rounded-full"
+                  className="h-7 w-7 rounded-full"
                   onClick={handleEnhanceClick}
                   title="Enhance Prompt"
                 >
-                  <Sparkles className="h-4 w-4" />
+                  <Sparkles className="h-3.5 w-3.5" />
                 </Button>
               )}
               
               <Button 
                 type="submit" 
                 size="icon" 
-                className="h-8 w-8 rounded-full"
+                className="h-7 w-7 rounded-full cyan-glow"
                 disabled={!input.trim() || disabled}
               >
                 <svg 
@@ -223,7 +229,7 @@ const ChatInput = ({
                   strokeWidth="2"
                   strokeLinecap="round" 
                   strokeLinejoin="round" 
-                  className="h-4 w-4"
+                  className="h-3.5 w-3.5"
                 >
                   <path d="m22 2-7 20-4-9-9-4Z" />
                   <path d="M22 2 11 13" />
@@ -236,7 +242,7 @@ const ChatInput = ({
       
       {/* Enhanced Prompt Dialog */}
       <Dialog open={enhanceDialogOpen} onOpenChange={setEnhanceDialogOpen}>
-        <DialogContent>
+        <DialogContent className="glass-morphism">
           <DialogHeader>
             <DialogTitle>Enhanced Prompt</DialogTitle>
             <DialogDescription>
@@ -250,7 +256,7 @@ const ChatInput = ({
           
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="ghost" onClick={() => setEnhanceDialogOpen(false)}>Cancel</Button>
-            <Button onClick={useEnhancedPrompt}>Use Enhanced Prompt</Button>
+            <Button onClick={useEnhancedPrompt} className="cyan-glow">Use Enhanced Prompt</Button>
           </div>
         </DialogContent>
       </Dialog>

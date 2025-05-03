@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { useChatStore } from '@/stores/chatStore';
 import { useModelStore } from '@/stores/modelStore';
 import { useUiStore } from '@/stores/uiStore';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface MainLayoutProps {
@@ -32,7 +33,7 @@ const MainLayout = ({
 }: MainLayoutProps) => {
   const { messages, isLoading, isGenerating, handleSendMessage, handleRegenerateResponse, handleStopGeneration, handleNewChat, generatedCode, showClearChatConfirm, setShowClearChatConfirm, confirmClearChat, enhanceUserPrompt, lastError, setLastError } = useChatStore();
   const { selectedModel, handleModelSelect } = useModelStore();
-  const { isChatMode, toggleChatMode } = useUiStore();
+  const { isChatMode, toggleChatMode, isDarkMode } = useUiStore();
   
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
@@ -40,6 +41,7 @@ const MainLayout = ({
   const lastScrollPosition = useRef(0);
   const headerRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
   
   // Handle scroll behavior for header
   useEffect(() => {
@@ -82,7 +84,7 @@ const MainLayout = ({
   }
 
   return (
-    <div className="flex flex-col h-screen max-h-screen overflow-hidden">
+    <div className="flex flex-col h-screen max-h-screen overflow-hidden bg-background text-foreground">
       <div 
         ref={headerRef}
         className={`transition-transform duration-300 ease-in-out ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'} sticky top-0 z-10`}
@@ -98,7 +100,7 @@ const MainLayout = ({
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         <div 
           ref={chatContainerRef}
-          className="w-full md:w-1/2 flex flex-col overflow-hidden border-r"
+          className="w-full md:w-1/2 flex flex-col overflow-hidden border-r border-border/30"
         >
           <ChatContainer 
             messages={messages} 
@@ -119,15 +121,15 @@ const MainLayout = ({
                 variant="outline"
                 size="sm"
                 onClick={handleStopGeneration}
-                className="flex items-center gap-2 my-2"
+                className="flex items-center gap-2 my-2 border-primary/20 text-xs"
               >
-                <div className="h-4 w-4 rounded-full border-2 border-current border-r-transparent animate-spin" />
+                <div className="h-3 w-3 rounded-full border-2 border-current border-r-transparent animate-spin" />
                 <span>Stop Generating</span>
               </Button>
             )}
           </div>
           
-          <div className="relative px-4 border-t mt-auto">
+          <div className="relative px-4">
             <ChatInput 
               onSendMessage={(msg, imageUrls) => handleSendMessage(msg, imageUrls)} 
               disabled={isLoading || !hasApiKeys()}
@@ -146,8 +148,8 @@ const MainLayout = ({
           {(generatedCode.html || generatedCode.css || generatedCode.js) ? (
             <CodeDisplay code={generatedCode} />
           ) : (
-            <div className="flex items-center justify-center h-full p-4 bg-muted/20">
-              <div className="text-center space-y-2 max-w-sm">
+            <div className="flex items-center justify-center h-full p-4 bg-muted/10">
+              <div className="text-center space-y-2 max-w-sm glass-morphism p-6 rounded-xl">
                 <h3 className="text-lg font-medium">No Code Generated Yet</h3>
                 <p className="text-sm text-muted-foreground">
                   Ask the AI to generate code and it will appear here. You can generate HTML, CSS, and JavaScript components.
@@ -175,7 +177,7 @@ const MainLayout = ({
         open={showClearChatConfirm} 
         onOpenChange={setShowClearChatConfirm}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="glass-morphism">
           <AlertDialogHeader>
             <AlertDialogTitle>Clear Chat History?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -184,7 +186,7 @@ const MainLayout = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmClearChat}>Yes, Clear Chat</AlertDialogAction>
+            <AlertDialogAction onClick={confirmClearChat} className="cyan-glow">Yes, Clear Chat</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

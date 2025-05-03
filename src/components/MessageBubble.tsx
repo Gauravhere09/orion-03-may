@@ -1,20 +1,13 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { cn } from "@/lib/utils";
 import { Message, getMessageText } from "@/services/api";
 import { Copy, RefreshCw, Check, Eye, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useChatStore } from "@/stores/chatStore";
+import Highlight from 'react-highlight';
+import 'highlight.js/styles/night-owl.css';
 
 interface MessageBubbleProps {
   message: Message;
@@ -62,15 +55,17 @@ const MessageBubble = ({
                  messageText.includes("```js") ||
                  messageText.includes("```javascript");
   
-  const formattedContent = messageText.replace(
-    /```(html|css|javascript|js)([\s\S]*?)```/g, 
-    (match, language, code) => {
-      return `<div class="mt-2 mb-2">
-                <div class="bg-secondary/50 text-xs px-3 py-1 rounded-t-md font-mono">${language}</div>
-                <pre class="bg-secondary/30 p-3 overflow-x-auto rounded-b-md rounded-tr-md text-sm"><code>${code}</code></pre>
-              </div>`;
-    }
-  );
+  const formatMessage = (content: string) => {
+    return content.replace(
+      /```(html|css|javascript|js)([\s\S]*?)```/g, 
+      (match, language, code) => {
+        return `<div class="mt-2 mb-2">
+                  <div class="bg-secondary/50 text-xs px-3 py-1 rounded-t-md font-mono">${language}</div>
+                  <pre class="language-${language} bg-secondary/30 p-3 overflow-x-auto rounded-b-md rounded-tr-md text-sm"><code>${code}</code></pre>
+                </div>`;
+      }
+    );
+  };
   
   return (
     <div className={cn(
@@ -81,45 +76,51 @@ const MessageBubble = ({
         "max-w-[85%] rounded-2xl px-4 py-3 text-sm relative group",
         isUser 
           ? "bg-primary text-primary-foreground rounded-tr-none" 
-          : "bg-secondary text-secondary-foreground rounded-tl-none"
+          : "glass-morphism text-foreground rounded-tl-none"
       )}>
         {isUser ? (
           <p>{messageText}</p>
         ) : (
-          <div dangerouslySetInnerHTML={{ __html: formattedContent }} />
+          hasCode ? (
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              <div dangerouslySetInnerHTML={{ __html: formatMessage(messageText) }} />
+            </div>
+          ) : (
+            <p className="leading-relaxed">{messageText}</p>
+          )
         )}
       </div>
       
       {/* Model info for AI messages */}
       {!isUser && modelName && (
-        <div className="mt-1 text-xs text-muted-foreground opacity-70">
+        <div className="mt-1 text-xs text-primary opacity-70">
           {modelName}
         </div>
       )}
       
       {/* Show buttons for all AI messages */}
       {!isUser && (
-        <div className="flex flex-wrap gap-2 mt-2">
+        <div className="flex flex-wrap gap-1.5 mt-1.5">
           {/* Rating buttons (like/dislike) */}
-          <div className="flex space-x-2">
+          <div className="flex space-x-1.5">
             <Button 
               onClick={() => rateMessage(messageIndex, 'like')}
               size="sm"
               variant={messageRating === 'like' ? 'default' : 'secondary'}
-              className="w-8 h-8 p-0"
+              className="w-6 h-6 p-0"
               title="Like"
             >
-              <ThumbsUp className="h-3 w-3" />
+              <ThumbsUp className="h-2.5 w-2.5" />
             </Button>
             
             <Button 
               onClick={() => rateMessage(messageIndex, 'dislike')}
               size="sm"
               variant={messageRating === 'dislike' ? 'destructive' : 'secondary'}
-              className="w-8 h-8 p-0"
+              className="w-6 h-6 p-0"
               title="Dislike"
             >
-              <ThumbsDown className="h-3 w-3" />
+              <ThumbsDown className="h-2.5 w-2.5" />
             </Button>
           </div>
           
@@ -128,13 +129,13 @@ const MessageBubble = ({
             onClick={handleCopy}
             size="sm"
             variant="secondary"
-            className="w-8 h-8 p-0"
+            className="w-6 h-6 p-0"
             title="Copy"
           >
             {copied ? (
-              <Check className="h-3 w-3" />
+              <Check className="h-2.5 w-2.5" />
             ) : (
-              <Copy className="h-3 w-3" />
+              <Copy className="h-2.5 w-2.5" />
             )}
           </Button>
           
@@ -144,10 +145,10 @@ const MessageBubble = ({
               onClick={() => setRegenerateDialogOpen(true)}
               size="sm"
               variant="secondary" 
-              className="w-8 h-8 p-0"
+              className="w-6 h-6 p-0"
               title="Regenerate"
             >
-              <RefreshCw className="h-3 w-3" />
+              <RefreshCw className="h-2.5 w-2.5" />
             </Button>
           )}
           
@@ -156,10 +157,10 @@ const MessageBubble = ({
             <Button 
               onClick={onViewPreview}
               size="sm"
-              variant="secondary"
-              className="flex items-center space-x-1 text-xs"
+              variant="outline"
+              className="flex items-center space-x-1 text-xs h-6 border-primary/20"
             >
-              <Eye className="h-3 w-3" />
+              <Eye className="h-2.5 w-2.5 mr-1" />
               <span>Preview</span>
             </Button>
           )}
@@ -167,7 +168,7 @@ const MessageBubble = ({
       )}
       
       <AlertDialog open={regenerateDialogOpen} onOpenChange={setRegenerateDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="glass-morphism">
           <AlertDialogHeader>
             <AlertDialogTitle>Regenerate Response?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -176,7 +177,7 @@ const MessageBubble = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRegenerateConfirm}>Yes, Regenerate</AlertDialogAction>
+            <AlertDialogAction onClick={handleRegenerateConfirm} className="cyan-glow">Yes, Regenerate</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -20,8 +20,7 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
       };
     });
     
-    // Find the system message and user messages
-    const systemMessage = formattedMessages.find(msg => msg.role === 'system');
+    // Find the user message
     const userMessages = formattedMessages.filter(msg => msg.role === 'user');
     
     // Get the last user message
@@ -31,7 +30,10 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
       throw new Error('No user message found for Gemini API request');
     }
     
-    // Build request body
+    // Find the system message
+    const systemMessage = formattedMessages.find(msg => msg.role === 'system');
+    
+    // Build request body for Gemini-2.0-flash model
     const requestBody = {
       contents: [
         ...(systemMessage ? [systemMessage] : []),
@@ -40,6 +42,8 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
       generationConfig: {
         temperature: 0.7,
         maxOutputTokens: 2048,
+        topP: 0.95,
+        topK: 64
       }
     };
     
