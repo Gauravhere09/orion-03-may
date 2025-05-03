@@ -1,4 +1,3 @@
-
 import { Message } from './api';
 
 const API_KEYS_STORAGE_KEY = 'openrouter_api_keys';
@@ -10,23 +9,18 @@ export interface ApiKey {
   priority: number;
 }
 
-// Default OpenRouter API keys
+// Default OpenRouter API keys (placeholder keys - to be replaced later)
 const DEFAULT_API_KEYS: ApiKey[] = [
-  { 
-    key: "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", 
-    isDefault: true, 
-    priority: 1 
-  },
-  { 
-    key: "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", 
-    isDefault: true, 
-    priority: 2 
-  },
-  { 
-    key: "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", 
-    isDefault: true, 
-    priority: 3 
-  }
+  { key: "sk-or-v1-placeholder-key-1", isDefault: true, priority: 1 },
+  { key: "sk-or-v1-placeholder-key-2", isDefault: true, priority: 2 },
+  { key: "sk-or-v1-placeholder-key-3", isDefault: true, priority: 3 },
+  { key: "sk-or-v1-placeholder-key-4", isDefault: true, priority: 4 },
+  { key: "sk-or-v1-placeholder-key-5", isDefault: true, priority: 5 },
+  { key: "sk-or-v1-placeholder-key-6", isDefault: true, priority: 6 },
+  { key: "sk-or-v1-placeholder-key-7", isDefault: true, priority: 7 },
+  { key: "sk-or-v1-placeholder-key-8", isDefault: true, priority: 8 },
+  { key: "sk-or-v1-placeholder-key-9", isDefault: true, priority: 9 },
+  { key: "sk-or-v1-placeholder-key-10", isDefault: true, priority: 10 }
 ];
 
 export interface Chat {
@@ -35,6 +29,9 @@ export interface Chat {
   modelId: string;
   timestamp: number;
 }
+
+// Maximum number of API keys allowed
+const MAX_API_KEYS = 20;
 
 // Initialize API keys in storage if they don't exist
 export const initializeApiKeys = (): void => {
@@ -46,6 +43,12 @@ export const initializeApiKeys = (): void => {
 
 export const saveApiKey = (apiKey: string): void => {
   const existingKeys = getApiKeys() || [];
+  
+  // Check if we've reached the maximum number of API keys
+  if (existingKeys.length >= MAX_API_KEYS) {
+    throw new Error(`Maximum number of API keys (${MAX_API_KEYS}) reached. Please remove some keys first.`);
+  }
+  
   const newKey: ApiKey = {
     key: apiKey,
     isDefault: false,

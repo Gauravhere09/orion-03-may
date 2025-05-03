@@ -1,9 +1,8 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from "@/lib/utils";
 import { Message, getMessageText } from "@/services/api";
 import { Copy, RefreshCw, Check, Eye } from 'lucide-react';
-import { toast } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -37,11 +36,19 @@ const MessageBubble = ({
   const [copied, setCopied] = useState(false);
   const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
   const messageText = getMessageText(message.content);
+  const [startTime] = useState(Date.now());
+  const [displayTime, setDisplayTime] = useState<string | null>(null);
+  
+  // Calculate response time once when message is added
+  useEffect(() => {
+    if (!isUser && responseTime) {
+      setDisplayTime(`${responseTime.toFixed(1)}s`);
+    }
+  }, [isUser, responseTime]);
   
   const handleCopy = () => {
     navigator.clipboard.writeText(messageText);
     setCopied(true);
-    toast("Copied to clipboard");
     
     setTimeout(() => {
       setCopied(false);
@@ -97,11 +104,12 @@ const MessageBubble = ({
       {/* Model info and response time for AI messages - displayed in very small text */}
       {!isUser && modelName && (
         <div className="mt-1 text-xs text-muted-foreground opacity-70">
-          {modelName} {responseTime ? `· ${responseTime.toFixed(1)}s` : ''}
+          {modelName} {displayTime ? `· ${displayTime}` : ''}
         </div>
       )}
       
-      {!isUser && (hasCode || isChatMode) && (
+      {/* Show buttons for all AI messages */}
+      {!isUser && (
         <div className="flex space-x-2 mt-2">
           {/* Copy button - icon only */}
           <Button 
@@ -131,8 +139,8 @@ const MessageBubble = ({
             </Button>
           )}
           
-          {/* Preview button only for code responses - with text */}
-          {hasCode && onViewPreview && (
+          {/* Preview button only for code responses and only in code mode */}
+          {hasCode && onViewPreview && !isChatMode && (
             <Button 
               onClick={handlePreview}
               size="sm"

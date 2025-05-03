@@ -1,24 +1,20 @@
 
 import { AIModel } from '@/data/models';
 import { Button } from '@/components/ui/button';
-import { Eye, KeyRound, Sparkles } from 'lucide-react';
+import { KeyRound, Sparkles, Plus } from 'lucide-react';
 
 interface HeaderProps {
   selectedModel: AIModel;
   onModelSelectClick: () => void;
   onApiKeyManagerClick: () => void;
   onNewChatClick: () => void;
-  onPreviewClick: () => void;
-  hasPreview: boolean;
 }
 
 const Header = ({ 
   selectedModel, 
   onModelSelectClick, 
   onApiKeyManagerClick, 
-  onNewChatClick, 
-  onPreviewClick,
-  hasPreview
+  onNewChatClick
 }: HeaderProps) => {
   return (
     <header className="flex items-center justify-between p-4 border-b">
@@ -27,25 +23,14 @@ const Header = ({
       </div>
       
       <div className="flex items-center space-x-2">
-        {hasPreview && (
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="flex items-center space-x-2"
-            onClick={onPreviewClick}
-          >
-            <Eye className="h-4 w-4" />
-            <span className="hidden sm:inline">Preview</span>
-          </Button>
-        )}
-        
         <Button 
           variant="outline" 
           size="sm"
           className="flex items-center space-x-2"
           onClick={onNewChatClick}
         >
-          <span>New Chat</span>
+          <Plus className="h-4 w-4" />
+          <span className="hidden sm:inline">New Chat</span>
         </Button>
         
         <Button 

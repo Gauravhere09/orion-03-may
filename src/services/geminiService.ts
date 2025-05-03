@@ -20,9 +20,11 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
       };
     });
     
-    // Keep only the essential parts of the conversation
+    // Find the system message and user messages
     const systemMessage = formattedMessages.find(msg => msg.role === 'system');
     const userMessages = formattedMessages.filter(msg => msg.role === 'user');
+    
+    // Get the last user message
     const lastUserMessage = userMessages[userMessages.length - 1];
     
     if (!lastUserMessage) {
@@ -74,10 +76,15 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
       throw new Error(errorMessage);
     }
 
-    if (data.candidates && data.candidates[0] && 
+    // Handle the successful response
+    if (data.candidates && 
+        Array.isArray(data.candidates) && 
+        data.candidates.length > 0 && 
         data.candidates[0].content && 
         data.candidates[0].content.parts && 
-        data.candidates[0].content.parts[0]) {
+        Array.isArray(data.candidates[0].content.parts) && 
+        data.candidates[0].content.parts.length > 0) {
+      
       return data.candidates[0].content.parts[0].text || '';
     }
     

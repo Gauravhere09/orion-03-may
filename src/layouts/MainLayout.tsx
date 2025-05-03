@@ -11,6 +11,7 @@ import ModelSelectorDialog from '@/components/ModelSelectorDialog';
 import CodeDisplay from '@/components/CodeDisplay';
 import CodePreview from '@/components/CodePreview';
 import Header from '@/components/Header';
+import ErrorReportButton from '@/components/ErrorReportButton';
 import { Button } from '@/components/ui/button';
 import { Code, MessageSquare } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
@@ -32,7 +33,7 @@ const MainLayout = ({
   isPreviewMode,
   onExitPreview
 }: MainLayoutProps) => {
-  const { messages, isLoading, isGenerating, handleSendMessage, handleRegenerateResponse, handleStopGeneration, handleNewChat, generatedCode, showClearChatConfirm, setShowClearChatConfirm, confirmClearChat, enhanceUserPrompt } = useChatStore();
+  const { messages, isLoading, isGenerating, handleSendMessage, handleRegenerateResponse, handleStopGeneration, handleNewChat, generatedCode, showClearChatConfirm, setShowClearChatConfirm, confirmClearChat, enhanceUserPrompt, lastError, setLastError } = useChatStore();
   const { selectedModel, handleModelSelect } = useModelStore();
   const { isChatMode, toggleChatMode } = useUiStore();
   
@@ -87,8 +88,6 @@ const MainLayout = ({
           onModelSelectClick={() => setModelSelectorOpen(true)}
           onApiKeyManagerClick={() => setApiKeyManagerOpen(true)}
           onNewChatClick={() => setShowClearChatConfirm(true)}
-          onPreviewClick={() => generatedCode.preview ? useUiStore.getState().setIsPreviewMode(true) : null}
-          hasPreview={!!generatedCode.preview}
         />
       </div>
       
@@ -97,6 +96,25 @@ const MainLayout = ({
           ref={chatContainerRef}
           className="w-full md:w-1/2 flex flex-col overflow-hidden border-r"
         >
+          {lastError && (
+            <div className="bg-red-50 p-3 flex justify-between items-center">
+              <span className="text-sm text-red-700">{lastError}</span>
+              <div className="flex space-x-2">
+                <ErrorReportButton 
+                  error={lastError} 
+                  additionalInfo={{ model: selectedModel.name }}
+                />
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setLastError(null)}
+                >
+                  Dismiss
+                </Button>
+              </div>
+            </div>
+          )}
+          
           <ChatContainer 
             messages={messages} 
             isLoading={isLoading} 
@@ -157,6 +175,7 @@ const MainLayout = ({
                 : "Describe the code you want to generate..."}
               isChatMode={isChatMode}
               onEnhancePrompt={enhanceUserPrompt}
+              selectedModel={selectedModel}
             />
           </div>
         </div>

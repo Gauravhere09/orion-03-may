@@ -1,8 +1,7 @@
 
 import { create } from 'zustand';
 import { Message, GeneratedCode, sendMessageWithFallback, enhancePrompt, parseCodeResponse, getMessageText, prepareMessageContent } from '@/services/api';
-import { hasApiKeys, saveChat } from '@/services/storage';
-import { toast } from '@/components/ui/sonner';
+import { hasApiKeys, saveChat, getChatById } from '@/services/storage';
 import { useModelStore } from './modelStore';
 import { useUiStore } from './uiStore';
 import { getCodeGenerationPrompt, getAssistantPrompt, initializeChat, parseCodeFromResponse, enhanceUserPrompt } from './chatActions';
@@ -13,6 +12,8 @@ interface ChatStore {
   isGenerating: boolean;
   generatedCode: GeneratedCode;
   chatId: string;
+  lastError: string | null;
+  setLastError: (error: string | null) => void;
   setMessages: (messages: Message[]) => void;
   addMessage: (message: Message) => void;
   setIsLoading: (isLoading: boolean) => void;
@@ -30,6 +31,7 @@ interface ChatStore {
   enhanceUserPrompt: (prompt: string) => string;
   isEnhancingPrompt: boolean;
   setIsEnhancingPrompt: (isEnhancing: boolean) => void;
+  loadChatById: (id: string) => boolean;
 }
 
 export const useChatStore = create<ChatStore>((set, get) => {
@@ -47,6 +49,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
     isGenerating: false,
     generatedCode: {},
     chatId: initialState.chatId,
+    lastError: null,
     showClearChatConfirm: false,
     isEnhancingPrompt: false,
     
@@ -56,6 +59,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
     setIsGenerating: (isGenerating) => set({ isGenerating }),
     setGeneratedCode: (code) => set({ generatedCode: code }),
     setChatId: (id) => set({ chatId: id }),
+    setLastError: (error) => set({ lastError: error }),
     setShowClearChatConfirm: (show) => set({ showClearChatConfirm: show }),
     setIsEnhancingPrompt: (isEnhancing) => set({ isEnhancingPrompt: isEnhancing }),
     
@@ -65,12 +69,38 @@ export const useChatStore = create<ChatStore>((set, get) => {
     },
     
     enhanceUserPrompt,
+
+    loadChatById: (id: string) => {
+      const chat = getChatById(id);
+      if (chat) {
+        set({
+          chatId: id,
+          messages: chat.messages,
+          isLoading: false,
+          isGenerating: false
+        });
+        
+        // If this is a code chat, also parse the code
+        const lastAssistantMessage = chat.messages
+          .filter(m => m.role === 'assistant')
+          .pop();
+          
+        if (lastAssistantMessage) {
+          const messageText = getMessageText(lastAssistantMessage.content);
+          if (hasCodeBlocks(messageText)) {
+            const parsedCode = parseCodeResponse(messageText);
+            set({ generatedCode: parsedCode });
+          }
+        }
+        
+        return true;
+      }
+      return false;
+    },
     
     handleSendMessage: async (content, imageUrls = []) => {
       if (!hasApiKeys()) {
-        toast("API Keys Required", {
-          description: "Please add API keys to continue"
-        });
+        set({ lastError: "API Keys Required - Please add API keys to continue" });
         return;
       }
 
@@ -86,7 +116,8 @@ export const useChatStore = create<ChatStore>((set, get) => {
       set(state => ({ 
         messages: [...state.messages, userMessage],
         isLoading: true,
-        isGenerating: true
+        isGenerating: true,
+        lastError: null
       }));
       
       lastUserMessageIndexRef = get().messages.length;
@@ -147,11 +178,10 @@ export const useChatStore = create<ChatStore>((set, get) => {
         console.error('Error sending message:', error);
         
         // Remove the temporary message if there was an error
-        set(state => ({ messages: state.messages.slice(0, state.messages.length - 1) }));
-        
-        toast("Error", { 
-          description: error instanceof Error ? error.message : "Failed to get a response",
-        });
+        set(state => ({ 
+          messages: state.messages.slice(0, state.messages.length - 1),
+          lastError: error instanceof Error ? error.message : "Failed to get a response"
+        }));
       } finally {
         set({ isLoading: false, isGenerating: false });
         abortControllerRef.current = null;
@@ -166,7 +196,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
       const { selectedModel } = useModelStore.getState();
       const { isChatMode } = useUiStore.getState();
       
-      set({ isLoading: true, isGenerating: true });
+      set({ isLoading: true, isGenerating: true, lastError: null });
       
       try {
         // Find the last user message
@@ -229,19 +259,12 @@ export const useChatStore = create<ChatStore>((set, get) => {
           const parsedCode = parseCodeResponse(codeText);
           set({ generatedCode: parsedCode });
         }
-        
-        toast("Response regenerated", {
-          description: `Generated new response using ${selectedModel.name} ${selectedModel.version}`
-        });
       } catch (error) {
         console.error('Error regenerating response:', error);
         
-        toast("Error", { 
-          description: error instanceof Error ? error.message : "Failed to regenerate response",
-        });
-        
-        // Remove the temporary message if there was an error
         set(state => ({ 
+          lastError: error instanceof Error ? error.message : "Failed to regenerate response",
+          // Remove the temporary message if there was an error
           messages: state.messages.filter((_, index) => index <= lastUserMessageIndexRef)
         }));
       } finally {
@@ -277,10 +300,6 @@ export const useChatStore = create<ChatStore>((set, get) => {
           
           return { isGenerating: false, isLoading: false };
         });
-        
-        toast("Generation stopped", {
-          description: "The generation process has been stopped."
-        });
       }
     },
     
@@ -293,10 +312,20 @@ export const useChatStore = create<ChatStore>((set, get) => {
           role: 'assistant',
           content: prepareMessageContent('Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you.')
         }],
-        generatedCode: {}
+        generatedCode: {},
+        lastError: null
       });
     },
     
     parseCodeFromResponse
   };
 });
+
+// Helper function outside the store
+function hasCodeBlocks(content: string | MessageContent[]): boolean {
+  const text = getMessageText(content);
+  return text.includes("```html") || 
+         text.includes("```css") || 
+         text.includes("```js") || 
+         text.includes("```javascript");
+}

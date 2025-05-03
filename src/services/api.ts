@@ -32,7 +32,6 @@ export const sendMessageWithFallback = async (
     } catch (error) {
       console.error("Gemini API error:", error);
       if (error instanceof Error) {
-        toast.error(`Gemini API error: ${error.message}`);
         throw new Error(`Gemini API error: ${error.message}`);
       }
       throw error;
@@ -54,9 +53,9 @@ export const sendMessageWithFallback = async (
         lastError = error;
         console.error(`API key ${maskApiKey(error.apiKey)} failed:`, error.message);
         
-        // If the error is a rate limit, show specific toast
-        if (error.message.includes("Rate limit") || (error.code === 429)) {
-          toast.error(`Rate limit exceeded for API key ${maskApiKey(error.apiKey)}. Trying next key...`);
+        // If the error is a rate limit, log but don't show toast
+        if (error.message.includes("Rate limit") || error.code === 429) {
+          console.log(`Rate limit exceeded for API key ${maskApiKey(error.apiKey)}. Trying next key...`);
         }
         // Continue to next API key
       } else {
@@ -72,7 +71,6 @@ export const sendMessageWithFallback = async (
     ? `All API keys failed. Last error: ${lastError.message}` 
     : 'All API keys failed with unknown errors';
   
-  toast.error(errorMessage);
   throw new Error(errorMessage);
 };
 
