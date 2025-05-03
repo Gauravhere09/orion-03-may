@@ -4,7 +4,26 @@ import { getMessageText } from './apiHelpers';
 
 // Send message to Gemini API
 export const sendMessageToGemini = async (messages: Message[]): Promise<string> => {
-  const API_KEY = "AIzaSyAHduoaBafMi6FI9fh6kI_u2hwXkIoAeYY";
+  // First try with Gemini 2.0 Flash model
+  try {
+    const response = await sendToGeminiModel(messages, "gemini-2.0-flash");
+    return response;
+  } catch (error) {
+    console.error("Error with primary Gemini model, falling back to alternative:", error);
+    // If failed, try with Gemini 1.5 Pro
+    try {
+      const response = await sendToGeminiModel(messages, "gemini-1.5-pro-latest");
+      return response;
+    } catch (secondError) {
+      console.error("Error with fallback Gemini model:", secondError);
+      throw new Error("Unable to get response from Gemini API. Please try again later.");
+    }
+  }
+};
+
+// Shared function to send messages to different Gemini models
+const sendToGeminiModel = async (messages: Message[], modelId: string): Promise<string> => {
+  const API_KEY = "AIzaSyAHduoaBafMi6FI9fh6kI_u2hwXkIoAeYY"; // Hardcoded for demo
   
   try {
     // Format messages for Gemini API
@@ -33,7 +52,7 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
     // Find the system message
     const systemMessage = formattedMessages.find(msg => msg.role === 'system');
     
-    // Build request body for Gemini-2.0-flash model
+    // Build request body for the specified Gemini model
     const requestBody = {
       contents: [
         ...(systemMessage ? [systemMessage] : []),
@@ -47,10 +66,10 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
       }
     };
     
-    console.log('Sending request to Gemini API:', JSON.stringify(requestBody));
+    console.log(`Sending request to Gemini API (${modelId}):`, JSON.stringify(requestBody));
     
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${API_KEY}`,
       {
         method: 'POST',
         headers: {
@@ -61,19 +80,19 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
     );
 
     const responseText = await response.text();
-    console.log('Gemini API raw response:', responseText);
+    console.log(`Gemini API (${modelId}) raw response:`, responseText);
     
     // Try to parse the response as JSON
     let data;
     try {
       data = JSON.parse(responseText);
     } catch (e) {
-      console.error("Failed to parse Gemini response as JSON:", e);
+      console.error(`Failed to parse Gemini (${modelId}) response as JSON:`, e);
       throw new Error(`Failed to parse Gemini response: ${responseText.substring(0, 100)}...`);
     }
 
     if (!response.ok) {
-      let errorMessage = 'Failed to get response from Gemini API';
+      let errorMessage = `Failed to get response from Gemini (${modelId})`;
       if (data.error) {
         errorMessage = data.error.message || errorMessage;
       }
@@ -92,9 +111,9 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
       return data.candidates[0].content.parts[0].text || '';
     }
     
-    throw new Error('Invalid response format from Gemini API');
+    throw new Error(`Invalid response format from Gemini (${modelId})`);
   } catch (error) {
-    console.error('Error sending message to Gemini:', error);
+    console.error(`Error sending message to Gemini (${modelId}):`, error);
     throw error;
   }
 };
