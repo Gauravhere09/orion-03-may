@@ -113,7 +113,7 @@ const ChatInput = ({
 
   return (
     <>
-      <form onSubmit={handleSubmit} className={inputContainerClasses}>
+      <form onSubmit={handleSubmit} className={`${inputContainerClasses} px-1 py-1`}>
         {/* Image previews */}
         {images.length > 0 && (
           <div className="flex gap-2 mb-2 flex-wrap">
@@ -145,7 +145,7 @@ const ChatInput = ({
         
         <div className="flex-col max-w-3xl mx-auto glass-morphism rounded-xl p-2">
           {/* Mode toggle and image button above input in row */}
-          <div className="flex justify-between items-center py-2">
+          <div className="flex justify-start gap-2 items-center py-2">
             <Toggle
               pressed={isChatMode}
               onPressedChange={onToggleChatMode}
@@ -182,7 +182,7 @@ const ChatInput = ({
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="flex items-center gap-1 h-7 border-primary/20"
+                  className="flex items-center gap-1 h-7 border-gray-500"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Image className="h-3.5 w-3.5" />
@@ -198,8 +198,19 @@ const ChatInput = ({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
-              className="resize-none min-h-[60px] rounded-2xl pl-4 pr-14 border-primary/20 focus:ring-primary/30"
+              className="resize-none min-h-[20px] max-h-[120px] rounded-2xl pl-2 pr-4 border-primary/20 focus:ring-primary/30 overflow-y-scroll scrollbar-none"
               disabled={disabled}
+              style={{
+                height: 'auto',
+                maxHeight: '100px',
+                overflow: 'auto',
+                resize: 'none',
+              }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = `${target.scrollHeight}px`;
+              }}
             />
             
             <div className="absolute right-3 bottom-2.5 flex space-x-1">
@@ -208,7 +219,7 @@ const ChatInput = ({
                   type="button"
                   size="icon"
                   variant="ghost"
-                  className="h-8 w-8 rounded-full"
+                  className="h-8 w-8 rounded-full bg-primary/30"
                   onClick={handleEnhanceClick}
                   title="Enhance Prompt"
                 >
@@ -222,7 +233,7 @@ const ChatInput = ({
                 className="h-8 w-8 rounded-full cyan-glow flex items-center justify-center"
                 disabled={!input.trim() || disabled}
               >
-                <Send className="h-4 w-4" />
+                <Send className="h-12 w-12 stroke-[3]" />
               </Button>
             </div>
           </div>

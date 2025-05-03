@@ -144,7 +144,7 @@ const MainLayout = ({
           </div>
         </div>
         
-        <div className="hidden md:flex md:w-1/2 overflow-hidden flex-col">
+        <div className="hidden md:flex md:w-1/2 overflow-hidden flex-col border-l-2 border-l-gray-500">
           {(generatedCode.html || generatedCode.css || generatedCode.js) ? (
             <CodeDisplay code={generatedCode} />
           ) : (

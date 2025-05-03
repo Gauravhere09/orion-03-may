@@ -11,8 +11,8 @@ export interface ApiKey {
 
 // Default OpenRouter API keys (placeholder keys - to be replaced later)
 const DEFAULT_API_KEYS: ApiKey[] = [
-  { key: "sk-or-v1-placeholder-key-1", isDefault: true, priority: 1 },
-  { key: "sk-or-v1-placeholder-key-2", isDefault: true, priority: 2 },
+  { key: "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", isDefault: true, priority: 1 },
+  { key: "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", isDefault: true, priority: 2 },
   { key: "sk-or-v1-placeholder-key-3", isDefault: true, priority: 3 },
   { key: "sk-or-v1-placeholder-key-4", isDefault: true, priority: 4 },
   { key: "sk-or-v1-placeholder-key-5", isDefault: true, priority: 5 },

@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AdminPage from './pages/Admin';
+import ExplorePage from './pages/explore';
 import { useEffect } from "react";
 import { useUiStore } from "./stores/uiStore";
 
@@ -41,6 +42,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/admin" element={<AdminPage />} />
+            <Route path="/explore" element={<ExplorePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

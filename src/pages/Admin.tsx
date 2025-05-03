@@ -10,7 +10,7 @@ import { ApiKey, getAllApiKeys, saveApiKey, removeApiKey, reorderApiKeys } from 
 import { useUiStore } from '@/stores/uiStore';
 
 // Sample credentials (to be replaced later with Supabase)
-const ADMIN_EMAIL = "admin@orion.ai";
+const ADMIN_EMAIL = "admin@orion.com";
 const ADMIN_PASSWORD = "admin123";
 
 const AdminPage = () => {
