@@ -9,6 +9,9 @@ export const sendMessageToOpenRouter = async (
   apiKey: string
 ): Promise<string> => {
   try {
+    // Ensure there's always a model ID
+    const modelId = model.openRouterModel || 'anthropic/claude-3-opus:beta';
+    
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -16,17 +19,27 @@ export const sendMessageToOpenRouter = async (
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: model.openRouterModel,
-        messages,
+        model: modelId,
+        messages: messages.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        })),
         temperature: 0.7,
         max_tokens: 2048,
       })
     });
 
     if (!response.ok) {
-      const errorData = await response.json() as ErrorResponse;
-      const errorMessage = errorData.error?.message || 'Failed to get response from OpenRouter API';
-      const errorCode = errorData.error?.code || errorData.error?.type;
+      let errorMessage = `Failed to get response from OpenRouter API: ${response.status} ${response.statusText}`;
+      let errorCode = undefined;
+      
+      try {
+        const errorData = await response.json() as ErrorResponse;
+        errorMessage = errorData.error?.message || errorMessage;
+        errorCode = errorData.error?.code || errorData.error?.type;
+      } catch (e) {
+        console.error("Error parsing error response:", e);
+      }
       
       throw new ApiError(errorMessage, apiKey, errorCode);
     }

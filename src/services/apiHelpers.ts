@@ -7,10 +7,14 @@ export const getMessageText = (content: string | MessageContent[]): string => {
     return content;
   }
   
-  // Extract text from MessageContent array
+  // Safely extract text from MessageContent array
+  if (!Array.isArray(content)) {
+    return '';
+  }
+  
   return content
-    .filter(item => item.type === 'text' && item.text)
-    .map(item => item.text as string)
+    .filter(item => item && item.type === 'text' && item.text)
+    .map(item => item.text || '')
     .join(' ');
 };
 

@@ -27,7 +27,9 @@ const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview }: Cha
   }, [messages, isLoading]);
 
   // Filter out system messages from display
-  const displayMessages = messages.filter(msg => msg.role !== 'system');
+  const displayMessages = Array.isArray(messages) 
+    ? messages.filter(msg => msg && msg.role !== 'system') 
+    : [];
   
   // Mock response time (in a real app, this would be measured)
   const getRandomResponseTime = () => Math.random() * 3 + 1; // 1-4 seconds
@@ -48,12 +50,16 @@ const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview }: Cha
         </div>
       ) : (
         displayMessages.map((message, index) => {
+          if (!message) return null;
+          
           const isLastAssistantMessage = message.role === 'assistant' && 
-            displayMessages.slice(index + 1).every(m => m.role !== 'assistant');
+            displayMessages.slice(index + 1).every(m => m && m.role !== 'assistant');
             
-          const messageText = getMessageText(message.content);
-          const hasCode = hasCodeBlocks(message.content);
-          const isGenerating = messageText.includes('Generating') || messageText.includes('Regenerating') || messageText.includes('Thinking');
+          const messageText = getMessageText(message.content || '');
+          const hasCode = hasCodeBlocks(message.content || '');
+          const isGenerating = messageText.includes('Generating') || 
+                              messageText.includes('Regenerating') || 
+                              messageText.includes('Thinking');
             
           return (
             <MessageBubble 
