@@ -1,4 +1,3 @@
-
 import { AIModel } from '@/data/models';
 import { ApiKey, getAllApiKeys } from './storage';
 
@@ -225,4 +224,26 @@ export const prepareMessageContent = (message: string, imageUrl?: string): strin
       }
     }
   ];
+};
+
+// Helper function to get plain text from message content
+export const getMessageText = (content: string | MessageContent[]): string => {
+  if (typeof content === 'string') {
+    return content;
+  }
+  
+  // Extract text from MessageContent array
+  return content
+    .filter(item => item.type === 'text' && item.text)
+    .map(item => item.text as string)
+    .join(' ');
+};
+
+// Helper function to check if content contains code blocks
+export const hasCodeBlocks = (content: string | MessageContent[]): boolean => {
+  const text = getMessageText(content);
+  return text.includes("```html") || 
+         text.includes("```css") || 
+         text.includes("```js") || 
+         text.includes("```javascript");
 };

@@ -1,6 +1,6 @@
 
 import { useEffect, useRef } from 'react';
-import { Message } from '@/services/api';
+import { Message, getMessageText, hasCodeBlocks } from '@/services/api';
 import MessageBubble from '@/components/MessageBubble';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -37,14 +37,17 @@ const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview }: Cha
           const isLastAssistantMessage = message.role === 'assistant' && 
             displayMessages.slice(index + 1).every(m => m.role !== 'assistant');
             
+          const messageText = getMessageText(message.content);
+          const hasCode = hasCodeBlocks(message.content);
+          const isGenerating = messageText.includes('Generating') || messageText.includes('Regenerating');
+            
           return (
             <MessageBubble 
               key={index} 
               message={message} 
-              onRegenerate={isLastAssistantMessage && !message.content.includes('Generating') && onRegenerate ? onRegenerate : undefined}
-              onViewPreview={message.role === 'assistant' && onViewPreview && 
-                (message.content.includes("```html") || message.content.includes("```css") || message.content.includes("```js")) 
-                ? () => onViewPreview(message.content) : undefined}
+              onRegenerate={isLastAssistantMessage && !isGenerating && onRegenerate ? onRegenerate : undefined}
+              onViewPreview={message.role === 'assistant' && onViewPreview && hasCode
+                ? () => onViewPreview(messageText) : undefined}
             />
           );
         })

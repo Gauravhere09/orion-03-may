@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { Message, sendMessageWithFallback, enhancePrompt, parseCodeResponse, GeneratedCode } from '@/services/api';
+import { Message, sendMessageWithFallback, enhancePrompt, parseCodeResponse, GeneratedCode, getMessageText } from '@/services/api';
 import { aiModels, AIModel } from '@/data/models';
 import { initializeApiKeys, hasApiKeys, saveChat, getChats } from '@/services/storage';
 
@@ -66,12 +66,14 @@ const Index = () => {
             .filter(msg => msg.role === 'assistant')
             .pop();
             
-          if (lastAssistantMessage && 
-              (lastAssistantMessage.content.includes("```html") || 
-               lastAssistantMessage.content.includes("```css") || 
-               lastAssistantMessage.content.includes("```js"))) {
-            const parsedCode = parseCodeResponse(lastAssistantMessage.content);
-            setGeneratedCode(parsedCode);
+          if (lastAssistantMessage) {
+            const messageText = getMessageText(lastAssistantMessage.content);
+            if (messageText.includes("```html") || 
+                messageText.includes("```css") || 
+                messageText.includes("```js")) {
+              const parsedCode = parseCodeResponse(messageText);
+              setGeneratedCode(parsedCode);
+            }
           }
         }
       }

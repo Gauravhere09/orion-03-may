@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { cn } from "@/lib/utils";
-import { Message } from "@/services/api";
+import { Message, getMessageText } from "@/services/api";
 import { Copy, RefreshCw, Check, Eye } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
@@ -26,9 +26,10 @@ const MessageBubble = ({ message, onRegenerate, onViewPreview }: MessageBubblePr
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
   const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
+  const messageText = getMessageText(message.content);
   
   const handleCopy = () => {
-    navigator.clipboard.writeText(message.content);
+    navigator.clipboard.writeText(messageText);
     setCopied(true);
     toast("Copied to clipboard");
     
@@ -44,12 +45,12 @@ const MessageBubble = ({ message, onRegenerate, onViewPreview }: MessageBubblePr
     setRegenerateDialogOpen(false);
   };
   
-  const hasCode = message.content.includes("```html") || 
-                 message.content.includes("```css") || 
-                 message.content.includes("```js") ||
-                 message.content.includes("```javascript");
+  const hasCode = messageText.includes("```html") || 
+                 messageText.includes("```css") || 
+                 messageText.includes("```js") ||
+                 messageText.includes("```javascript");
   
-  const formattedContent = message.content.replace(
+  const formattedContent = messageText.replace(
     /```(html|css|javascript|js)([\s\S]*?)```/g, 
     (match, language, code) => {
       return `<div class="mt-2 mb-2">
@@ -61,7 +62,7 @@ const MessageBubble = ({ message, onRegenerate, onViewPreview }: MessageBubblePr
   
   const handlePreview = () => {
     if (onViewPreview) {
-      onViewPreview(message.content);
+      onViewPreview(messageText);
     }
   };
   
@@ -77,7 +78,7 @@ const MessageBubble = ({ message, onRegenerate, onViewPreview }: MessageBubblePr
           : "bg-secondary text-secondary-foreground rounded-tl-none"
       )}>
         {isUser ? (
-          <p>{message.content}</p>
+          <p>{messageText}</p>
         ) : (
           <div dangerouslySetInnerHTML={{ __html: formattedContent }} />
         )}
