@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { saveApiKey } from '@/services/storage';
+import { saveApiKey, hasApiKeys, initializeApiKeys } from '@/services/storage';
 import { toast } from '@/components/ui/sonner';
 
 interface ApiKeyModalProps {
@@ -21,26 +21,32 @@ const ApiKeyModal = ({ open, onOpenChange, onApiKeySaved }: ApiKeyModalProps) =>
     
     if (apiKey.trim().length < 10) {
       toast("Invalid API key", {
-        description: "Please enter a valid Groq API key"
+        description: "Please enter a valid OpenRouter API key"
       });
       return;
+    }
+    
+    // Initialize default keys if needed
+    if (!hasApiKeys()) {
+      initializeApiKeys();
     }
     
     saveApiKey(apiKey);
     onApiKeySaved();
     toast("API key saved", {
-      description: "Your Groq API key has been saved to local storage"
+      description: "Your OpenRouter API key has been added to your API key list"
     });
     onOpenChange(false);
+    setApiKey('');
   };
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Groq API Key</DialogTitle>
+          <DialogTitle>OpenRouter API Key</DialogTitle>
           <DialogDescription>
-            Enter your Groq API key to use the AI models. It will be stored only in your browser's local storage.
+            Enter your OpenRouter API key to use the AI models. You can also use our default keys or add multiple keys later.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -51,16 +57,30 @@ const ApiKeyModal = ({ open, onOpenChange, onApiKeySaved }: ApiKeyModalProps) =>
             <Input
               id="apiKey"
               type="password"
-              placeholder="Enter your Groq API key"
+              placeholder="Enter your OpenRouter API key"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               className="col-span-3"
             />
             <p className="text-xs text-muted-foreground text-left">
-              Get your API key from <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="text-primary hover:underline">Groq Console</a>
+              Get your API key from <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="text-primary hover:underline">OpenRouter Console</a>
             </p>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                initializeApiKeys();
+                onApiKeySaved();
+                onOpenChange(false);
+                toast("Default API keys activated", {
+                  description: "Using the provided default OpenRouter API keys"
+                });
+              }}
+            >
+              Use Default Keys
+            </Button>
             <Button type="submit">Save API Key</Button>
           </DialogFooter>
         </form>

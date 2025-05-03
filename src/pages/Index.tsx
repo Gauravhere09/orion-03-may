@@ -1,24 +1,27 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { Message, sendMessageToGroq, enhancePrompt, parseCodeResponse, GeneratedCode } from '@/services/api';
+import { Message, sendMessageWithFallback, enhancePrompt, parseCodeResponse, GeneratedCode } from '@/services/api';
 import { aiModels, AIModel } from '@/data/models';
-import { getApiKey, hasApiKey, saveChat, getChats } from '@/services/storage';
+import { initializeApiKeys, hasApiKeys, saveChat, getChats } from '@/services/storage';
 
 import ChatContainer from '@/components/ChatContainer';
 import ChatInput from '@/components/ChatInput';
 import ApiKeyModal from '@/components/ApiKeyModal';
+import ApiKeyManager from '@/components/ApiKeyManager';
 import ModelSelectorDialog from '@/components/ModelSelectorDialog';
 import CodeDisplay from '@/components/CodeDisplay';
 import CodePreview from '@/components/CodePreview';
+import ModelSelector from '@/components/ModelSelector';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
-import { RefreshCw, Copy, Settings, Sparkles, StopCircle, Eye, Code } from 'lucide-react';
+import { RefreshCw, Settings, Sparkles, StopCircle, Eye, Code, KeyRound } from 'lucide-react';
 
 const Index = () => {
   const [selectedModel, setSelectedModel] = useState<AIModel>(aiModels[0]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
+  const [apiKeyManagerOpen, setApiKeyManagerOpen] = useState(false);
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [generatedCode, setGeneratedCode] = useState<GeneratedCode>({});
@@ -43,9 +46,11 @@ const Index = () => {
   \`\`\`
   Use detailed comments in the code and ensure it's well-organized.`;
   
-  // Check if API key exists on initial load
+  // Initialize API keys and check if they exist
   useEffect(() => {
-    if (!hasApiKey()) {
+    initializeApiKeys();
+    
+    if (!hasApiKeys()) {
       setApiKeyModalOpen(true);
     } else {
       // Load chat history
@@ -76,7 +81,7 @@ const Index = () => {
     if (messages.length === 0) {
       setMessages([{
         role: 'assistant',
-        content: 'Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you.'
+        content: 'Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you. You can use our default OpenRouter API keys or add your own!'
       }]);
     }
   }, []);
@@ -89,7 +94,7 @@ const Index = () => {
   }, [messages, chatId, selectedModel.id]);
 
   const handleSendMessage = async (content: string) => {
-    if (!hasApiKey()) {
+    if (!hasApiKeys()) {
       setApiKeyModalOpen(true);
       return;
     }
@@ -101,9 +106,6 @@ const Index = () => {
     setIsGenerating(true);
 
     try {
-      const apiKey = getApiKey();
-      if (!apiKey) throw new Error('No API key found');
-
       // Add a temporary "generating" message
       const tempMessage: Message = { 
         role: 'assistant', 
@@ -121,7 +123,7 @@ const Index = () => {
       ];
 
       abortControllerRef.current = new AbortController();
-      const response = await sendMessageToGroq(selectedModel, messagesForApi, apiKey);
+      const response = await sendMessageWithFallback(selectedModel, messagesForApi);
       
       // Replace the temporary message with the actual response
       setMessages(prev => {
@@ -160,15 +162,12 @@ const Index = () => {
   };
 
   const handleRegenerateResponse = async () => {
-    if (messages.length === 0 || isLoading || !hasApiKey()) return;
+    if (messages.length === 0 || isLoading || !hasApiKeys()) return;
     
     setIsLoading(true);
     setIsGenerating(true);
     
     try {
-      const apiKey = getApiKey();
-      if (!apiKey) throw new Error('No API key found');
-      
       // Find the last user message
       let lastUserIndex = -1;
       for (let i = messages.length - 1; i >= 0; i--) {
@@ -201,7 +200,7 @@ const Index = () => {
       ];
 
       abortControllerRef.current = new AbortController();
-      const response = await sendMessageToGroq(selectedModel, messagesForApi, apiKey);
+      const response = await sendMessageWithFallback(selectedModel, messagesForApi);
       
       // Replace the temporary message with the actual response
       setMessages(prev => {
@@ -293,7 +292,7 @@ const Index = () => {
           <h1 className="text-xl font-bold">AI Code Generator</h1>
         </div>
         
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2">
           {generatedCode.preview && (
             <Button 
               variant="outline" 
@@ -329,16 +328,23 @@ const Index = () => {
           <Button 
             variant="ghost" 
             size="icon"
-            onClick={() => setApiKeyModalOpen(true)}
-            title="API Key Settings"
+            onClick={() => setApiKeyManagerOpen(true)}
+            title="Manage API Keys"
           >
-            <Settings className="h-4 w-4" />
+            <KeyRound className="h-4 w-4" />
           </Button>
         </div>
       </header>
       
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="w-full md:w-1/2 flex flex-col overflow-hidden border-r">
+          <div className="py-2 px-4">
+            <ModelSelector 
+              selectedModel={selectedModel}
+              onModelSelect={handleModelSelect}
+            />
+          </div>
+          
           <ChatContainer 
             messages={messages} 
             isLoading={isLoading} 
@@ -362,22 +368,36 @@ const Index = () => {
           
           <ChatInput 
             onSendMessage={handleSendMessage} 
-            disabled={isLoading || !hasApiKey()}
+            disabled={isLoading || !hasApiKeys()}
             placeholder="Describe the code you want to generate..."
           />
         </div>
         
-        {(generatedCode.html || generatedCode.css || generatedCode.js) && (
-          <div className="hidden md:flex md:w-1/2 border-l overflow-hidden flex-col">
+        <div className="hidden md:flex md:w-1/2 overflow-hidden flex-col">
+          {(generatedCode.html || generatedCode.css || generatedCode.js) ? (
             <CodeDisplay code={generatedCode} />
-          </div>
-        )}
+          ) : (
+            <div className="flex items-center justify-center h-full p-4 bg-muted/20">
+              <div className="text-center space-y-2 max-w-sm">
+                <h3 className="text-lg font-medium">No Code Generated Yet</h3>
+                <p className="text-sm text-muted-foreground">
+                  Ask the AI to generate code and it will appear here. You can generate HTML, CSS, and JavaScript components.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       
       <ApiKeyModal 
         open={apiKeyModalOpen} 
         onOpenChange={setApiKeyModalOpen} 
         onApiKeySaved={() => {}} 
+      />
+      
+      <ApiKeyManager
+        open={apiKeyManagerOpen}
+        onOpenChange={setApiKeyManagerOpen}
       />
       
       <ModelSelectorDialog

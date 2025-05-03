@@ -1,9 +1,18 @@
 
 import { AIModel } from '@/data/models';
+import { ApiKey, getAllApiKeys } from './storage';
+
+export interface MessageContent {
+  type: string;
+  text?: string;
+  image_url?: {
+    url: string;
+  };
+}
 
 export interface Message {
   role: 'user' | 'assistant' | 'system';
-  content: string;
+  content: string | MessageContent[];
 }
 
 export interface ChatCompletionResponse {
@@ -16,6 +25,14 @@ export interface ChatCompletionResponse {
   }[];
 }
 
+export interface ErrorResponse {
+  error: {
+    message: string;
+    code?: string;
+    type?: string;
+  };
+}
+
 export interface GeneratedCode {
   html?: string;
   css?: string;
@@ -23,20 +40,81 @@ export interface GeneratedCode {
   preview?: string;
 }
 
-export const sendMessageToGroq = async (
-  model: AIModel, 
-  messages: Message[], 
+// API error that includes which key was used
+export class ApiError extends Error {
+  apiKey: string;
+  code?: string;
+  
+  constructor(message: string, apiKey: string, code?: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.apiKey = apiKey;
+    this.code = code;
+  }
+}
+
+// Try each API key in order until one works
+export const sendMessageWithFallback = async (
+  model: AIModel,
+  messages: Message[]
+): Promise<string> => {
+  const apiKeys = getAllApiKeys();
+  if (!apiKeys || apiKeys.length === 0) {
+    throw new Error('No API keys available');
+  }
+  
+  // Sort API keys by priority
+  const sortedKeys = [...apiKeys].sort((a, b) => a.priority - b.priority);
+  
+  let lastError: ApiError | null = null;
+  
+  // Try each API key in order until one works
+  for (const apiKey of sortedKeys) {
+    try {
+      const response = await sendMessageToOpenRouter(model, messages, apiKey.key);
+      return response;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        lastError = error;
+        console.error(`API key ${maskApiKey(error.apiKey)} failed:`, error.message);
+        // Continue to next API key
+      } else {
+        // For non-API errors, throw immediately
+        throw error;
+      }
+    }
+  }
+  
+  // If we get here, all API keys failed
+  if (lastError) {
+    throw new Error(`All API keys failed. Last error: ${lastError.message}`);
+  } else {
+    throw new Error('All API keys failed with unknown errors');
+  }
+};
+
+// Mask API key for logging/display purposes
+const maskApiKey = (apiKey: string): string => {
+  if (!apiKey) return '';
+  if (apiKey.length <= 8) return '****';
+  return apiKey.substring(0, 4) + '...' + apiKey.substring(apiKey.length - 4);
+};
+
+// Send message to OpenRouter API
+export const sendMessageToOpenRouter = async (
+  model: AIModel,
+  messages: Message[],
   apiKey: string
 ): Promise<string> => {
   try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: model.groqModel,
+        model: model.openRouterModel,
         messages,
         temperature: 0.7,
         max_tokens: 2048,
@@ -44,21 +122,27 @@ export const sendMessageToGroq = async (
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.error?.message || 'Failed to get response from Groq API';
+      const errorData = await response.json() as ErrorResponse;
+      const errorMessage = errorData.error?.message || 'Failed to get response from OpenRouter API';
+      const errorCode = errorData.error?.code || errorData.error?.type;
       
-      if (errorData.error?.code === "model_not_found" || errorData.error?.code === "model_decommissioned") {
-        throw new Error(`Model unavailable: ${errorMessage}`);
-      }
-      
-      throw new Error(errorMessage);
+      throw new ApiError(errorMessage, apiKey, errorCode);
     }
 
     const data = await response.json() as ChatCompletionResponse;
     return data.choices[0].message.content;
   } catch (error) {
-    console.error('Error sending message to Groq:', error);
-    throw error;
+    // Re-throw ApiError instances
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    
+    // Wrap other errors as ApiError
+    console.error('Error sending message to OpenRouter:', error);
+    throw new ApiError(
+      error instanceof Error ? error.message : 'Unknown error occurred', 
+      apiKey
+    );
   }
 };
 
@@ -123,14 +207,22 @@ export const parseCodeResponse = (response: string): GeneratedCode => {
   return result;
 };
 
-// Helper function to regenerate a response
-export const regenerateResponse = async (
-  model: AIModel,
-  messages: Message[],
-  apiKey: string,
-  lastUserMessageIndex: number
-): Promise<string> => {
-  // Remove the assistant's last message if it exists
-  const messagesToSend = messages.slice(0, lastUserMessageIndex + 1);
-  return sendMessageToGroq(model, messagesToSend, apiKey);
+// Function to prepare message content with images if needed
+export const prepareMessageContent = (message: string, imageUrl?: string): string | MessageContent[] => {
+  if (!imageUrl) {
+    return message;
+  }
+  
+  return [
+    {
+      type: "text",
+      text: message
+    },
+    {
+      type: "image_url",
+      image_url: {
+        url: imageUrl
+      }
+    }
+  ];
 };

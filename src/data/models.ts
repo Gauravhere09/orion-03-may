@@ -6,83 +6,83 @@ export interface AIModel {
   description: string;
   version: string;
   maxTokens: number;
-  groqModel: string;
+  openRouterModel: string;
   gradient: string;
   strengths: string[];
-  codeGeneration?: boolean;
+  visionCapable?: boolean;
 }
 
 export const aiModels: AIModel[] = [
   {
-    id: "llama3-8b",
-    name: "Llama 3",
+    id: "llama-4-maverick",
+    name: "Llama 4",
     provider: "Meta",
-    description: "Meta's latest open weights model with strong performance and reasoning.",
-    version: "8B",
-    maxTokens: 8192,
-    groqModel: "llama3-8b-8192",
+    description: "Meta's latest open model with powerful vision capabilities.",
+    version: "Maverick",
+    maxTokens: 4096,
+    openRouterModel: "meta-llama/llama-4-maverick:free",
     gradient: "from-blue-600 via-indigo-600 to-purple-600",
-    strengths: ["Well-balanced", "Good reasoning", "Open weights"],
-    codeGeneration: true
+    strengths: ["Vision", "Reasoning", "Latest model"],
+    visionCapable: true
   },
   {
-    id: "llama3-70b",
-    name: "Llama 3",
-    provider: "Meta",
-    description: "More capable version with better reasoning and knowledge.",
-    version: "70B",
-    maxTokens: 8192,
-    groqModel: "llama3-70b-8192",
-    gradient: "from-blue-700 via-indigo-700 to-purple-700",
-    strengths: ["Strong reasoning", "Content generation", "Knowledge"],
-    codeGeneration: true
-  },
-  {
-    id: "mixtral-8x7b",
-    name: "Mixtral",
-    provider: "Mistral AI",
-    description: "A mixture of experts model with strong capabilities.",
-    version: "8x7B",
-    maxTokens: 32768,
-    groqModel: "mixtral-8x7b-32768",
-    gradient: "from-emerald-500 via-teal-500 to-green-500",
-    strengths: ["Long context", "Code generation", "Multilingual"],
-    codeGeneration: true
-  },
-  {
-    id: "gemma-7b",
-    name: "Gemma",
+    id: "gemini-2-flash",
+    name: "Gemini",
     provider: "Google",
-    description: "Google's lightweight and efficient open model.",
-    version: "7B", 
-    maxTokens: 8192,
-    groqModel: "gemma-7b-it",
+    description: "Google's multimodal model with vision capabilities.",
+    version: "2.0 Flash",
+    maxTokens: 4096,
+    openRouterModel: "google/gemini-2.0-flash-exp:free",
     gradient: "from-amber-500 via-orange-500 to-red-500",
-    strengths: ["Efficient", "Fast responses", "Good instruction following"],
-    codeGeneration: true
+    strengths: ["Vision", "Fast responses", "Knowledge"],
+    visionCapable: true
+  },
+  {
+    id: "deepseek-chat-v3",
+    name: "DeepSeek Chat",
+    provider: "DeepSeek",
+    description: "Latest DeepSeek chat model with high performance.",
+    version: "v3",
+    maxTokens: 8192,
+    openRouterModel: "deepseek/deepseek-chat-v3-0324:free",
+    gradient: "from-emerald-500 via-teal-500 to-green-500",
+    strengths: ["Reasoning", "Context understanding", "Knowledge"],
+    visionCapable: false
+  },
+  {
+    id: "deepseek-chat",
+    name: "DeepSeek Chat",
+    provider: "DeepSeek",
+    description: "Reliable DeepSeek chat model for various tasks.",
+    version: "Standard",
+    maxTokens: 8192,
+    openRouterModel: "deepseek/deepseek-chat:free",
+    gradient: "from-sky-500 via-cyan-500 to-blue-600",
+    strengths: ["General purpose", "Code generation", "Knowledge"],
+    visionCapable: false
   },
   {
     id: "deepseek-r1",
-    name: "DeepSeek",
-    provider: "DeepSeek AI",
-    description: "Advanced large language model with strong reasoning capabilities.",
-    version: "70B",
-    maxTokens: 16384,
-    groqModel: "deepseek-coder-33b-instruct",
-    gradient: "from-sky-500 via-cyan-500 to-blue-600",
-    strengths: ["Advanced reasoning", "Code generation", "Knowledge"],
-    codeGeneration: true
+    name: "DeepSeek R1",
+    provider: "DeepSeek",
+    description: "Advanced reasoning model with code understanding.",
+    version: "R1",
+    maxTokens: 8192,
+    openRouterModel: "deepseek/deepseek-r1:free",
+    gradient: "from-purple-500 via-pink-500 to-rose-500",
+    strengths: ["Code generation", "Reasoning", "Knowledge"],
+    visionCapable: false
   },
   {
-    id: "deepseek-r1-distill",
-    name: "DeepSeek Distill",
-    provider: "DeepSeek AI",
-    description: "Distilled version optimized for code generation and reasoning.",
-    version: "70B",
-    maxTokens: 16384,
-    groqModel: "deepseek-coder-33b-instruct",
-    gradient: "from-purple-500 via-pink-500 to-rose-500",
-    strengths: ["Fast code generation", "High efficiency", "Programming expertise"],
-    codeGeneration: true
+    id: "nemotron-ultra",
+    name: "Nemotron Ultra",
+    provider: "NVIDIA",
+    description: "NVIDIA's Llama 3.1 Nemotron Ultra model with powerful capabilities.",
+    version: "253B", 
+    maxTokens: 8192,
+    openRouterModel: "nvidia/llama-3.1-nemotron-ultra-253b-v1:free",
+    gradient: "from-green-600 via-teal-600 to-cyan-600",
+    strengths: ["Task versatility", "Reasoning", "Advanced capabilities"],
+    visionCapable: false
   }
 ];
