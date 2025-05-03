@@ -6,9 +6,10 @@ import { Textarea } from '@/components/ui/textarea';
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
   disabled: boolean;
+  placeholder?: string;
 }
 
-const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
+const ChatInput = ({ onSendMessage, disabled, placeholder = "Type your message..." }: ChatInputProps) => {
   const [input, setInput] = useState('');
 
   const handleSubmit = (e: FormEvent) => {
@@ -33,8 +34,8 @@ const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type your message..."
-          className="resize-none min-h-[60px] rounded-3xl pr-14"
+          placeholder={placeholder}
+          className="resize-none min-h-[60px] rounded-full pr-14"
           disabled={disabled}
         />
         <Button 

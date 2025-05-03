@@ -9,6 +9,7 @@ export interface AIModel {
   groqModel: string;
   gradient: string;
   strengths: string[];
+  codeGeneration?: boolean;
 }
 
 export const aiModels: AIModel[] = [
@@ -21,7 +22,8 @@ export const aiModels: AIModel[] = [
     maxTokens: 8192,
     groqModel: "llama3-8b-8192",
     gradient: "from-blue-600 via-indigo-600 to-purple-600",
-    strengths: ["Well-balanced", "Good reasoning", "Open weights"]
+    strengths: ["Well-balanced", "Good reasoning", "Open weights"],
+    codeGeneration: true
   },
   {
     id: "llama3-70b",
@@ -32,7 +34,8 @@ export const aiModels: AIModel[] = [
     maxTokens: 8192,
     groqModel: "llama3-70b-8192",
     gradient: "from-blue-700 via-indigo-700 to-purple-700",
-    strengths: ["Strong reasoning", "Content generation", "Knowledge"]
+    strengths: ["Strong reasoning", "Content generation", "Knowledge"],
+    codeGeneration: true
   },
   {
     id: "mixtral-8x7b",
@@ -43,7 +46,8 @@ export const aiModels: AIModel[] = [
     maxTokens: 32768,
     groqModel: "mixtral-8x7b-32768",
     gradient: "from-emerald-500 via-teal-500 to-green-500",
-    strengths: ["Long context", "Code generation", "Multilingual"]
+    strengths: ["Long context", "Code generation", "Multilingual"],
+    codeGeneration: true
   },
   {
     id: "gemma-7b",
@@ -54,7 +58,8 @@ export const aiModels: AIModel[] = [
     maxTokens: 8192,
     groqModel: "gemma-7b-it",
     gradient: "from-amber-500 via-orange-500 to-red-500",
-    strengths: ["Efficient", "Fast responses", "Good instruction following"]
+    strengths: ["Efficient", "Fast responses", "Good instruction following"],
+    codeGeneration: true
   },
   {
     id: "deepseek-r1",
@@ -65,6 +70,19 @@ export const aiModels: AIModel[] = [
     maxTokens: 16384,
     groqModel: "deepseek-coder-33b-instruct",
     gradient: "from-sky-500 via-cyan-500 to-blue-600",
-    strengths: ["Advanced reasoning", "Code generation", "Knowledge"]
+    strengths: ["Advanced reasoning", "Code generation", "Knowledge"],
+    codeGeneration: true
+  },
+  {
+    id: "deepseek-r1-distill",
+    name: "DeepSeek Distill",
+    provider: "DeepSeek AI",
+    description: "Distilled version optimized for code generation and reasoning.",
+    version: "70B",
+    maxTokens: 16384,
+    groqModel: "deepseek-coder-33b-instruct",
+    gradient: "from-purple-500 via-pink-500 to-rose-500",
+    strengths: ["Fast code generation", "High efficiency", "Programming expertise"],
+    codeGeneration: true
   }
 ];

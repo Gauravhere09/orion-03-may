@@ -8,9 +8,10 @@ interface ChatContainerProps {
   messages: Message[];
   isLoading: boolean;
   onRegenerate?: () => void;
+  onViewPreview?: (code: string) => void;
 }
 
-const ChatContainer = ({ messages, isLoading, onRegenerate }: ChatContainerProps) => {
+const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview }: ChatContainerProps) => {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,9 +26,9 @@ const ChatContainer = ({ messages, isLoading, onRegenerate }: ChatContainerProps
       {displayMessages.length === 0 ? (
         <div className="flex items-center justify-center h-full">
           <div className="text-center space-y-4 max-w-md">
-            <h3 className="text-lg font-medium">Welcome to the AI Model Explorer</h3>
+            <h3 className="text-lg font-medium">Welcome to the AI Code Generator</h3>
             <p className="text-muted-foreground text-sm">
-              Select a model and start chatting to see how different LLMs respond to your queries.
+              Describe the application or component you want to create, and I'll generate the code for you.
             </p>
           </div>
         </div>
@@ -36,7 +37,8 @@ const ChatContainer = ({ messages, isLoading, onRegenerate }: ChatContainerProps
           <MessageBubble 
             key={index} 
             message={message} 
-            onRegenerate={message.role === 'assistant' ? onRegenerate : undefined}
+            onRegenerate={message.role === 'assistant' && onRegenerate ? onRegenerate : undefined}
+            onViewPreview={message.role === 'assistant' && onViewPreview ? onViewPreview : undefined}
           />
         ))
       )}
