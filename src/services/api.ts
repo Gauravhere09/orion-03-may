@@ -5,8 +5,8 @@ import { Message, ChatCompletionResponse, ErrorResponse, GeneratedCode, ApiError
 import { getMessageText, hasCodeBlocks, maskApiKey, prepareMessageContent } from './apiHelpers';
 import { sendMessageToGemini } from './geminiService';
 import { sendMessageToOpenRouter } from './openRouterService';
-import { enhancePrompt, parseCodeResponse } from './codeService';
-import { toast } from '@/components/ui/sonner';
+import { enhancePrompt, parseCodeResponse, codeGenerationPrompt } from './codeService';
+import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
 
 // Initialize by syncing API keys from Supabase
@@ -23,11 +23,16 @@ export const sendMessageWithFallback = async (
   params: SendMessageParams
 ): Promise<Message> => {
   const { messages, options } = params;
-  const { selectedModel } = options;
+  const { selectedModel, message } = options;
   
   // Check if we should use Gemini API directly
   if (selectedModel.id === 'gemini') {
-    return await useGeminiApi(messages);
+    try {
+      return await useGeminiApi(messages, message);
+    } catch (error) {
+      console.error("Gemini API error:", error);
+      throw new Error(`Gemini API error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
   
   // Try OpenRouter with available API keys
@@ -38,18 +43,41 @@ export const sendMessageWithFallback = async (
     
     // Fall back to Gemini as a last resort if OpenRouter fails
     toast.warning("OpenRouter API unavailable. Falling back to Gemini API.");
-    return await useGeminiApi(messages);
+    try {
+      return await useGeminiApi(messages, message);
+    } catch (fallbackError) {
+      console.error("Fallback to Gemini also failed:", fallbackError);
+      throw new Error(`All API services failed. Last error: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
+    }
   }
 };
 
-// Use Gemini API directly
-const useGeminiApi = async (messages: Message[]): Promise<Message> => {
+// Use Gemini API directly with improved response handling
+const useGeminiApi = async (messages: Message[], userMessage?: string): Promise<Message> => {
   try {
     console.log("Using Gemini API directly");
-    const responseText = await sendMessageToGemini(messages);
+    
+    // Add system prompt for better code generation if the message appears to be asking for code
+    let processedMessages = [...messages];
+    if (userMessage && (
+      userMessage.toLowerCase().includes('create') ||
+      userMessage.toLowerCase().includes('generate') ||
+      userMessage.toLowerCase().includes('build') ||
+      userMessage.toLowerCase().includes('develop') ||
+      userMessage.toLowerCase().includes('code')
+    )) {
+      // Add code generation system prompt
+      processedMessages = [
+        { role: 'system', content: codeGenerationPrompt },
+        ...processedMessages
+      ];
+    }
+    
+    const responseText = await sendMessageToGemini(processedMessages);
     return {
       role: 'assistant',
-      content: responseText
+      content: responseText,
+      model: 'Gemini'  // Track which model generated this response
     };
   } catch (error) {
     console.error("Gemini API error:", error);
@@ -86,7 +114,8 @@ const useOpenRouterWithFallback = async (
       console.log("Got successful response from OpenRouter");
       return {
         role: 'assistant',
-        content: responseText
+        content: responseText,
+        model: model.name  // Track which model generated this response
       };
     } catch (error) {
       if (error instanceof ApiError) {

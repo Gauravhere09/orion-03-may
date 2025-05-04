@@ -11,7 +11,7 @@ export interface SavedProject {
 }
 
 // Get the current user ID (to be used for projects)
-const getCurrentUserId = async (): Promise<string | null> => {
+export const getCurrentUserId = async (): Promise<string | null> => {
   const { data } = await supabase.auth.getSession();
   return data?.session?.user?.id || null;
 };
@@ -30,18 +30,18 @@ export const saveProjectToSupabase = async (
       return false;
     }
 
+    // Prepare the data object with chats as Json
+    const projectData = { 
+      id: projectId,
+      project_name: projectName || 'Untitled Project', 
+      chats: chats as unknown as Json,
+      preview_image: previewImage,
+      user_id: userId
+    };
+
     const { error } = await supabase
       .from('saved_projects')
-      .upsert(
-        { 
-          id: projectId,
-          project_name: projectName || 'Untitled Project', 
-          chats: chats as unknown as Json,
-          preview_image: previewImage,
-          user_id: userId
-        },
-        { onConflict: 'id' }
-      );
+      .upsert(projectData, { onConflict: 'id' });
 
     if (error) {
       console.error('Error saving project to Supabase:', error);
@@ -146,6 +146,8 @@ export const autoSaveCurrentChat = async (
         })
         .eq('id', projectId)
         .eq('user_id', userId);
+      
+      console.log('Auto-saved chat to existing project');
     }
     
     // If it doesn't exist, we don't auto-create it (that should be done by explicit save)

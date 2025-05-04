@@ -1,27 +1,38 @@
 
 import { AIModel } from '@/data/models';
 import { Button } from '@/components/ui/button';
-import { Settings, Plus, Sun, Moon } from 'lucide-react';
+import { Settings, Plus, Sun, Moon, Save, ChevronDown } from 'lucide-react';
 import { useUiStore } from '@/stores/uiStore';
+import { useState } from 'react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface HeaderProps {
   selectedModel: AIModel;
   onModelSelectClick: () => void;
   onNewChatClick: () => void;
   onSettingsClick?: () => void;
+  onSaveClick?: () => void;
+  projectName?: string | null;
 }
 
 const Header = ({ 
   selectedModel, 
   onModelSelectClick, 
   onNewChatClick,
-  onSettingsClick 
+  onSettingsClick,
+  onSaveClick,
+  projectName
 }: HeaderProps) => {
   const { isDarkMode, toggleDarkMode } = useUiStore();
 
   return (
     <header className="flex justify-between items-center p-3 border-b border-border">
-      <div className="flex items-center">
+      <div className="flex items-center gap-2">
         <Button
           variant="ghost"
           size="sm"
@@ -33,9 +44,33 @@ const Header = ({
           </div>
           <span className="font-medium truncate max-w-[150px]">{selectedModel.name}</span>
         </Button>
+        
+        {/* Project name dropdown */}
+        {projectName && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="flex items-center gap-1 text-sm px-2 h-8"
+              >
+                <span className="truncate max-w-[120px]">{projectName}</span>
+                <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuItem className="cursor-pointer">
+                Rename Project
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer">
+                Export Project
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
       
-      {/* Right - New Chat and Settings buttons */}
+      {/* Right - New Chat, Save, Theme, and Settings buttons */}
       <div className="flex items-center gap-1">
         <Button
           variant="ghost"
@@ -46,6 +81,18 @@ const Header = ({
         >
           <Plus className="h-4 w-4" />
         </Button>
+        
+        {onSaveClick && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onSaveClick}
+            className="h-8 w-8 rounded-full"
+            title="Save Project"
+          >
+            <Save className="h-4 w-4" />
+          </Button>
+        )}
         
         <Button
           variant="ghost"
