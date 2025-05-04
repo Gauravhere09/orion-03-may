@@ -99,10 +99,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     try {
+      // Fixed: Call sendMessageWithFallback with the correct arguments
       const response = await sendMessageWithFallback(
         get().messages, 
-        message, 
-        imageUrls
+        { message, imageUrls } // Pass as a single options object
       );
 
       // Parse the assistant's response for code if present
@@ -187,10 +187,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
     
     // Send the message again
     try {
+      // Fixed: Call sendMessageWithFallback with the correct arguments
       const response = await sendMessageWithFallback(
         get().messages,
-        userMessageText,
-        imageUrls
+        { message: userMessageText, imageUrls } // Pass as a single options object
       );
 
       // Parse the assistant's response for code if present
@@ -372,10 +372,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
   }
 })();
 
-function hasCodeBlocks(content: string | any[]): boolean {
+// Helper function to detect code blocks in messages
+export const hasCodeBlocks = (content: string | any[]): boolean => {
   const text = getMessageText(content);
   return text.includes("```html") || 
          text.includes("```css") || 
          text.includes("```js") || 
          text.includes("```javascript");
-}
+};

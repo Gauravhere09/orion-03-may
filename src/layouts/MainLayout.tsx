@@ -185,7 +185,6 @@ const MainLayout = ({
       <ApiKeyModal 
         open={apiKeyModalOpen} 
         onOpenChange={onApiKeyModalOpenChange}
-        onApiKeySaved={() => {}}
       />
       
       <ModelSelectorDialog

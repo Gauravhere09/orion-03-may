@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -54,7 +53,7 @@ const Header = ({ selectedModel, onModelSelectClick, onNewChatClick }: HeaderPro
       const previewImage = '/public/placeholder.svg';
 
       // Fix type issue: Convert messages to a plain object before saving to Supabase
-      const messagesJson = JSON.parse(JSON.stringify(messages));
+      const messagesJson = JSON.stringify(messages);
 
       // Save to Supabase
       const { data, error } = await supabase

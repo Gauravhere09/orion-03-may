@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { cn } from "@/lib/utils";
 import { Message, getMessageText } from "@/services/api";
@@ -30,7 +29,7 @@ const MessageBubble = ({
   const [copied, setCopied] = useState(false);
   const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
   const messageText = getMessageText(message.content);
-  const { messageRatings, rateMessage } = useChatStore();
+  const { messageRatings = {}, rateMessage } = useChatStore();
   
   const messageRating = messageRatings[messageIndex];
   

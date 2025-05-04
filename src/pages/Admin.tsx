@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,7 +32,8 @@ const AdminPage = () => {
         // Since is_admin doesn't exist in the profiles table yet, we'll 
         // simulate the admin check using email for now
         // A proper implementation would check a roles table or a specific admin flag
-        const adminCheck = data.email?.includes('admin') || false;
+        const userEmail = data?.email || '';
+        const adminCheck = userEmail.includes('admin') || false;
         setIsAdmin(adminCheck);
       } catch (error) {
         console.error('Error checking admin status:', error);
