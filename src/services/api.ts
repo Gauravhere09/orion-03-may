@@ -1,7 +1,7 @@
 
 import { AIModel } from '@/data/models';
 import { ApiKey, getAllApiKeys } from './storage';
-import { Message, ChatCompletionResponse, ErrorResponse, GeneratedCode, ApiError, MessageContent } from './apiTypes';
+import { Message, ChatCompletionResponse, ErrorResponse, GeneratedCode, ApiError, MessageContent, SendMessageParams } from './apiTypes';
 import { getMessageText, hasCodeBlocks, maskApiKey, prepareMessageContent } from './apiHelpers';
 import { sendMessageToGemini } from './geminiService';
 import { sendMessageToOpenRouter } from './openRouterService';
@@ -10,9 +10,9 @@ import { toast } from '@/components/ui/sonner';
 
 // Try each API key in order until one works
 export const sendMessageWithFallback = async (
-  model: AIModel,
-  messages: Message[]
-): Promise<string> => {
+  params: SendMessageParams
+): Promise<Message> => {
+  const { messages, options } = params;
   const apiKeys = getAllApiKeys();
   if (!apiKeys || apiKeys.length === 0) {
     throw new Error('No API keys available');
@@ -23,11 +23,18 @@ export const sendMessageWithFallback = async (
   
   let lastError: ApiError | null = null;
   
+  // Get current model from the stores (will need to be passed in)
+  const model = { id: 'default', name: 'AI Assistant', openRouterModel: 'anthropic/claude-3-opus', version: '1.0' };
+  
   // Check if we should use Gemini API
   if (model.id === 'gemini') {
     try {
       console.log("Using Gemini API directly");
-      return await sendMessageToGemini(messages);
+      const responseText = await sendMessageToGemini(messages);
+      return {
+        role: 'assistant',
+        content: responseText
+      };
     } catch (error) {
       console.error("Gemini API error:", error);
       if (error instanceof Error) {
@@ -44,9 +51,12 @@ export const sendMessageWithFallback = async (
   for (const apiKey of sortedKeys) {
     try {
       console.log(`Trying API key: ${maskApiKey(apiKey.key)}`);
-      const response = await sendMessageToOpenRouter(model, messages, apiKey.key);
+      const responseText = await sendMessageToOpenRouter(model, messages, apiKey.key);
       console.log("Got successful response from OpenRouter");
-      return response;
+      return {
+        role: 'assistant',
+        content: responseText
+      };
     } catch (error) {
       if (error instanceof ApiError) {
         lastError = error;

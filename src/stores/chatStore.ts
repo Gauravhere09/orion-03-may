@@ -1,6 +1,11 @@
+
 import { create } from 'zustand';
-import { Message, GeneratedCode, sendMessageWithFallback, enhancePrompt, parseCodeResponse, getMessageText, prepareMessageContent } from '@/services/api';
+import { Message, GeneratedCode, SendMessageParams, MessageOptions } from '@/services/apiTypes';
+import { sendMessageWithFallback, enhancePrompt, parseCodeResponse, getMessageText, prepareMessageContent } from '@/services/api';
 import { v4 as uuidv4 } from 'uuid';
+
+// Define storage key as a constant
+const CHAT_STORAGE_KEY = 'orion_chat_history';
 
 // Define rating type
 type MessageRating = 'like' | 'dislike' | null;
@@ -33,7 +38,7 @@ export interface ChatState {
 // Save chats to localStorage
 const saveChatsToStorage = (chats: Record<string, Message[]>) => {
   try {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chats));
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(chats));
   } catch (error) {
     console.error('Error saving chats to localStorage:', error);
   }
@@ -42,7 +47,7 @@ const saveChatsToStorage = (chats: Record<string, Message[]>) => {
 // Load chats from localStorage
 const loadChatsFromStorage = (): Record<string, Message[]> => {
   try {
-    const chatsStr = localStorage.getItem(LOCAL_STORAGE_KEY);
+    const chatsStr = localStorage.getItem(CHAT_STORAGE_KEY);
     return chatsStr ? JSON.parse(chatsStr) : {};
   } catch (error) {
     console.error('Error loading chats from localStorage:', error);
@@ -97,18 +102,26 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     try {
-      // Fix: Use the correct parameter type for sendMessageWithFallback
-      const response = await sendMessageWithFallback({
+      // Create params object for sendMessageWithFallback
+      const params: SendMessageParams = {
         messages: get().messages, 
         options: { message, imageUrls }
-      });
+      };
+      
+      // Call the API with the correct parameter structure
+      const response = await sendMessageWithFallback(params);
 
       // Parse the assistant's response for code if present
-      const assistantText = getMessageText(response.content);
-      const generatedCode = parseCodeResponse(assistantText);
+      const responseText = typeof response === 'string' ? response : getMessageText(response.content);
+      const generatedCode = parseCodeResponse(responseText);
       
       set(state => {
-        const newMessages = [...state.messages, response];
+        // Create assistant message with the appropriate type
+        const assistantMessage: Message = typeof response === 'string' 
+          ? { role: 'assistant', content: response } 
+          : response;
+        
+        const newMessages = [...state.messages, assistantMessage];
         
         // Save to localStorage again with assistant's response
         const allChats = loadChatsFromStorage();
@@ -185,18 +198,26 @@ export const useChatStore = create<ChatState>((set, get) => ({
     
     // Send the message again
     try {
-      // Fix: Use the correct parameter type for sendMessageWithFallback
-      const response = await sendMessageWithFallback({
+      // Create params object for sendMessageWithFallback
+      const params: SendMessageParams = {
         messages: get().messages,
         options: { message: userMessageText, imageUrls }
-      });
+      };
+      
+      // Call the API with the correct parameter structure
+      const response = await sendMessageWithFallback(params);
 
       // Parse the assistant's response for code if present
-      const assistantText = getMessageText(response.content);
-      const generatedCode = parseCodeResponse(assistantText);
+      const responseText = typeof response === 'string' ? response : getMessageText(response.content);
+      const generatedCode = parseCodeResponse(responseText);
       
       set(state => {
-        const newMessages = [...state.messages, response];
+        // Create assistant message with the appropriate type
+        const assistantMessage: Message = typeof response === 'string' 
+          ? { role: 'assistant', content: response } 
+          : response;
+        
+        const newMessages = [...state.messages, assistantMessage];
         
         // Save to localStorage
         const allChats = loadChatsFromStorage();
