@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import emailjs from "@emailjs/browser";
 import { EMAILJS_SERVICE_ID, EMAILJS_CONTACT_TEMPLATE_ID } from "@/utils/emailjs";
 import { addStoredContactMessage } from "@/utils/localStorageBackup";
@@ -9,10 +9,21 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, CheckCircle, Code, MessageCircle, Search, Mail, Phone, MapPin } from "lucide-react";
+import { 
+  ArrowRight, CheckCircle, Code, MessageCircle, Search, Mail, Phone, MapPin,
+  ChevronDown 
+} from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/AuthContext";
+import { useUiStore } from "@/stores/uiStore";
+import AuthModal from "@/components/AuthModal";
 
 // Feature card component
 const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
@@ -65,6 +76,8 @@ const HowToUseStep = ({ number, title, description }: { number: number, title: s
 
 const ExplorePage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { isDarkMode } = useUiStore();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -150,8 +163,11 @@ const ExplorePage: React.FC = () => {
           <div className="text-center mb-12">
             <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 flex justify-center items-center select-none">
               Build with<span className="text-black dark:text-white">
-                <img src="/public/orion-white.png" className="hidden dark:block h-52 w-52 translate-y-3 select-none pointer-events-none" alt="Orion" />
-                <img src="/public/orion-black.png" className="dark:hidden h-52 w-52 translate-y-3 select-none pointer-events-none" alt="Orion" />
+                {isDarkMode ? (
+                  <img src="/orion-white.png" className="h-52 w-52 translate-y-3 select-none pointer-events-none" alt="Orion" />
+                ) : (
+                  <img src="/orion-black.png" className="h-52 w-52 translate-y-3 select-none pointer-events-none" alt="Orion" />
+                )}
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-12">
@@ -167,17 +183,34 @@ const ExplorePage: React.FC = () => {
                 Start Building
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button 
-                variant="outline" 
-                size="lg"
-                onClick={() => {
-                  setIsSignUp(false);
-                  setIsAuthModalOpen(true);
-                }}
-                className="px-8 py-6 text-lg border-2"
-              >
-                Login
-              </Button>
+              
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="lg" className="px-8 py-6 text-lg border-2">
+                      Menu
+                      <ChevronDown className="ml-2 h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => navigate("/")}>
+                      Chat with AI
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+                      Dashboard
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="px-8 py-6 text-lg border-2"
+                >
+                  Login
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -314,7 +347,7 @@ const ExplorePage: React.FC = () => {
             />
           </div>
         </div>
-      </section> */}
+      </section> */
 
       {/* Contact Section */}
       <section className="py-20 px-2 bg-gray-50 dark:bg-gray-900 relative overflow-hidden" id="contact">
@@ -411,128 +444,7 @@ const ExplorePage: React.FC = () => {
       </footer>
 
       {/* Auth Modal */}
-      <Dialog open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen}>
-        <DialogContent className="sm:max-w-[425px] border-2 rounded-xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">{isSignUp ? "Create an Account" : "Sign In to Orion"}</DialogTitle>
-          </DialogHeader>
-          
-          {isSignUp ? (
-            <form onSubmit={handleSignUpSubmit(onSignUpSubmit)} className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  placeholder="John Doe"
-                  {...registerSignUp("name", { required: "Name is required" })}
-                />
-                {signUpErrors.name && (
-                  <p className="text-sm text-red-500">{signUpErrors.name.message as string}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="emailSignUp">Email</Label>
-                <Input
-                  id="emailSignUp"
-                  type="email" 
-                  placeholder="your@email.com"
-                  {...registerSignUp("email", { 
-                    required: "Email is required",
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: "Invalid email address"
-                    }
-                  })}
-                />
-                {signUpErrors.email && (
-                  <p className="text-sm text-red-500">{signUpErrors.email.message as string}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="passwordSignUp">Password</Label>
-                <Input 
-                  id="passwordSignUp"
-                  type="password"
-                  {...registerSignUp("password", { 
-                    required: "Password is required",
-                    minLength: {
-                      value: 8,
-                      message: "Password must be at least 8 characters"
-                    }
-                  })}
-                />
-                {signUpErrors.password && (
-                  <p className="text-sm text-red-500">{signUpErrors.password.message as string}</p>
-                )}
-              </div>
-              <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2">
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-                      <span>Creating Account...</span>
-                    </div>
-                  ) : "Sign Up"}
-                </Button>
-              </DialogFooter>
-            </form>
-          ) : (
-            <form onSubmit={handleLoginSubmit(onLoginSubmit)} className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email" 
-                  placeholder="your@email.com"
-                  {...registerLogin("email", { 
-                    required: "Email is required",
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: "Invalid email address"
-                    }
-                  })}
-                />
-                {loginErrors.email && (
-                  <p className="text-sm text-red-500">{loginErrors.email.message as string}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input 
-                  id="password"
-                  type="password"
-                  {...registerLogin("password", { required: "Password is required" })}
-                />
-                {loginErrors.password && (
-                  <p className="text-sm text-red-500">{loginErrors.password.message as string}</p>
-                )}
-              </div>
-              <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2">
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-                      <span>Signing In...</span>
-                    </div>
-                  ) : "Sign In"}
-                </Button>
-              </DialogFooter>
-            </form>
-          )}
-          
-          <div className="text-center mt-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {isSignUp ? "Already have an account?" : "New user?"} 
-              <button 
-                className="text-primary hover:underline ml-1" 
-                onClick={() => setIsSignUp(!isSignUp)}
-              >
-                {isSignUp ? "Sign In" : "Sign Up"}
-              </button>
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <AuthModal open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />
     </div>
   );
 };

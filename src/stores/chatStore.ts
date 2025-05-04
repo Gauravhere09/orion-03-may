@@ -1,340 +1,351 @@
-
 import { create } from 'zustand';
 import { Message, GeneratedCode, sendMessageWithFallback, enhancePrompt, parseCodeResponse, getMessageText, prepareMessageContent } from '@/services/api';
-import { hasApiKeys, saveChat, getChatById } from '@/services/storage';
-import { useModelStore } from './modelStore';
-import { useUiStore } from './uiStore';
-import { getCodeGenerationPrompt, getAssistantPrompt, initializeChat, parseCodeFromResponse, enhanceUserPrompt } from './chatActions';
-import { MessageContent } from '@/services/apiTypes';
+import { v4 as uuidv4 } from 'uuid';
 
-interface ChatStore {
+export interface ChatState {
+  chatId: string;
   messages: Message[];
   isLoading: boolean;
   isGenerating: boolean;
   generatedCode: GeneratedCode;
-  chatId: string;
+  showClearChatConfirm: boolean;
   lastError: string | null;
-  setLastError: (error: string | null) => void;
-  setMessages: (messages: Message[]) => void;
-  addMessage: (message: Message) => void;
-  setIsLoading: (isLoading: boolean) => void;
-  setIsGenerating: (isGenerating: boolean) => void;
-  setGeneratedCode: (code: GeneratedCode) => void;
-  setChatId: (id: string) => void;
-  handleSendMessage: (content: string, imageUrls?: string[]) => Promise<void>;
+  
+  handleSendMessage: (message: string, imageUrls?: string[]) => Promise<void>;
   handleRegenerateResponse: () => Promise<void>;
   handleStopGeneration: () => void;
   handleNewChat: () => void;
-  parseCodeFromResponse: (content: string) => GeneratedCode;
-  confirmClearChat: () => void;
-  showClearChatConfirm: boolean;
   setShowClearChatConfirm: (show: boolean) => void;
+  confirmClearChat: () => void;
+  setGeneratedCode: (code: GeneratedCode) => void;
   enhanceUserPrompt: (prompt: string) => string;
-  isEnhancingPrompt: boolean;
-  setIsEnhancingPrompt: (isEnhancing: boolean) => void;
-  loadChatById: (id: string) => boolean;
-  rateMessage: (index: number, rating: 'like' | 'dislike') => void;
-  messageRatings: Record<number, 'like' | 'dislike'>;
+  parseCodeFromResponse: (content: string) => GeneratedCode;
+  setLastError: (error: string | null) => void;
+  loadChatFromStorage: (chatId?: string) => void;
+  loadChatFromSaved: (savedChat: any) => void;
 }
 
-export const useChatStore = create<ChatStore>((set, get) => {
-  // Controller for aborting requests
-  const abortControllerRef: { current: AbortController | null } = { current: null };
-  // Reference to the last user message index
-  let lastUserMessageIndexRef = -1;
-  
-  // Initialize with stored chat if available, otherwise use default welcome message
-  const initialState = initializeChat();
-  
-  return {
-    messages: initialState.messages,
-    isLoading: false,
-    isGenerating: false,
-    generatedCode: {},
-    chatId: initialState.chatId,
-    lastError: null,
-    showClearChatConfirm: false,
-    isEnhancingPrompt: false,
-    messageRatings: {},
-    
-    setMessages: (messages) => set({ messages }),
-    addMessage: (message) => set(state => ({ messages: [...state.messages, message] })),
-    setIsLoading: (isLoading) => set({ isLoading }),
-    setIsGenerating: (isGenerating) => set({ isGenerating }),
-    setGeneratedCode: (code) => set({ generatedCode: code }),
-    setChatId: (id) => set({ chatId: id }),
-    setLastError: (error) => set({ lastError: error }),
-    setShowClearChatConfirm: (show) => set({ showClearChatConfirm: show }),
-    setIsEnhancingPrompt: (isEnhancing) => set({ isEnhancingPrompt: isEnhancing }),
-    
-    // Add message rating functionality
-    rateMessage: (index, rating) => set(state => ({
-      messageRatings: {
-        ...state.messageRatings,
-        [index]: rating
-      }
-    })),
-    
-    confirmClearChat: () => {
-      set({ showClearChatConfirm: false });
-      get().handleNewChat();
-    },
-    
-    enhanceUserPrompt,
+const LOCAL_STORAGE_KEY = 'orion_chat_history';
 
-    loadChatById: (id: string) => {
-      const chat = getChatById(id);
-      if (chat) {
-        set({
-          chatId: id,
-          messages: chat.messages,
+// Save chats to localStorage
+const saveChatsToStorage = (chats: Record<string, Message[]>) => {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chats));
+  } catch (error) {
+    console.error('Error saving chats to localStorage:', error);
+  }
+};
+
+// Load chats from localStorage
+const loadChatsFromStorage = (): Record<string, Message[]> => {
+  try {
+    const chatsStr = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return chatsStr ? JSON.parse(chatsStr) : {};
+  } catch (error) {
+    console.error('Error loading chats from localStorage:', error);
+    return {};
+  }
+};
+
+// Initialize with default welcome message
+const createInitialMessages = (): Message[] => {
+  return [{
+    role: 'assistant',
+    content: prepareMessageContent('Welcome to Orion AI! How can I help you create today?')
+  }];
+};
+
+export const useChatStore = create<ChatState>((set, get) => ({
+  chatId: uuidv4(),
+  messages: createInitialMessages(),
+  isLoading: false,
+  isGenerating: false,
+  generatedCode: { html: '', css: '', js: '', preview: '' },
+  showClearChatConfirm: false,
+  lastError: null,
+
+  handleSendMessage: async (message, imageUrls = []) => {
+    if (!message.trim() && imageUrls.length === 0) return;
+
+    set(state => {
+      // Create a new user message
+      const userMessage: Message = {
+        role: 'user',
+        content: imageUrls.length > 0 
+          ? [
+              ...imageUrls.map(url => ({
+                type: 'image_url',
+                image_url: { url }
+              })),
+              { type: 'text', text: message }
+            ] 
+          : message
+      };
+      
+      const newMessages = [...state.messages, userMessage];
+      
+      // Save to localStorage
+      const allChats = loadChatsFromStorage();
+      allChats[state.chatId] = newMessages;
+      saveChatsToStorage(allChats);
+      
+      return { messages: newMessages, isLoading: true, isGenerating: true };
+    });
+
+    try {
+      const response = await sendMessageWithFallback(
+        get().messages, 
+        message, 
+        imageUrls
+      );
+
+      // Parse the assistant's response for code if present
+      const assistantText = getMessageText(response.content);
+      const generatedCode = parseCodeResponse(assistantText);
+      
+      set(state => {
+        const newMessages = [...state.messages, response];
+        
+        // Save to localStorage again with assistant's response
+        const allChats = loadChatsFromStorage();
+        allChats[state.chatId] = newMessages;
+        saveChatsToStorage(allChats);
+        
+        return { 
+          messages: newMessages, 
           isLoading: false,
-          isGenerating: false
-        });
-        
-        // If this is a code chat, also parse the code
-        const lastAssistantMessage = chat.messages
-          .filter(m => m.role === 'assistant')
-          .pop();
-          
-        if (lastAssistantMessage) {
-          const messageText = getMessageText(lastAssistantMessage.content);
-          if (hasCodeBlocks(messageText)) {
-            const parsedCode = parseCodeResponse(messageText);
-            set({ generatedCode: parsedCode });
-          }
-        }
-        
-        return true;
-      }
-      return false;
-    },
-    
-    handleSendMessage: async (content, imageUrls = []) => {
-      if (!hasApiKeys()) {
-        set({ lastError: "API Keys Required - Please add API keys to continue" });
-        return;
-      }
-
-      const { isChatMode } = useUiStore.getState();
-      const { selectedModel } = useModelStore.getState();
-      
-      // Prepare message content with images if provided
-      const messageContent = imageUrls.length > 0 
-        ? prepareMessageContent(content, imageUrls) 
-        : content;
-      
-      const userMessage: Message = { role: 'user', content: messageContent };
-      set(state => ({ 
-        messages: [...state.messages, userMessage],
-        isLoading: true,
-        isGenerating: true,
-        lastError: null
-      }));
-      
-      lastUserMessageIndexRef = get().messages.length;
-
-      try {
-        // Add a temporary "generating" message
-        const tempMessage: Message = { 
-          role: 'assistant', 
-          content: isChatMode 
-            ? prepareMessageContent("Thinking...") 
-            : prepareMessageContent(`Generating code for your ${content.split(' ').slice(0, 3).join(' ')}...`)
+          isGenerating: false,
+          generatedCode 
         };
-        
-        set(state => ({ messages: [...state.messages, tempMessage] }));
-        
-        // Get the appropriate system message based on mode
-        const systemPrompt = isChatMode 
-          ? getAssistantPrompt(selectedModel.name, selectedModel.version)
-          : getCodeGenerationPrompt(selectedModel.name, selectedModel.version);
-        
-        // Enhanced prompt for code generation or use original for chat
-        const processedContent = isChatMode ? content : enhancePrompt(content);
-        
-        // Create new messages array with system prompt and chat history
-        const messagesForApi: Message[] = [
-          { role: 'system', content: systemPrompt },
-        ];
-        
-        // Add image content if in chat mode and images exist
-        if (isChatMode && imageUrls.length > 0) {
-          messagesForApi.push({ role: 'user', content: messageContent });
-        } else {
-          messagesForApi.push({ role: 'user', content: processedContent });
-        }
-
-        abortControllerRef.current = new AbortController();
-        const response = await sendMessageWithFallback(selectedModel, messagesForApi);
-        
-        // Replace the temporary message with the actual response
-        set(state => {
-          const newMessages = [...state.messages.slice(0, state.messages.length - 1)];
-          newMessages.push({ role: 'assistant', content: response });
-          
-          // Save the chat
-          saveChat(state.chatId, newMessages, selectedModel.id);
-          
-          return { messages: newMessages };
-        });
-        
-        // Parse code from response if not in chat mode
-        if (!isChatMode) {
-          const codeText = getMessageText(response);
-          const parsedCode = parseCodeResponse(codeText);
-          set({ generatedCode: parsedCode });
-        }
-        
-      } catch (error) {
-        console.error('Error sending message:', error);
-        
-        // Remove the temporary message if there was an error
-        set(state => ({ 
-          messages: state.messages.slice(0, state.messages.length - 1),
-          lastError: error instanceof Error ? error.message : "Failed to get a response"
-        }));
-      } finally {
-        set({ isLoading: false, isGenerating: false });
-        abortControllerRef.current = null;
-      }
-    },
-    
-    handleRegenerateResponse: async () => {
-      const state = get();
-      
-      if (state.messages.length === 0 || state.isLoading || !hasApiKeys()) return;
-      
-      const { selectedModel } = useModelStore.getState();
-      const { isChatMode } = useUiStore.getState();
-      
-      set({ isLoading: true, isGenerating: true, lastError: null });
-      
-      try {
-        // Find the last user message
-        let lastUserIndex = -1;
-        for (let i = state.messages.length - 1; i >= 0; i--) {
-          if (state.messages[i].role === 'user') {
-            lastUserIndex = i;
-            break;
-          }
-        }
-        
-        if (lastUserIndex === -1) return;
-        
-        // Add a temporary "regenerating" message
-        const tempMessage: Message = { 
-          role: 'assistant', 
-          content: isChatMode 
-            ? prepareMessageContent("Thinking...") 
-            : prepareMessageContent("Regenerating code...")
-        };
-        
-        // Remove the previous assistant message and add temp message
-        const newMessages = state.messages.filter((_, index) => index <= lastUserIndex);
-        newMessages.push(tempMessage);
-        set({ messages: newMessages });
-
-        // Get content from the last user message
-        const lastUserContent = typeof state.messages[lastUserIndex].content === 'string' 
-          ? state.messages[lastUserIndex].content 
-          : state.messages[lastUserIndex].content;
-
-        // Get the appropriate system message based on mode
-        const systemPrompt = isChatMode 
-          ? getAssistantPrompt(selectedModel.name, selectedModel.version)
-          : getCodeGenerationPrompt(selectedModel.name, selectedModel.version);
-        
-        // Create messages array with system prompt and the user request
-        const messagesForApi: Message[] = [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: lastUserContent }
-        ];
-
-        abortControllerRef.current = new AbortController();
-        const response = await sendMessageWithFallback(selectedModel, messagesForApi);
-        
-        // Replace the temporary message with the actual response
-        set(state => {
-          const updatedMessages = [...state.messages.slice(0, state.messages.length - 1)];
-          updatedMessages.push({ role: 'assistant', content: response });
-          
-          // Save the chat
-          saveChat(state.chatId, updatedMessages, selectedModel.id);
-          
-          return { messages: updatedMessages };
-        });
-        
-        // Parse code if not in chat mode
-        if (!isChatMode) {
-          const codeText = getMessageText(response);
-          const parsedCode = parseCodeResponse(codeText);
-          set({ generatedCode: parsedCode });
-        }
-      } catch (error) {
-        console.error('Error regenerating response:', error);
-        
-        set(state => ({ 
-          lastError: error instanceof Error ? error.message : "Failed to regenerate response",
-          // Remove the temporary message if there was an error
-          messages: state.messages.filter((_, index) => index <= lastUserMessageIndexRef)
-        }));
-      } finally {
-        set({ isLoading: false, isGenerating: false });
-        abortControllerRef.current = null;
-      }
-    },
-    
-    handleStopGeneration: () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-        abortControllerRef.current = null;
-        
-        set(state => {
-          const messages = state.messages;
-          
-          // Remove the temporary generating message
-          if (messages.length > 0) {
-            const lastMessage = messages[messages.length - 1];
-            const lastMessageText = getMessageText(lastMessage.content);
-            
-            if (lastMessage.role === 'assistant' && 
-                (lastMessageText.includes('Generating') || 
-                lastMessageText.includes('Thinking') || 
-                lastMessageText.includes('Regenerating'))) {
-              return { 
-                messages: messages.slice(0, messages.length - 1),
-                isGenerating: false,
-                isLoading: false
-              };
-            }
-          }
-          
-          return { isGenerating: false, isLoading: false };
-        });
-      }
-    },
-    
-    handleNewChat: () => {
-      const { chatId } = initializeChat();
-      
-      set({
-        chatId: chatId,
-        messages: [{
-          role: 'assistant',
-          content: prepareMessageContent('Welcome to the AI Code Generator! Describe the application or component you want me to create, and I\'ll generate HTML, CSS, and JavaScript code for you.')
-        }],
-        generatedCode: {},
-        lastError: null,
-        messageRatings: {}
       });
-    },
-    
-    parseCodeFromResponse
-  };
-});
+    } catch (error: any) {
+      console.error('Error in AI response:', error);
+      
+      set(state => {
+        // Create an error message
+        const errorMessage: Message = {
+          role: 'assistant',
+          content: `I encountered an error: ${error.message || 'Unknown error'}. Please try again.`
+        };
+        
+        const newMessages = [...state.messages, errorMessage];
+        
+        // Save to localStorage including the error message
+        const allChats = loadChatsFromStorage();
+        allChats[state.chatId] = newMessages;
+        saveChatsToStorage(allChats);
+        
+        return { 
+          messages: newMessages, 
+          isLoading: false, 
+          isGenerating: false,
+          lastError: error.message || 'Unknown error'
+        };
+      });
+    }
+  },
 
-// Helper function outside the store
+  handleRegenerateResponse: async () => {
+    // Find the last user message
+    const messages = get().messages;
+    let lastUserMessageIndex = messages.length - 1;
+    
+    while (lastUserMessageIndex >= 0 && messages[lastUserMessageIndex].role !== 'user') {
+      lastUserMessageIndex--;
+    }
+    
+    if (lastUserMessageIndex < 0) return; // No user message found
+    
+    // Get the last user message
+    const lastUserMessage = messages[lastUserMessageIndex];
+    const userMessageText = typeof lastUserMessage.content === 'string' 
+      ? lastUserMessage.content 
+      : lastUserMessage.content.find((c: any) => c.type === 'text')?.text || '';
+    
+    // Remove all messages after the last user message
+    set(state => {
+      const trimmedMessages = state.messages.slice(0, lastUserMessageIndex + 1);
+      return { 
+        messages: trimmedMessages, 
+        isLoading: true,
+        isGenerating: true 
+      };
+    });
+    
+    // Extract image URLs if they exist
+    const imageUrls = typeof lastUserMessage.content !== 'string' 
+      ? lastUserMessage.content
+          .filter((c: any) => c.type === 'image_url')
+          .map((c: any) => c.image_url.url)
+      : [];
+    
+    // Send the message again
+    try {
+      const response = await sendMessageWithFallback(
+        get().messages,
+        userMessageText,
+        imageUrls
+      );
+
+      // Parse the assistant's response for code if present
+      const assistantText = getMessageText(response.content);
+      const generatedCode = parseCodeResponse(assistantText);
+      
+      set(state => {
+        const newMessages = [...state.messages, response];
+        
+        // Save to localStorage
+        const allChats = loadChatsFromStorage();
+        allChats[state.chatId] = newMessages;
+        saveChatsToStorage(allChats);
+        
+        return { 
+          messages: newMessages, 
+          isLoading: false,
+          isGenerating: false,
+          generatedCode 
+        };
+      });
+    } catch (error: any) {
+      console.error('Error in AI response:', error);
+      
+      set(state => {
+        const errorMessage: Message = {
+          role: 'assistant',
+          content: `I encountered an error: ${error.message || 'Unknown error'}. Please try again.`
+        };
+        
+        const newMessages = [...state.messages, errorMessage];
+        
+        // Save to localStorage
+        const allChats = loadChatsFromStorage();
+        allChats[state.chatId] = newMessages;
+        saveChatsToStorage(allChats);
+        
+        return { 
+          messages: newMessages, 
+          isLoading: false, 
+          isGenerating: false,
+          lastError: error.message || 'Unknown error' 
+        };
+      });
+    }
+  },
+
+  handleStopGeneration: () => {
+    // Stop the ongoing generation process
+    set({ isGenerating: false });
+  },
+
+  handleNewChat: () => {
+    // Create a new chat with a welcome message
+    const newChatId = uuidv4();
+    set({
+      chatId: newChatId,
+      messages: createInitialMessages(),
+      isLoading: false,
+      generatedCode: { html: '', css: '', js: '', preview: '' },
+      showClearChatConfirm: false
+    });
+  },
+
+  setShowClearChatConfirm: (show) => {
+    set({ showClearChatConfirm: show });
+  },
+
+  confirmClearChat: () => {
+    // Clear the current chat and start a new one
+    get().handleNewChat();
+    set({ showClearChatConfirm: false });
+  },
+
+  setGeneratedCode: (code) => {
+    set({ generatedCode: code });
+  },
+
+  enhanceUserPrompt: (prompt) => {
+    return enhancePrompt(prompt);
+  },
+
+  parseCodeFromResponse: (content) => {
+    return parseCodeResponse(content);
+  },
+
+  setLastError: (error) => {
+    set({ lastError: error });
+  },
+  
+  loadChatFromStorage: (chatId) => {
+    const allChats = loadChatsFromStorage();
+    
+    if (chatId && allChats[chatId]) {
+      // Load specified chat
+      set({
+        chatId,
+        messages: allChats[chatId],
+        generatedCode: { html: '', css: '', js: '', preview: '' } // Reset code display
+      });
+    } else if (Object.keys(allChats).length > 0) {
+      // Load most recent chat if no specific one requested
+      const mostRecentChatId = Object.keys(allChats)[0]; // Assuming first chat is most recent
+      set({
+        chatId: mostRecentChatId,
+        messages: allChats[mostRecentChatId],
+        generatedCode: { html: '', css: '', js: '', preview: '' } // Reset code display
+      });
+    } 
+    // Otherwise keep current state
+  },
+  
+  loadChatFromSaved: (savedChat) => {
+    if (!savedChat || !savedChat.chats) return;
+    
+    set({
+      chatId: savedChat.id,
+      messages: savedChat.chats,
+      generatedCode: { html: '', css: '', js: '', preview: '' } // Reset code display
+    });
+    
+    // Also save to localStorage
+    const allChats = loadChatsFromStorage();
+    allChats[savedChat.id] = savedChat.chats;
+    saveChatsToStorage(allChats);
+  }
+}));
+
+// Initialize by loading saved chat if available
+// This runs when the store is first created
+(() => {
+  const storedChats = loadChatsFromStorage();
+  
+  // Check if we have any saved chats
+  if (Object.keys(storedChats).length > 0) {
+    // Try to load current project if set
+    try {
+      const currentProjectStr = localStorage.getItem('currentProject');
+      if (currentProjectStr) {
+        const currentProject = JSON.parse(currentProjectStr);
+        if (currentProject && currentProject.chats) {
+          useChatStore.setState({
+            chatId: currentProject.id,
+            messages: currentProject.chats
+          });
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Error loading current project:', e);
+    }
+    
+    // Otherwise load most recent chat
+    const mostRecentChatId = Object.keys(storedChats)[0];
+    useChatStore.setState({
+      chatId: mostRecentChatId,
+      messages: storedChats[mostRecentChatId]
+    });
+  }
+})();
+
 function hasCodeBlocks(content: string | MessageContent[]): boolean {
   const text = getMessageText(content);
   return text.includes("```html") || 

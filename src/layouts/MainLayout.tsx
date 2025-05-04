@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Message } from '@/services/api';
 import { hasApiKeys } from '@/services/storage';
+import { useNavigate } from 'react-router-dom';
 
 import ChatContainer from '@/components/ChatContainer';
 import ChatInput from '@/components/ChatInput';
@@ -15,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { useChatStore } from '@/stores/chatStore';
 import { useModelStore } from '@/stores/modelStore';
 import { useUiStore } from '@/stores/uiStore';
+import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
@@ -31,7 +33,12 @@ const MainLayout = ({
   isPreviewMode,
   onExitPreview
 }: MainLayoutProps) => {
-  const { messages, isLoading, isGenerating, handleSendMessage, handleRegenerateResponse, handleStopGeneration, handleNewChat, generatedCode, showClearChatConfirm, setShowClearChatConfirm, confirmClearChat, enhanceUserPrompt, lastError, setLastError } = useChatStore();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { messages, isLoading, isGenerating, handleSendMessage, handleRegenerateResponse, 
+          handleStopGeneration, handleNewChat, generatedCode, showClearChatConfirm, 
+          setShowClearChatConfirm, confirmClearChat, enhanceUserPrompt, lastError, 
+          setLastError, loadChatFromSaved } = useChatStore();
   const { selectedModel, handleModelSelect } = useModelStore();
   const { isChatMode, toggleChatMode, isDarkMode } = useUiStore();
   
@@ -42,6 +49,23 @@ const MainLayout = ({
   const headerRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  
+  // Load current project if available
+  useEffect(() => {
+    try {
+      const currentProjectStr = localStorage.getItem('currentProject');
+      if (currentProjectStr) {
+        const currentProject = JSON.parse(currentProjectStr);
+        if (currentProject && currentProject.chats) {
+          // Clear the current project from localStorage after loading it
+          loadChatFromSaved(currentProject);
+          localStorage.removeItem('currentProject');
+        }
+      }
+    } catch (e) {
+      console.error('Error loading current project:', e);
+    }
+  }, []);
   
   // Handle scroll behavior for header
   useEffect(() => {
@@ -92,7 +116,6 @@ const MainLayout = ({
         <Header 
           selectedModel={selectedModel}
           onModelSelectClick={() => setModelSelectorOpen(true)}
-          onApiKeyManagerClick={() => {}} // API key manager button removed
           onNewChatClick={() => setShowClearChatConfirm(true)}
         />
       </div>
@@ -100,7 +123,7 @@ const MainLayout = ({
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         <div 
           ref={chatContainerRef}
-          className="w-full md:w-1/2 flex flex-col overflow-hidden border-r border-border/30"
+          className="w-full md:w-1/2 flex flex-col overflow-hidden border-r border-border"
         >
           <ChatContainer 
             messages={messages} 
@@ -144,7 +167,7 @@ const MainLayout = ({
           </div>
         </div>
         
-        <div className="hidden md:flex md:w-1/2 overflow-hidden flex-col border-l-2 border-l-gray-500">
+        <div className="hidden md:flex md:w-1/2 overflow-hidden flex-col border-l border-border">
           {(generatedCode.html || generatedCode.css || generatedCode.js) ? (
             <CodeDisplay code={generatedCode} />
           ) : (
@@ -163,7 +186,6 @@ const MainLayout = ({
       <ApiKeyModal 
         open={apiKeyModalOpen} 
         onOpenChange={onApiKeyModalOpenChange} 
-        onApiKeySaved={() => {}} 
       />
       
       <ModelSelectorDialog
@@ -177,7 +199,7 @@ const MainLayout = ({
         open={showClearChatConfirm} 
         onOpenChange={setShowClearChatConfirm}
       >
-        <AlertDialogContent className="glass-morphism">
+        <AlertDialogContent className="border border-border">
           <AlertDialogHeader>
             <AlertDialogTitle>Clear Chat History?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -186,7 +208,7 @@ const MainLayout = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmClearChat} className="cyan-glow">Yes, Clear Chat</AlertDialogAction>
+            <AlertDialogAction onClick={confirmClearChat}>Yes, Clear Chat</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

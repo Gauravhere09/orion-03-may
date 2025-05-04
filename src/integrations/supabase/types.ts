@@ -9,7 +9,84 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      openrouter_apis: {
+        Row: {
+          api_key: string
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          priority: number
+          updated_at: string | null
+        }
+        Insert: {
+          api_key: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          priority: number
+          updated_at?: string | null
+        }
+        Update: {
+          api_key?: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          priority?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      saved_projects: {
+        Row: {
+          chats: Json
+          created_at: string | null
+          id: string
+          preview_image: string | null
+          project_name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          chats?: Json
+          created_at?: string | null
+          id?: string
+          preview_image?: string | null
+          project_name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          chats?: Json
+          created_at?: string | null
+          id?: string
+          preview_image?: string | null
+          project_name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
