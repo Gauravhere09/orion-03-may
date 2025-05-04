@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import emailjs from "@emailjs/browser";
 import { EMAILJS_SERVICE_ID, EMAILJS_CONTACT_TEMPLATE_ID } from "@/utils/emailjs";
@@ -321,34 +322,6 @@ const ExplorePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      {/* <section className="py-20 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">What People Are Saying</h2>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <TestimonialCard 
-              name="Alex Johnson"
-              role="Frontend Developer"
-              content="Orion helped me build a complex UI in minutes that would've taken days otherwise. The code quality is impressive!"
-              avatar=""
-            />
-            <TestimonialCard 
-              name="Sarah Miller"
-              role="Product Manager"
-              content="We use Orion to quickly prototype new features. It's become an essential part of our development workflow."
-              avatar=""
-            />
-            <TestimonialCard 
-              name="Michael Chen"
-              role="Startup Founder"
-              content="As a non-technical founder, Orion has been a game-changer. I can now bring my ideas to life without hiring a developer."
-              avatar=""
-            />
-          </div>
-        </div>
-      </section> */
-
       {/* Contact Section */}
       <section className="py-20 px-2 bg-gray-50 dark:bg-gray-900 relative overflow-hidden" id="contact">
         {/* Decorative background elements */}
@@ -375,7 +348,6 @@ const ExplorePage: React.FC = () => {
           <p className="text-center text-gray-600 dark:text-gray-300 mb-12 max-w-xl mx-auto">Have questions or feedback? We'd love to hear from you!</p>
           
           <div className="flex justify-center">
-            
             <div>
               <Card className="border-2 border-gray-100 dark:border-gray-800">
                 <CardContent className="p-6">
