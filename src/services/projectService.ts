@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Message } from './apiTypes';
+import { Json } from "@/integrations/supabase/types";
 
 export interface SavedProject {
   id: string;
@@ -8,6 +9,12 @@ export interface SavedProject {
   chats: Message[];
   preview_image?: string;
 }
+
+// Get the current user ID (to be used for projects)
+const getCurrentUserId = async (): Promise<string | null> => {
+  const { data } = await supabase.auth.getSession();
+  return data?.session?.user?.id || null;
+};
 
 // Save a project to Supabase
 export const saveProjectToSupabase = async (
@@ -17,14 +24,21 @@ export const saveProjectToSupabase = async (
   previewImage?: string
 ): Promise<boolean> => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      console.error('No user ID found, cannot save project');
+      return false;
+    }
+
     const { error } = await supabase
       .from('saved_projects')
       .upsert(
         { 
           id: projectId,
           project_name: projectName || 'Untitled Project', 
-          chats: JSON.stringify(chats),
-          preview_image: previewImage
+          chats: chats as unknown as Json,
+          preview_image: previewImage,
+          user_id: userId
         },
         { onConflict: 'id' }
       );
@@ -45,9 +59,16 @@ export const saveProjectToSupabase = async (
 // Get all saved projects from Supabase
 export const getProjectsFromSupabase = async (): Promise<SavedProject[]> => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      console.error('No user ID found, cannot retrieve projects');
+      return [];
+    }
+
     const { data, error } = await supabase
       .from('saved_projects')
       .select('*')
+      .eq('user_id', userId)
       .order('updated_at', { ascending: false });
       
     if (error) {
@@ -58,7 +79,7 @@ export const getProjectsFromSupabase = async (): Promise<SavedProject[]> => {
     return data?.map(project => ({
       id: project.id,
       project_name: project.project_name,
-      chats: project.chats,
+      chats: project.chats as unknown as Message[],
       preview_image: project.preview_image
     })) || [];
   } catch (e) {
@@ -70,10 +91,17 @@ export const getProjectsFromSupabase = async (): Promise<SavedProject[]> => {
 // Delete a project from Supabase
 export const deleteProjectFromSupabase = async (projectId: string): Promise<boolean> => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      console.error('No user ID found, cannot delete project');
+      return false;
+    }
+
     const { error } = await supabase
       .from('saved_projects')
       .delete()
-      .eq('id', projectId);
+      .eq('id', projectId)
+      .eq('user_id', userId);
     
     if (error) {
       console.error('Error deleting project from Supabase:', error);
@@ -94,11 +122,18 @@ export const autoSaveCurrentChat = async (
   chats: Message[]
 ): Promise<void> => {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      console.error('No user ID found, cannot auto-save project');
+      return;
+    }
+
     // Check if this project already exists
     const { data } = await supabase
       .from('saved_projects')
       .select('project_name, preview_image')
       .eq('id', projectId)
+      .eq('user_id', userId)
       .single();
     
     if (data) {
@@ -106,10 +141,11 @@ export const autoSaveCurrentChat = async (
       await supabase
         .from('saved_projects')
         .update({ 
-          chats: JSON.stringify(chats),
+          chats: chats as unknown as Json,
           updated_at: new Date().toISOString()
         })
-        .eq('id', projectId);
+        .eq('id', projectId)
+        .eq('user_id', userId);
     }
     
     // If it doesn't exist, we don't auto-create it (that should be done by explicit save)

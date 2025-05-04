@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { GeneratedCode } from '@/services/apiTypes';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,6 +7,7 @@ import { toast } from '@/components/ui/sonner';
 import Editor from '@monaco-editor/react';
 import { useChatStore } from '@/stores/chatStore';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useUiStore } from '@/stores/uiStore';
 
 interface CodeDisplayProps {
   code: GeneratedCode;
@@ -170,7 +170,7 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
             height={editorHeight}
             language="html"
             value={editableHtml}
-            theme={useUiStore.getState().isDarkMode ? "vs-dark" : "light"}
+            theme={useUiStore().isDarkMode ? "vs-dark" : "light"}
             options={{
               readOnly: !isEditing,
               minimap: { enabled: false },
@@ -213,7 +213,7 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
             height={editorHeight}
             language="css"
             value={editableCss}
-            theme={useUiStore.getState().isDarkMode ? "vs-dark" : "light"}
+            theme={useUiStore().isDarkMode ? "vs-dark" : "light"}
             options={{
               readOnly: !isEditing,
               minimap: { enabled: false },
@@ -256,7 +256,7 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
             height={editorHeight}
             language="javascript"
             value={editableJs}
-            theme={useUiStore.getState().isDarkMode ? "vs-dark" : "light"}
+            theme={useUiStore().isDarkMode ? "vs-dark" : "light"}
             options={{
               readOnly: !isEditing,
               minimap: { enabled: false },
