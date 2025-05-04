@@ -37,13 +37,14 @@ export interface GeneratedCode {
   preview?: string;
 }
 
-// Added MessageOptions interface to match how we're calling sendMessageWithFallback
+// Updated MessageOptions interface to include selected model
 export interface MessageOptions {
   message: string;
   imageUrls?: string[];
+  selectedModel: any; // Model from the store
 }
 
-// Added SendMessageParams interface for better type safety
+// Updated SendMessageParams interface for better type safety
 export interface SendMessageParams {
   messages: Message[];
   options: MessageOptions;

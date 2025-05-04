@@ -10,34 +10,64 @@ import { toast } from '@/components/ui/sonner';
 interface ApiKeyModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onApiKeySaved?: () => void; // Make this prop optional
+  onApiKeySaved?: () => void;
 }
 
 const ApiKeyModal = ({ open, onOpenChange, onApiKeySaved = () => {} }: ApiKeyModalProps) => {
   const [apiKey, setApiKey] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
-    if (apiKey.trim().length < 10) {
-      toast("Invalid API key", {
-        description: "Please enter a valid OpenRouter API key"
+    try {
+      if (apiKey.trim().length < 10) {
+        toast.error("Invalid API key", {
+          description: "Please enter a valid OpenRouter API key"
+        });
+        return;
+      }
+      
+      // Initialize default keys if needed
+      if (!hasApiKeys()) {
+        initializeApiKeys();
+      }
+      
+      saveApiKey(apiKey);
+      onApiKeySaved();
+      toast.success("API key saved", {
+        description: "Your OpenRouter API key has been added to your API key list"
       });
-      return;
+      onOpenChange(false);
+      setApiKey('');
+    } catch (error) {
+      console.error("Error saving API key:", error);
+      toast.error("Failed to save API key", {
+        description: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    // Initialize default keys if needed
-    if (!hasApiKeys()) {
+  };
+  
+  const handleUseDefaultKeys = () => {
+    setIsSubmitting(true);
+    try {
       initializeApiKeys();
+      onApiKeySaved();
+      onOpenChange(false);
+      toast.success("Default API keys activated", {
+        description: "Using the provided default OpenRouter API keys"
+      });
+    } catch (error) {
+      console.error("Error initializing default keys:", error);
+      toast.error("Failed to initialize default keys", {
+        description: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    saveApiKey(apiKey);
-    onApiKeySaved();
-    toast("API key saved", {
-      description: "Your OpenRouter API key has been added to your API key list"
-    });
-    onOpenChange(false);
-    setApiKey('');
   };
   
   return (
@@ -70,18 +100,14 @@ const ApiKeyModal = ({ open, onOpenChange, onApiKeySaved = () => {} }: ApiKeyMod
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                initializeApiKeys();
-                onApiKeySaved();
-                onOpenChange(false);
-                toast("Default API keys activated", {
-                  description: "Using the provided default OpenRouter API keys"
-                });
-              }}
+              onClick={handleUseDefaultKeys}
+              disabled={isSubmitting}
             >
               Use Default Keys
             </Button>
-            <Button type="submit">Save API Key</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save API Key"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

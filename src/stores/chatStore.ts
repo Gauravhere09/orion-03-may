@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Message, GeneratedCode, SendMessageParams, MessageOptions } from '@/services/apiTypes';
 import { sendMessageWithFallback, enhancePrompt, parseCodeResponse, getMessageText, prepareMessageContent } from '@/services/api';
 import { v4 as uuidv4 } from 'uuid';
+import { useModelStore } from '@/stores/modelStore';
 
 // Define storage key as a constant
 const CHAT_STORAGE_KEY = 'orion_chat_history';
@@ -58,7 +59,7 @@ const loadChatsFromStorage = (): Record<string, Message[]> => {
 const createInitialMessages = (): Message[] => {
   return [{
     role: 'assistant',
-    content: prepareMessageContent('Welcome to Orion AI! How can I help you create today?')
+    content: 'Welcome to Orion AI! How can I help you create today?'
   }];
 };
 
@@ -74,6 +75,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   handleSendMessage: async (message, imageUrls = []) => {
     if (!message.trim() && imageUrls.length === 0) return;
+
+    // Get the selected model
+    const { selectedModel } = useModelStore.getState();
 
     set(state => {
       // Create a new user message
@@ -101,10 +105,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     try {
-      // Create params object for sendMessageWithFallback
+      // Create params object for sendMessageWithFallback with the selected model
       const params: SendMessageParams = {
         messages: get().messages, 
-        options: { message, imageUrls }
+        options: { 
+          message, 
+          imageUrls,
+          selectedModel
+        }
       };
       
       // Call the API with the correct parameter structure
@@ -158,6 +166,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   handleRegenerateResponse: async () => {
+    // Get the selected model
+    const { selectedModel } = useModelStore.getState();
+    
     // Find the last user message
     const messages = get().messages;
     let lastUserMessageIndex = messages.length - 1;
@@ -193,10 +204,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
     
     // Send the message again
     try {
-      // Create params object for sendMessageWithFallback
+      // Create params object for sendMessageWithFallback with the selected model
       const params: SendMessageParams = {
         messages: get().messages,
-        options: { message: userMessageText, imageUrls }
+        options: { 
+          message: userMessageText, 
+          imageUrls,
+          selectedModel
+        }
       };
       
       // Call the API with the correct parameter structure
@@ -249,12 +264,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   handleStopGeneration: () => {
-    // Stop the ongoing generation process
     set({ isGenerating: false });
   },
 
   handleNewChat: () => {
-    // Create a new chat with a welcome message
     const newChatId = uuidv4();
     set({
       chatId: newChatId,
@@ -270,7 +283,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   confirmClearChat: () => {
-    // Clear the current chat and start a new one
     get().handleNewChat();
     set({ showClearChatConfirm: false });
   },
@@ -295,12 +307,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set(state => {
       const currentRating = state.messageRatings[messageIndex];
       
-      // If they clicked the same rating again, toggle it off
       if (currentRating === rating) {
         const { [messageIndex]: _, ...rest } = state.messageRatings;
         return { messageRatings: rest };
       } else {
-        // Otherwise set the new rating
         return { 
           messageRatings: { 
             ...state.messageRatings, 
@@ -315,22 +325,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const allChats = loadChatsFromStorage();
     
     if (chatId && allChats[chatId]) {
-      // Load specified chat
       set({
         chatId,
         messages: allChats[chatId],
-        generatedCode: { html: '', css: '', js: '', preview: '' } // Reset code display
+        generatedCode: { html: '', css: '', js: '', preview: '' }
       });
     } else if (Object.keys(allChats).length > 0) {
-      // Load most recent chat if no specific one requested
-      const mostRecentChatId = Object.keys(allChats)[0]; // Assuming first chat is most recent
+      const mostRecentChatId = Object.keys(allChats)[0];
       set({
         chatId: mostRecentChatId,
         messages: allChats[mostRecentChatId],
-        generatedCode: { html: '', css: '', js: '', preview: '' } // Reset code display
+        generatedCode: { html: '', css: '', js: '', preview: '' }
       });
-    } 
-    // Otherwise keep current state
+    }
   },
   
   loadChatFromSaved: (savedChat) => {
@@ -339,10 +346,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({
       chatId: savedChat.id,
       messages: savedChat.chats,
-      generatedCode: { html: '', css: '', js: '', preview: '' } // Reset code display
+      generatedCode: { html: '', css: '', js: '', preview: '' }
     });
     
-    // Also save to localStorage
     const allChats = loadChatsFromStorage();
     allChats[savedChat.id] = savedChat.chats;
     saveChatsToStorage(allChats);
@@ -350,13 +356,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
 }));
 
 // Initialize by loading saved chat if available
-// This runs when the store is first created
 (() => {
   const storedChats = loadChatsFromStorage();
   
-  // Check if we have any saved chats
   if (Object.keys(storedChats).length > 0) {
-    // Try to load current project if set
     try {
       const currentProjectStr = localStorage.getItem('currentProject');
       if (currentProjectStr) {
@@ -373,7 +376,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
       console.error('Error loading current project:', e);
     }
     
-    // Otherwise load most recent chat
     const mostRecentChatId = Object.keys(storedChats)[0];
     useChatStore.setState({
       chatId: mostRecentChatId,

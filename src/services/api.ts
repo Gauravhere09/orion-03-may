@@ -7,13 +7,54 @@ import { sendMessageToGemini } from './geminiService';
 import { sendMessageToOpenRouter } from './openRouterService';
 import { enhancePrompt, parseCodeResponse } from './codeService';
 import { toast } from '@/components/ui/sonner';
-import { useModelStore } from '@/stores/modelStore';
 
 // Try each API key in order until one works
 export const sendMessageWithFallback = async (
   params: SendMessageParams
 ): Promise<Message> => {
   const { messages, options } = params;
+  const { selectedModel } = options;
+  
+  // Check if we should use Gemini API directly
+  if (selectedModel.id === 'gemini') {
+    return await useGeminiApi(messages);
+  }
+  
+  // Try OpenRouter with available API keys
+  try {
+    return await useOpenRouterWithFallback(selectedModel, messages);
+  } catch (error) {
+    console.error("All OpenRouter API keys failed or none available:", error);
+    
+    // Fall back to Gemini as a last resort if OpenRouter fails
+    toast.warning("OpenRouter API unavailable. Falling back to Gemini API.");
+    return await useGeminiApi(messages);
+  }
+};
+
+// Use Gemini API directly
+const useGeminiApi = async (messages: Message[]): Promise<Message> => {
+  try {
+    console.log("Using Gemini API directly");
+    const responseText = await sendMessageToGemini(messages);
+    return {
+      role: 'assistant',
+      content: responseText
+    };
+  } catch (error) {
+    console.error("Gemini API error:", error);
+    if (error instanceof Error) {
+      throw new Error(`Gemini API error: ${error.message}`);
+    }
+    throw error;
+  }
+};
+
+// Try OpenRouter with API keys fallback
+const useOpenRouterWithFallback = async (
+  model: AIModel,
+  messages: Message[]
+): Promise<Message> => {
   const apiKeys = getAllApiKeys();
   if (!apiKeys || apiKeys.length === 0) {
     throw new Error('No API keys available');
@@ -23,28 +64,6 @@ export const sendMessageWithFallback = async (
   const sortedKeys = [...apiKeys].sort((a, b) => a.priority - b.priority);
   
   let lastError: ApiError | null = null;
-  
-  // Get current model from the model store
-  const { selectedModel } = useModelStore.getState();
-  const model = selectedModel;
-  
-  // Check if we should use Gemini API
-  if (model.id === 'gemini') {
-    try {
-      console.log("Using Gemini API directly");
-      const responseText = await sendMessageToGemini(messages);
-      return {
-        role: 'assistant',
-        content: responseText
-      };
-    } catch (error) {
-      console.error("Gemini API error:", error);
-      if (error instanceof Error) {
-        throw new Error(`Gemini API error: ${error.message}`);
-      }
-      throw error;
-    }
-  }
   
   console.log(`Attempting to use OpenRouter with model: ${model.name}, ${model.openRouterModel}`);
   console.log(`Available API keys: ${sortedKeys.length}`);

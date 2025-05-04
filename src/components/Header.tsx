@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from './ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
-import { ChevronDown, Menu, Moon, Save, Sun, User } from 'lucide-react';
+import { ChevronDown, Moon, Save, Sun, User } from 'lucide-react';
 import { useUiStore } from '@/stores/uiStore';
 import { useChatStore } from '@/stores/chatStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,8 +50,7 @@ const Header = ({ selectedModel, onModelSelectClick, onNewChatClick }: HeaderPro
     setIsSaving(true);
     try {
       // Get a preview image (could be from the generated code or a placeholder)
-      // For this example, we'll use a placeholder
-      const previewImage = '/public/placeholder.svg';
+      const previewImage = '/placeholder.svg';
 
       // Fix type issue: Convert messages to a plain object before saving to Supabase
       const messagesJson = JSON.stringify(messages);
@@ -82,9 +82,6 @@ const Header = ({ selectedModel, onModelSelectClick, onNewChatClick }: HeaderPro
     <header className="border-b border-border px-4 py-3">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <Menu className="h-5 w-5" />
-          </Button>
           <span className="text-lg font-semibold hidden md:inline-block">Orion</span>
         </div>
 
