@@ -185,6 +185,7 @@ const MainLayout = ({
       <ApiKeyModal 
         open={apiKeyModalOpen} 
         onOpenChange={onApiKeyModalOpenChange}
+        // onApiKeySaved is now optional, so we don't need to provide it
       />
       
       <ModelSelectorDialog

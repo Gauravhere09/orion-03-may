@@ -30,8 +30,6 @@ export interface ChatState {
   rateMessage: (messageIndex: number, rating: MessageRating) => void;
 }
 
-const LOCAL_STORAGE_KEY = 'orion_chat_history';
-
 // Save chats to localStorage
 const saveChatsToStorage = (chats: Record<string, Message[]>) => {
   try {
@@ -99,11 +97,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     try {
-      // Fixed: Call sendMessageWithFallback with the correct arguments
-      const response = await sendMessageWithFallback(
-        get().messages, 
-        { message, imageUrls } // Pass as a single options object
-      );
+      // Fix: Use the correct parameter type for sendMessageWithFallback
+      const response = await sendMessageWithFallback({
+        messages: get().messages, 
+        options: { message, imageUrls }
+      });
 
       // Parse the assistant's response for code if present
       const assistantText = getMessageText(response.content);
@@ -187,11 +185,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
     
     // Send the message again
     try {
-      // Fixed: Call sendMessageWithFallback with the correct arguments
-      const response = await sendMessageWithFallback(
-        get().messages,
-        { message: userMessageText, imageUrls } // Pass as a single options object
-      );
+      // Fix: Use the correct parameter type for sendMessageWithFallback
+      const response = await sendMessageWithFallback({
+        messages: get().messages,
+        options: { message: userMessageText, imageUrls }
+      });
 
       // Parse the assistant's response for code if present
       const assistantText = getMessageText(response.content);

@@ -37,6 +37,18 @@ export interface GeneratedCode {
   preview?: string;
 }
 
+// Added MessageOptions interface to match how we're calling sendMessageWithFallback
+export interface MessageOptions {
+  message: string;
+  imageUrls?: string[];
+}
+
+// Added SendMessageParams interface for better type safety
+export interface SendMessageParams {
+  messages: Message[];
+  options: MessageOptions;
+}
+
 // API error that includes which key was used
 export class ApiError extends Error {
   apiKey: string;

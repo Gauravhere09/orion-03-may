@@ -10,10 +10,10 @@ import { toast } from '@/components/ui/sonner';
 interface ApiKeyModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onApiKeySaved: () => void;
+  onApiKeySaved?: () => void; // Make this prop optional
 }
 
-const ApiKeyModal = ({ open, onOpenChange, onApiKeySaved }: ApiKeyModalProps) => {
+const ApiKeyModal = ({ open, onOpenChange, onApiKeySaved = () => {} }: ApiKeyModalProps) => {
   const [apiKey, setApiKey] = useState('');
 
   const handleSubmit = (e: FormEvent) => {
