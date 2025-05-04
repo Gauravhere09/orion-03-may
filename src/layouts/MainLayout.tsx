@@ -1,6 +1,5 @@
+
 import { useState, useEffect, useRef } from 'react';
-import { Message } from '@/services/api';
-import { hasApiKeys } from '@/services/storage';
 import { useNavigate } from 'react-router-dom';
 
 import ChatContainer from '@/components/ChatContainer';
@@ -17,7 +16,11 @@ import { useModelStore } from '@/stores/modelStore';
 import { useUiStore } from '@/stores/uiStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { hasApiKeys } from '@/services/storage';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { syncApiKeysWithSupabase } from '@/services/storage';
+import { supabase } from '@/integrations/supabase/client';
+import { Message } from '@/services/apiTypes';
 
 interface MainLayoutProps {
   apiKeyModalOpen: boolean;
@@ -37,7 +40,7 @@ const MainLayout = ({
   const { messages, isLoading, isGenerating, handleSendMessage, handleRegenerateResponse, 
           handleStopGeneration, handleNewChat, generatedCode, showClearChatConfirm, 
           setShowClearChatConfirm, confirmClearChat, enhanceUserPrompt, lastError, 
-          setLastError, loadChatFromSaved } = useChatStore();
+          setLastError, loadChatFromSaved, chatId, projectName, autoSaveIfNeeded } = useChatStore();
   const { selectedModel, handleModelSelect } = useModelStore();
   const { isChatMode, toggleChatMode, isDarkMode } = useUiStore();
   
@@ -48,6 +51,24 @@ const MainLayout = ({
   const headerRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  
+  // Sync API keys from Supabase on initial load
+  useEffect(() => {
+    syncApiKeysWithSupabase(supabase).catch(err => 
+      console.error('Error syncing API keys on component mount:', err)
+    );
+  }, []);
+  
+  // Trigger auto-save every 30 seconds if messages have changed
+  useEffect(() => {
+    if (projectName && chatId && messages.length > 0) {
+      const saveInterval = setInterval(() => {
+        autoSaveIfNeeded();
+      }, 30000); // Every 30 seconds
+      
+      return () => clearInterval(saveInterval);
+    }
+  }, [projectName, chatId, messages, autoSaveIfNeeded]);
   
   // Load current project if available
   useEffect(() => {
@@ -64,7 +85,7 @@ const MainLayout = ({
     } catch (e) {
       console.error('Error loading current project:', e);
     }
-  }, []);
+  }, [loadChatFromSaved]);
   
   // Handle scroll behavior for header
   useEffect(() => {

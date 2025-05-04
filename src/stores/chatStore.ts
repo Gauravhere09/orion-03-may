@@ -1,8 +1,10 @@
+
 import { create } from 'zustand';
 import { Message, GeneratedCode, SendMessageParams, MessageOptions } from '@/services/apiTypes';
 import { sendMessageWithFallback, enhancePrompt, parseCodeResponse, getMessageText, prepareMessageContent } from '@/services/api';
 import { v4 as uuidv4 } from 'uuid';
 import { useModelStore } from '@/stores/modelStore';
+import { autoSaveCurrentChat } from '@/services/projectService';
 
 // Define storage key as a constant
 const CHAT_STORAGE_KEY = 'orion_chat_history';
@@ -19,6 +21,8 @@ export interface ChatState {
   showClearChatConfirm: boolean;
   lastError: string | null;
   messageRatings: { [key: number]: MessageRating };
+  projectName: string | null;
+  lastAutoSaveTime: number;
   
   handleSendMessage: (message: string, imageUrls?: string[]) => Promise<void>;
   handleRegenerateResponse: () => Promise<void>;
@@ -33,6 +37,8 @@ export interface ChatState {
   loadChatFromStorage: (chatId?: string) => void;
   loadChatFromSaved: (savedChat: any) => void;
   rateMessage: (messageIndex: number, rating: MessageRating) => void;
+  setProjectName: (name: string) => void;
+  autoSaveIfNeeded: () => void;
 }
 
 // Save chats to localStorage
@@ -63,6 +69,9 @@ const createInitialMessages = (): Message[] => {
   }];
 };
 
+// Auto-save debounce time (in ms)
+const AUTO_SAVE_DEBOUNCE = 30000; // 30 seconds
+
 export const useChatStore = create<ChatState>((set, get) => ({
   chatId: uuidv4(),
   messages: createInitialMessages(),
@@ -72,6 +81,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   showClearChatConfirm: false,
   lastError: null,
   messageRatings: {},
+  projectName: null,
+  lastAutoSaveTime: 0,
 
   handleSendMessage: async (message, imageUrls = []) => {
     if (!message.trim() && imageUrls.length === 0) return;
@@ -138,6 +149,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
           generatedCode 
         };
       });
+      
+      // Auto-save to Supabase if this is part of a named project
+      get().autoSaveIfNeeded();
     } catch (error: any) {
       console.error('Error in AI response:', error);
       
@@ -237,6 +251,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
           generatedCode 
         };
       });
+      
+      // Auto-save to Supabase if this is part of a named project
+      get().autoSaveIfNeeded();
     } catch (error: any) {
       console.error('Error in AI response:', error);
       
@@ -274,7 +291,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
       messages: createInitialMessages(),
       isLoading: false,
       generatedCode: { html: '', css: '', js: '', preview: '' },
-      showClearChatConfirm: false
+      showClearChatConfirm: false,
+      projectName: null
     });
   },
 
@@ -346,12 +364,40 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({
       chatId: savedChat.id,
       messages: savedChat.chats,
+      projectName: savedChat.project_name || null,
       generatedCode: { html: '', css: '', js: '', preview: '' }
     });
     
     const allChats = loadChatsFromStorage();
     allChats[savedChat.id] = savedChat.chats;
     saveChatsToStorage(allChats);
+  },
+  
+  setProjectName: (name) => {
+    set({ projectName: name });
+  },
+  
+  autoSaveIfNeeded: () => {
+    const state = get();
+    const now = Date.now();
+    
+    // Only auto-save if this is a named project and enough time has passed since last save
+    if (
+      state.projectName && 
+      state.chatId && 
+      state.messages.length > 1 && 
+      (now - state.lastAutoSaveTime > AUTO_SAVE_DEBOUNCE)
+    ) {
+      // Auto-save to Supabase
+      autoSaveCurrentChat(state.chatId, state.messages)
+        .then(() => {
+          console.log('Chat auto-saved to Supabase');
+          set({ lastAutoSaveTime: now });
+        })
+        .catch(err => {
+          console.error('Failed to auto-save chat:', err);
+        });
+    }
   }
 }));
 
@@ -367,7 +413,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
         if (currentProject && currentProject.chats) {
           useChatStore.setState({
             chatId: currentProject.id,
-            messages: currentProject.chats
+            messages: currentProject.chats,
+            projectName: currentProject.project_name || null
           });
           return;
         }

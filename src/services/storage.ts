@@ -12,15 +12,8 @@ export interface ApiKey {
 // Default OpenRouter API keys (placeholder keys - to be replaced later)
 const DEFAULT_API_KEYS: ApiKey[] = [
   { key: "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", isDefault: true, priority: 1 },
-  { key: "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", isDefault: true, priority: 2 },
-  { key: "sk-or-v1-placeholder-key-3", isDefault: true, priority: 3 },
-  { key: "sk-or-v1-placeholder-key-4", isDefault: true, priority: 4 },
-  { key: "sk-or-v1-placeholder-key-5", isDefault: true, priority: 5 },
-  { key: "sk-or-v1-placeholder-key-6", isDefault: true, priority: 6 },
-  { key: "sk-or-v1-placeholder-key-7", isDefault: true, priority: 7 },
-  { key: "sk-or-v1-placeholder-key-8", isDefault: true, priority: 8 },
-  { key: "sk-or-v1-placeholder-key-9", isDefault: true, priority: 9 },
-  { key: "sk-or-v1-placeholder-key-10", isDefault: true, priority: 10 }
+  { key: "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", isDefault: true, priority: 2 }
+  // Removed placeholder keys that aren't working
 ];
 
 export interface Chat {
@@ -72,7 +65,9 @@ export const getApiKeys = (): ApiKey[] | null => {
 };
 
 export const getAllApiKeys = (): ApiKey[] => {
-  return getApiKeys() || DEFAULT_API_KEYS;
+  const localKeys = getApiKeys() || [];
+  // Use valid keys from local storage OR use default keys if none found
+  return localKeys.length > 0 ? localKeys : DEFAULT_API_KEYS;
 };
 
 export const removeApiKey = (apiKey: string): void => {
@@ -148,4 +143,34 @@ export const deleteChat = (chatId: string): void => {
   
   const updatedChats = chats.filter(chat => chat.id !== chatId);
   localStorage.setItem(CHATS_STORAGE_KEY, JSON.stringify(updatedChats));
+};
+
+// Add function to sync API keys with Supabase
+export const syncApiKeysWithSupabase = async (supabaseClient: any): Promise<void> => {
+  try {
+    const { data: supabaseKeys, error } = await supabaseClient
+      .from('openrouter_apis')
+      .select('*')
+      .order('priority', { ascending: true });
+    
+    if (error) {
+      console.error('Error fetching API keys from Supabase:', error);
+      return;
+    }
+    
+    if (supabaseKeys && supabaseKeys.length > 0) {
+      // Map Supabase keys to our ApiKey format
+      const formattedKeys: ApiKey[] = supabaseKeys.map(key => ({
+        key: key.api_key,
+        isDefault: key.is_default || false,
+        priority: key.priority || 99
+      }));
+      
+      // Save these keys to local storage
+      saveApiKeys(formattedKeys);
+      console.log('API keys synced from Supabase');
+    }
+  } catch (e) {
+    console.error('Failed to sync API keys with Supabase:', e);
+  }
 };

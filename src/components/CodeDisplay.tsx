@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { GeneratedCode } from '@/services/api';
+import { GeneratedCode } from '@/services/apiTypes';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Copy, Save, Edit, Check } from 'lucide-react';
+import { Copy, Save, Edit, Check, Phone } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
-import { Textarea } from '@/components/ui/textarea';
+import Editor from '@monaco-editor/react';
 import { useChatStore } from '@/stores/chatStore';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CodeDisplayProps {
   code: GeneratedCode;
@@ -18,8 +19,23 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
   const [editableJs, setEditableJs] = useState(code.js || '');
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('html');
+  const [editorHeight, setEditorHeight] = useState('500px');
 
   const { setGeneratedCode } = useChatStore();
+  const isMobile = useIsMobile();
+  
+  // Auto-adjust editor height based on available space
+  useEffect(() => {
+    const handleResize = () => {
+      const viewportHeight = window.innerHeight;
+      const desiredHeight = Math.max(viewportHeight * 0.6, 300); // 60% of viewport, min 300px
+      setEditorHeight(`${desiredHeight}px`);
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   // Update editable content when code prop changes
   useEffect(() => {
@@ -75,6 +91,20 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
       });
     }
   };
+
+  // Mobile edit button for quick access
+  const MobileEditButton = () => (
+    <Button
+      variant="default"
+      size="sm"
+      className="fixed bottom-20 right-4 z-50 rounded-full shadow-lg flex items-center gap-1 bg-primary"
+      onClick={toggleEditMode}
+    >
+      <Edit className="h-4 w-4" />
+      <Phone className="h-4 w-4" />
+      <span>{isEditing ? "Done" : "Edit"}</span>
+    </Button>
+  );
   
   return (
     <Tabs 
@@ -134,17 +164,24 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
             <Copy className="h-3.5 w-3.5" />
           </Button>
         </div>
-        <Textarea
-          value={editableHtml}
-          onChange={(e) => setEditableHtml(e.target.value)}
-          className="font-mono text-sm flex-1 h-full bg-muted rounded-md p-4 resize-none focus:outline-none"
-          placeholder="No HTML code generated"
-          spellCheck={false}
-          readOnly={!isEditing}
-          style={{ 
-            backgroundColor: isEditing ? 'hsl(var(--background))' : 'hsl(var(--muted))'
-          }}
-        />
+        
+        <div className="flex-1 border rounded-md overflow-hidden">
+          <Editor
+            height={editorHeight}
+            language="html"
+            value={editableHtml}
+            theme={useUiStore.getState().isDarkMode ? "vs-dark" : "light"}
+            options={{
+              readOnly: !isEditing,
+              minimap: { enabled: false },
+              fontSize: 14,
+              tabSize: 2,
+              scrollBeyondLastLine: false,
+              automaticLayout: true,
+            }}
+            onChange={(value) => setEditableHtml(value || '')}
+          />
+        </div>
       </TabsContent>
       
       <TabsContent value="css" className="flex-1 overflow-auto p-1 flex flex-col">
@@ -170,17 +207,24 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
             <Copy className="h-3.5 w-3.5" />
           </Button>
         </div>
-        <Textarea
-          value={editableCss}
-          onChange={(e) => setEditableCss(e.target.value)}
-          className="font-mono text-sm flex-1 h-full bg-muted rounded-md p-4 resize-none focus:outline-none"
-          placeholder="No CSS code generated"
-          spellCheck={false}
-          readOnly={!isEditing}
-          style={{ 
-            backgroundColor: isEditing ? 'hsl(var(--background))' : 'hsl(var(--muted))'
-          }}
-        />
+        
+        <div className="flex-1 border rounded-md overflow-hidden">
+          <Editor
+            height={editorHeight}
+            language="css"
+            value={editableCss}
+            theme={useUiStore.getState().isDarkMode ? "vs-dark" : "light"}
+            options={{
+              readOnly: !isEditing,
+              minimap: { enabled: false },
+              fontSize: 14,
+              tabSize: 2,
+              scrollBeyondLastLine: false,
+              automaticLayout: true,
+            }}
+            onChange={(value) => setEditableCss(value || '')}
+          />
+        </div>
       </TabsContent>
       
       <TabsContent value="js" className="flex-1 overflow-auto p-1 flex flex-col">
@@ -206,18 +250,28 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
             <Copy className="h-3.5 w-3.5" />
           </Button>
         </div>
-        <Textarea
-          value={editableJs}
-          onChange={(e) => setEditableJs(e.target.value)}
-          className="font-mono text-sm flex-1 h-full bg-muted rounded-md p-4 resize-none focus:outline-none"
-          placeholder="No JavaScript code generated"
-          spellCheck={false}
-          readOnly={!isEditing}
-          style={{ 
-            backgroundColor: isEditing ? 'hsl(var(--background))' : 'hsl(var(--muted))'
-          }}
-        />
+        
+        <div className="flex-1 border rounded-md overflow-hidden">
+          <Editor
+            height={editorHeight}
+            language="javascript"
+            value={editableJs}
+            theme={useUiStore.getState().isDarkMode ? "vs-dark" : "light"}
+            options={{
+              readOnly: !isEditing,
+              minimap: { enabled: false },
+              fontSize: 14,
+              tabSize: 2,
+              scrollBeyondLastLine: false,
+              automaticLayout: true,
+            }}
+            onChange={(value) => setEditableJs(value || '')}
+          />
+        </div>
       </TabsContent>
+      
+      {/* Mobile edit button */}
+      {isMobile && <MobileEditButton />}
     </Tabs>
   );
 };

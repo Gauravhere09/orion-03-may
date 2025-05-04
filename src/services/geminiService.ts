@@ -11,14 +11,14 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
     const formattedMessages = formatMessagesForGemini(messages);
     const conversationContext = buildGeminiConversationContext(formattedMessages);
     
-    // Build request body for Gemini-2.0-flash model
+    // Build request body for Gemini-2.0-flash model - use maximally optimized settings for speed
     const requestBody = {
       contents: conversationContext,
       generationConfig: {
-        temperature: 0.4, // Lower temperature for faster, more deterministic responses
+        temperature: 0.3, // Lower temperature for faster, more deterministic responses
         maxOutputTokens: 4096, // Increase token limit for more comprehensive code generation
-        topP: 0.95,
-        topK: 64
+        topP: 0.8,
+        topK: 40
       }
     };
     
@@ -63,10 +63,10 @@ const buildGeminiConversationContext = (formattedMessages: any[]) => {
   // Extract system message if present
   const systemMessage = formattedMessages.find(msg => msg.role === 'system');
   
-  // Get recent conversation history (last 10 messages)
+  // Get recent conversation history (last 10 messages for better performance)
   const recentMessages = formattedMessages
     .filter(msg => msg.role !== 'system')
-    .slice(-10); // Limit context to last 10 messages for better performance
+    .slice(-10);
   
   // Build context with system message first if available
   return [

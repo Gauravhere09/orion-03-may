@@ -1,12 +1,22 @@
 
 import { AIModel } from '@/data/models';
-import { ApiKey, getAllApiKeys } from './storage';
+import { ApiKey, getAllApiKeys, syncApiKeysWithSupabase } from './storage';
 import { Message, ChatCompletionResponse, ErrorResponse, GeneratedCode, ApiError, MessageContent, SendMessageParams } from './apiTypes';
 import { getMessageText, hasCodeBlocks, maskApiKey, prepareMessageContent } from './apiHelpers';
 import { sendMessageToGemini } from './geminiService';
 import { sendMessageToOpenRouter } from './openRouterService';
 import { enhancePrompt, parseCodeResponse } from './codeService';
 import { toast } from '@/components/ui/sonner';
+import { supabase } from "@/integrations/supabase/client";
+
+// Initialize by syncing API keys from Supabase
+(async () => {
+  try {
+    await syncApiKeysWithSupabase(supabase);
+  } catch (e) {
+    console.error('Failed to sync API keys on initialization:', e);
+  }
+})();
 
 // Try each API key in order until one works
 export const sendMessageWithFallback = async (
