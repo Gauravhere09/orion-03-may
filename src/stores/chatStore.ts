@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { Message, GeneratedCode, sendMessageWithFallback, enhancePrompt, parseCodeResponse, getMessageText, prepareMessageContent } from '@/services/api';
 import { v4 as uuidv4 } from 'uuid';
 
+// Define rating type
+type MessageRating = 'like' | 'dislike' | null;
+
 export interface ChatState {
   chatId: string;
   messages: Message[];
@@ -10,6 +13,7 @@ export interface ChatState {
   generatedCode: GeneratedCode;
   showClearChatConfirm: boolean;
   lastError: string | null;
+  messageRatings: { [key: number]: MessageRating };
   
   handleSendMessage: (message: string, imageUrls?: string[]) => Promise<void>;
   handleRegenerateResponse: () => Promise<void>;
@@ -23,6 +27,7 @@ export interface ChatState {
   setLastError: (error: string | null) => void;
   loadChatFromStorage: (chatId?: string) => void;
   loadChatFromSaved: (savedChat: any) => void;
+  rateMessage: (messageIndex: number, rating: MessageRating) => void;
 }
 
 const LOCAL_STORAGE_KEY = 'orion_chat_history';
@@ -63,6 +68,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   generatedCode: { html: '', css: '', js: '', preview: '' },
   showClearChatConfirm: false,
   lastError: null,
+  messageRatings: {},
 
   handleSendMessage: async (message, imageUrls = []) => {
     if (!message.trim() && imageUrls.length === 0) return;
@@ -275,6 +281,26 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ lastError: error });
   },
   
+  rateMessage: (messageIndex, rating) => {
+    set(state => {
+      const currentRating = state.messageRatings[messageIndex];
+      
+      // If they clicked the same rating again, toggle it off
+      if (currentRating === rating) {
+        const { [messageIndex]: _, ...rest } = state.messageRatings;
+        return { messageRatings: rest };
+      } else {
+        // Otherwise set the new rating
+        return { 
+          messageRatings: { 
+            ...state.messageRatings, 
+            [messageIndex]: rating 
+          } 
+        };
+      }
+    });
+  },
+  
   loadChatFromStorage: (chatId) => {
     const allChats = loadChatsFromStorage();
     
@@ -346,7 +372,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   }
 })();
 
-function hasCodeBlocks(content: string | MessageContent[]): boolean {
+function hasCodeBlocks(content: string | any[]): boolean {
   const text = getMessageText(content);
   return text.includes("```html") || 
          text.includes("```css") || 

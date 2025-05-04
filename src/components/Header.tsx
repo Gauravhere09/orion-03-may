@@ -53,13 +53,16 @@ const Header = ({ selectedModel, onModelSelectClick, onNewChatClick }: HeaderPro
       // For this example, we'll use a placeholder
       const previewImage = '/public/placeholder.svg';
 
+      // Fix type issue: Convert messages to a plain object before saving to Supabase
+      const messagesJson = JSON.parse(JSON.stringify(messages));
+
       // Save to Supabase
       const { data, error } = await supabase
         .from('saved_projects')
         .insert({
           user_id: user.id,
           project_name: projectName,
-          chats: messages,
+          chats: messagesJson,
           preview_image: previewImage
         })
         .select();

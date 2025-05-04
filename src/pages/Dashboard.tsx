@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,6 +28,7 @@ import { format } from 'date-fns';
 import { ChevronDown, LogOut, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthModal from '@/components/AuthModal';
+import { Json } from '@/integrations/supabase/types';
 
 interface SavedProject {
   id: string;
@@ -36,6 +36,8 @@ interface SavedProject {
   updated_at: string;
   preview_image?: string;
   chats: any[];
+  user_id: string;
+  created_at: string;
 }
 
 const Dashboard = () => {
@@ -66,7 +68,18 @@ const Dashboard = () => {
 
       if (error) throw error;
 
-      setProjects(data || []);
+      // Convert the database result to match our SavedProject interface
+      const typedProjects: SavedProject[] = data?.map(project => ({
+        id: project.id,
+        project_name: project.project_name,
+        updated_at: project.updated_at,
+        preview_image: project.preview_image || undefined,
+        chats: Array.isArray(project.chats) ? project.chats : [],
+        user_id: project.user_id,
+        created_at: project.created_at
+      })) || [];
+
+      setProjects(typedProjects);
     } catch (error: any) {
       console.error('Error fetching projects:', error);
       toast.error('Failed to load projects');

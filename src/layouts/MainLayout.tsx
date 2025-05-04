@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Message } from '@/services/api';
 import { hasApiKeys } from '@/services/storage';
@@ -185,7 +184,8 @@ const MainLayout = ({
       
       <ApiKeyModal 
         open={apiKeyModalOpen} 
-        onOpenChange={onApiKeyModalOpenChange} 
+        onOpenChange={onApiKeyModalOpenChange}
+        onApiKeySaved={() => {}}
       />
       
       <ModelSelectorDialog
