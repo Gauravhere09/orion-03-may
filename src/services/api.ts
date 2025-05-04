@@ -7,6 +7,7 @@ import { sendMessageToGemini } from './geminiService';
 import { sendMessageToOpenRouter } from './openRouterService';
 import { enhancePrompt, parseCodeResponse } from './codeService';
 import { toast } from '@/components/ui/sonner';
+import { useModelStore } from '@/stores/modelStore';
 
 // Try each API key in order until one works
 export const sendMessageWithFallback = async (
@@ -23,8 +24,9 @@ export const sendMessageWithFallback = async (
   
   let lastError: ApiError | null = null;
   
-  // Get current model from the stores (will need to be passed in)
-  const model = { id: 'default', name: 'AI Assistant', openRouterModel: 'anthropic/claude-3-opus', version: '1.0' };
+  // Get current model from the model store
+  const { selectedModel } = useModelStore.getState();
+  const model = selectedModel;
   
   // Check if we should use Gemini API
   if (model.id === 'gemini') {

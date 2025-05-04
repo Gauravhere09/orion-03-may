@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { Message, GeneratedCode, SendMessageParams, MessageOptions } from '@/services/apiTypes';
 import { sendMessageWithFallback, enhancePrompt, parseCodeResponse, getMessageText, prepareMessageContent } from '@/services/api';
@@ -112,16 +111,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const response = await sendMessageWithFallback(params);
 
       // Parse the assistant's response for code if present
-      const responseText = typeof response === 'string' ? response : getMessageText(response.content);
+      const responseText = getMessageText(response.content);
       const generatedCode = parseCodeResponse(responseText);
       
       set(state => {
-        // Create assistant message with the appropriate type
-        const assistantMessage: Message = typeof response === 'string' 
-          ? { role: 'assistant', content: response } 
-          : response;
-        
-        const newMessages = [...state.messages, assistantMessage];
+        // Add the assistant's response to messages
+        const newMessages = [...state.messages, response];
         
         // Save to localStorage again with assistant's response
         const allChats = loadChatsFromStorage();
@@ -208,16 +203,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const response = await sendMessageWithFallback(params);
 
       // Parse the assistant's response for code if present
-      const responseText = typeof response === 'string' ? response : getMessageText(response.content);
+      const responseText = getMessageText(response.content);
       const generatedCode = parseCodeResponse(responseText);
       
       set(state => {
-        // Create assistant message with the appropriate type
-        const assistantMessage: Message = typeof response === 'string' 
-          ? { role: 'assistant', content: response } 
-          : response;
-        
-        const newMessages = [...state.messages, assistantMessage];
+        // Add the assistant's response to messages
+        const newMessages = [...state.messages, response];
         
         // Save to localStorage
         const allChats = loadChatsFromStorage();
