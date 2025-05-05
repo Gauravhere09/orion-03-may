@@ -81,7 +81,7 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
     };
 
     // Make API request
-    const response = await fetch(`${GEMINI_API_ENDPOINT}?key=${AIzaSyAHduoaBafMi6FI9fh6kI_u2hwXkIoAeYY}`, {
+    const response = await fetch(`${GEMINI_API_ENDPOINT}?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
