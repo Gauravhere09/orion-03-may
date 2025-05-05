@@ -4,7 +4,7 @@ import { getMessageText } from './apiHelpers';
 import { getApiKey } from './apiKeyService';
 import { supabase } from "@/integrations/supabase/client";
 
-const GEMINI_API_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+const GEMINI_API_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
 // Get Gemini API key (first try Supabase, then fallback to localStorage or default key)
 const getGeminiApiKey = async (): Promise<string> => {
