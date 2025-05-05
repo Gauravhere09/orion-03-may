@@ -59,9 +59,9 @@ export const saveApiKeys = (apiKeys: ApiKey[]): void => {
   localStorage.setItem(API_KEYS_STORAGE_KEY, JSON.stringify(apiKeys));
 };
 
-export const getApiKeys = (): ApiKey[] | null => {
+export const getApiKeys = (): ApiKey[] => {
   const keysStr = localStorage.getItem(API_KEYS_STORAGE_KEY);
-  return keysStr ? JSON.parse(keysStr) : null;
+  return keysStr ? JSON.parse(keysStr) : [];
 };
 
 export const getAllApiKeys = (): ApiKey[] => {

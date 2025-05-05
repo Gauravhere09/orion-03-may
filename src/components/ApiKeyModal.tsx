@@ -1,11 +1,14 @@
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { saveApiKey, hasApiKeys, initializeApiKeys } from '@/services/storage';
 import { toast } from '@/components/ui/sonner';
+import { saveApiKey as saveSupabaseApiKey } from '@/services/apiKeyService';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ApiKeyModalProps {
   open: boolean;
@@ -13,9 +16,17 @@ interface ApiKeyModalProps {
   onApiKeySaved?: () => void;
 }
 
+const API_SERVICES = [
+  { id: 'openrouter', name: 'OpenRouter' },
+  { id: 'gemini', name: 'Google Gemini' },
+  { id: 'dream_studio', name: 'Dream Studio (Stability AI)' }
+];
+
 const ApiKeyModal = ({ open, onOpenChange, onApiKeySaved = () => {} }: ApiKeyModalProps) => {
   const [apiKey, setApiKey] = useState('');
+  const [service, setService] = useState('openrouter');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -24,20 +35,44 @@ const ApiKeyModal = ({ open, onOpenChange, onApiKeySaved = () => {} }: ApiKeyMod
     try {
       if (apiKey.trim().length < 10) {
         toast.error("Invalid API key", {
-          description: "Please enter a valid OpenRouter API key"
+          description: `Please enter a valid ${API_SERVICES.find(s => s.id === service)?.name} API key`
         });
         return;
       }
       
-      // Initialize default keys if needed
-      if (!hasApiKeys()) {
-        initializeApiKeys();
+      if (user) {
+        // Save to Supabase if logged in
+        const saved = await saveSupabaseApiKey(service, apiKey);
+        if (!saved) {
+          toast.error("Failed to save API key", {
+            description: "There was an error saving your API key to the database"
+          });
+          return;
+        }
+      } else {
+        // Save to localStorage if not logged in
+        if (service === 'openrouter') {
+          // Initialize default OpenRouter keys if needed
+          if (!hasApiKeys()) {
+            initializeApiKeys();
+          }
+          
+          // Save OpenRouter key to localStorage
+          saveApiKey(apiKey);
+        } else {
+          // For non-OpenRouter keys, warn user about logging in
+          toast.warning("Not logged in", {
+            description: "Your API key is saved locally. Log in to store securely."
+          });
+          
+          // Store in localStorage with service prefix
+          localStorage.setItem(`${service}_api_key`, apiKey);
+        }
       }
-      
-      saveApiKey(apiKey);
+
       onApiKeySaved();
       toast.success("API key saved", {
-        description: "Your OpenRouter API key has been added to your API key list"
+        description: `Your ${API_SERVICES.find(s => s.id === service)?.name} API key has been saved`
       });
       onOpenChange(false);
       setApiKey('');
@@ -52,6 +87,11 @@ const ApiKeyModal = ({ open, onOpenChange, onApiKeySaved = () => {} }: ApiKeyMod
   };
   
   const handleUseDefaultKeys = () => {
+    if (service !== 'openrouter') {
+      toast.error("Default keys are only available for OpenRouter");
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
       initializeApiKeys();
@@ -74,12 +114,31 @@ const ApiKeyModal = ({ open, onOpenChange, onApiKeySaved = () => {} }: ApiKeyMod
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>OpenRouter API Key</DialogTitle>
+          <DialogTitle>Add API Key</DialogTitle>
           <DialogDescription>
-            Enter your OpenRouter API key to use the AI models. You can also use our default keys or add multiple keys later.
+            Enter your API key to use with our AI features. You can add keys for different services.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid gap-2">
+            <Label htmlFor="service" className="text-left">
+              Service
+            </Label>
+            <Select
+              value={service}
+              onValueChange={setService}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select service" />
+              </SelectTrigger>
+              <SelectContent>
+                {API_SERVICES.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
           <div className="grid gap-2">
             <Label htmlFor="apiKey" className="text-left">
               API Key
@@ -87,24 +146,34 @@ const ApiKeyModal = ({ open, onOpenChange, onApiKeySaved = () => {} }: ApiKeyMod
             <Input
               id="apiKey"
               type="password"
-              placeholder="Enter your OpenRouter API key"
+              placeholder={`Enter your ${API_SERVICES.find(s => s.id === service)?.name} API key`}
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               className="col-span-3"
             />
             <p className="text-xs text-muted-foreground text-left">
-              Get your API key from <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="text-primary hover:underline">OpenRouter Console</a>
+              {service === 'openrouter' && (
+                <>Get your API key from <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="text-primary hover:underline">OpenRouter Console</a></>
+              )}
+              {service === 'gemini' && (
+                <>Get your API key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-primary hover:underline">Google AI Studio</a></>
+              )}
+              {service === 'dream_studio' && (
+                <>Get your API key from <a href="https://stability.ai/platform/account/keys" target="_blank" rel="noreferrer" className="text-primary hover:underline">Stability AI Platform</a></>
+              )}
             </p>
           </div>
           <DialogFooter className="flex justify-between">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleUseDefaultKeys}
-              disabled={isSubmitting}
-            >
-              Use Default Keys
-            </Button>
+            {service === 'openrouter' && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleUseDefaultKeys}
+                disabled={isSubmitting}
+              >
+                Use Default Keys
+              </Button>
+            )}
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Saving..." : "Save API Key"}
             </Button>

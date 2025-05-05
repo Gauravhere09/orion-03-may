@@ -1,9 +1,27 @@
 
 import { Message } from './apiTypes';
 import { getMessageText } from './apiHelpers';
+import { getApiKey } from './apiKeyService';
+import { supabase } from "@/integrations/supabase/client";
 
 const GEMINI_API_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
-const GEMINI_API_KEY = "AIzaSyAzD5oKhOg1xt7wuUvORklBZ5qaO7TT8g8"; // This is a public API key from Vertex AI
+
+// Get Gemini API key (first try Supabase, then fallback to localStorage or default key)
+const getGeminiApiKey = async (): Promise<string> => {
+  // First try to get from Supabase if user is authenticated
+  const session = await supabase.auth.getSession();
+  if (session.data.session) {
+    const supabaseKey = await getApiKey('gemini');
+    if (supabaseKey) return supabaseKey;
+  }
+  
+  // Try localStorage
+  const localKey = localStorage.getItem('gemini_api_key');
+  if (localKey) return localKey;
+  
+  // Fallback to default key (for development only)
+  return "AIzaSyAzD5oKhOg1xt7wuUvORklBZ5qaO7TT8g8";
+}
 
 // Convert our message format to Gemini's format
 const convertMessagesToGemini = (messages: Message[]) => {
@@ -25,6 +43,8 @@ const convertMessagesToGemini = (messages: Message[]) => {
 // Send a message to Gemini API with optimized settings
 export const sendMessageToGemini = async (messages: Message[]): Promise<string> => {
   try {
+    const apiKey = await getGeminiApiKey();
+    
     // Get the most recent messages for context (limit to reduce token usage)
     const recentMessages = messages.slice(-10);
     
@@ -61,7 +81,7 @@ export const sendMessageToGemini = async (messages: Message[]): Promise<string> 
     };
 
     // Make API request
-    const response = await fetch(`${GEMINI_API_ENDPOINT}?key=${GEMINI_API_KEY}`, {
+    const response = await fetch(`${GEMINI_API_ENDPOINT}?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

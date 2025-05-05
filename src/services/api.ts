@@ -1,3 +1,4 @@
+
 import { Message, SendMessageParams, ApiError, MessageContent, GeneratedCode } from './apiTypes';
 import { getApiKeys } from './storage';
 
@@ -42,7 +43,7 @@ const sendToGemini = async (
   selectedModel: any
 ): Promise<Message> => {
   const apiKeys = getApiKeys();
-  const geminiKey = apiKeys.find(key => key.key.startsWith('sk-g'))?.key;
+  const geminiKey = apiKeys.find(key => key.key.startsWith('g-'))?.key;
   
   if (!geminiKey) {
     throw new ApiError('Gemini API key not found', 'gemini');

@@ -1,1 +1,5 @@
+
 project_id = "tamcmkgrvjcyragjwqcy"
+
+[functions.dream-studio-generate]
+verify_jwt = true

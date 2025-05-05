@@ -1,14 +1,38 @@
 
 import { AIModel } from '@/data/models';
 import { Message, ChatCompletionResponse, ErrorResponse, ApiError } from './apiTypes';
+import { getApiKeys } from './storage';
+import { getApiKey } from './apiKeyService';
+import { supabase } from "@/integrations/supabase/client";
+
+// Get OpenRouter API key (first try Supabase, then fallback to localStorage)
+const getOpenRouterApiKey = async (): Promise<string> => {
+  // First try to get from Supabase if user is authenticated
+  const session = await supabase.auth.getSession();
+  if (session.data.session) {
+    const supabaseKey = await getApiKey('openrouter');
+    if (supabaseKey) return supabaseKey;
+  }
+  
+  // Fallback to localStorage
+  const apiKeys = getApiKeys();
+  const openRouterKey = apiKeys.find(key => key.key.startsWith('sk-or'))?.key;
+  
+  if (!openRouterKey) {
+    throw new ApiError('OpenRouter API key not found', 'openrouter');
+  }
+  
+  return openRouterKey;
+}
 
 // Send message to OpenRouter API
 export const sendMessageToOpenRouter = async (
   model: AIModel,
   messages: Message[],
-  apiKey: string
 ): Promise<string> => {
   try {
+    const apiKey = await getOpenRouterApiKey();
+    
     // Use the model ID from the data source
     const modelId = model.openRouterModel;
     
@@ -82,7 +106,7 @@ export const sendMessageToOpenRouter = async (
     console.error('Error sending message to OpenRouter:', error);
     throw new ApiError(
       error instanceof Error ? error.message : 'Unknown error occurred', 
-      apiKey
+      "openrouter"
     );
   }
 };
