@@ -9,6 +9,7 @@ import { useChatStore } from "@/stores/chatStore";
 import Highlight from 'react-highlight';
 import 'highlight.js/styles/night-owl.css';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useUiStore } from "@/stores/uiStore";
 
 interface MessageBubbleProps {
   message: Message;

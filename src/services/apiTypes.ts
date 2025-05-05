@@ -10,6 +10,7 @@ export interface MessageContent {
 export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string | MessageContent[];
+  model?: string; // Added model property to track which AI model generated the response
 }
 
 export interface ChatCompletionResponse {
