@@ -17,12 +17,13 @@ export async function generateDreamStudioImage(options: DreamStudioGenerateOptio
       body: {
         prompt,
         aspect_ratio: aspectRatio,
-        style_preset: stylePreset,
+        style_preset: stylePreset !== "none" ? stylePreset : undefined,
         output_format: outputFormat
       }
     });
     
     if (error) {
+      console.error("Dream Studio API error:", error);
       toast.error("Failed to generate image", {
         description: error.message || "An unexpected error occurred"
       });
@@ -30,6 +31,7 @@ export async function generateDreamStudioImage(options: DreamStudioGenerateOptio
     }
     
     if (!data.image) {
+      console.error("No image data returned from Dream Studio API");
       toast.error("No image was generated");
       return null;
     }

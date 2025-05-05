@@ -20,24 +20,10 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
   const [editableJs, setEditableJs] = useState(code.js || '');
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('html');
-  const [editorHeight, setEditorHeight] = useState('500px');
 
   const { setGeneratedCode } = useChatStore();
   const { isDarkMode } = useUiStore();
   const isMobile = useIsMobile();
-  
-  // Auto-adjust editor height based on available space
-  useEffect(() => {
-    const handleResize = () => {
-      const viewportHeight = window.innerHeight;
-      const desiredHeight = Math.max(viewportHeight * 0.6, 300); // 60% of viewport, min 300px
-      setEditorHeight(`${desiredHeight}px`);
-    };
-    
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
   
   // Update editable content when code prop changes
   useEffect(() => {
@@ -112,7 +98,7 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
     <Tabs 
       value={activeTab} 
       onValueChange={setActiveTab}
-      className="h-full flex flex-col"
+      className="h-full flex flex-col overflow-hidden"
     >
       <div className="flex justify-between items-center px-2">
         <TabsList className="grid grid-cols-3">
@@ -167,9 +153,9 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
           </Button>
         </div>
         
-        <div className="flex-1 border rounded-md overflow-hidden">
+        <div className="flex-1 border rounded-md overflow-hidden h-full">
           <Editor
-            height={editorHeight}
+            height="100%"
             language="html"
             value={editableHtml}
             theme={isDarkMode ? "vs-dark" : "light"}
@@ -210,9 +196,9 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
           </Button>
         </div>
         
-        <div className="flex-1 border rounded-md overflow-hidden">
+        <div className="flex-1 border rounded-md overflow-hidden h-full">
           <Editor
-            height={editorHeight}
+            height="100%"
             language="css"
             value={editableCss}
             theme={isDarkMode ? "vs-dark" : "light"}
@@ -253,9 +239,9 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
           </Button>
         </div>
         
-        <div className="flex-1 border rounded-md overflow-hidden">
+        <div className="flex-1 border rounded-md overflow-hidden h-full">
           <Editor
-            height={editorHeight}
+            height="100%"
             language="javascript"
             value={editableJs}
             theme={isDarkMode ? "vs-dark" : "light"}

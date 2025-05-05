@@ -19,9 +19,14 @@ serve(async (req) => {
       .from('api_keys')
       .select('api_key')
       .eq('service', 'dream_studio')
-      .single();
+      .maybeSingle();
 
-    if (apiKeyError || !apiKeyData) {
+    if (apiKeyError) {
+      console.error('Error fetching Dream Studio API key:', apiKeyError);
+      throw new Error(`Failed to fetch API key: ${apiKeyError.message}`);
+    }
+
+    if (!apiKeyData?.api_key) {
       throw new Error('Dream Studio API key not found');
     }
 
@@ -36,21 +41,22 @@ serve(async (req) => {
       );
     }
 
-    console.log("Generating image with Dream Studio:", { prompt, aspect_ratio, style_preset });
+    console.log("Generating image with Dream Studio:", { 
+      prompt, 
+      aspect_ratio, 
+      style_preset: style_preset || "none" 
+    });
     
     // Create payload for Stability AI API
-    const payload = {
-      prompt,
-      output_format,
-      aspect_ratio,
-      ...(style_preset && { style_preset })
-    };
-    
-    // Convert payload to FormData
     const formData = new FormData();
-    Object.entries(payload).forEach(([key, value]) => {
-      formData.append(key, value as string);
-    });
+    formData.append('prompt', prompt);
+    formData.append('output_format', output_format);
+    formData.append('aspect_ratio', aspect_ratio);
+    
+    // Only add style_preset if it's provided and not "none"
+    if (style_preset && style_preset !== "none") {
+      formData.append('style_preset', style_preset);
+    }
 
     // Call Stability AI API
     const response = await fetch("https://api.stability.ai/v2beta/stable-image/generate/ultra", {
@@ -64,6 +70,7 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error(`Stability AI API error: ${response.status}`, errorText);
       throw new Error(`Stability AI API error: ${response.status} - ${errorText}`);
     }
 

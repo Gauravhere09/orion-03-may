@@ -8,7 +8,7 @@ export async function getApiKey(service: string): Promise<string | null> {
       .from('api_keys')
       .select('api_key')
       .eq('service', service)
-      .single();
+      .maybeSingle();
     
     if (error) {
       console.error(`Error fetching ${service} API key:`, error);
@@ -22,7 +22,7 @@ export async function getApiKey(service: string): Promise<string | null> {
   }
 }
 
-// Save or update API key for a service
+// Save or update API key for a service (admin only)
 export async function saveApiKey(service: string, apiKey: string): Promise<boolean> {
   try {
     // Check if service already exists
@@ -59,7 +59,7 @@ export async function saveApiKey(service: string, apiKey: string): Promise<boole
   }
 }
 
-// Delete API key for a service
+// Delete API key for a service (admin only)
 export async function deleteApiKey(service: string): Promise<boolean> {
   try {
     const { error } = await supabase
@@ -95,5 +95,19 @@ export async function listApiKeyServices(): Promise<string[]> {
   } catch (error) {
     console.error("Error fetching API key services:", error);
     return [];
+  }
+}
+
+// Check if user is an admin (can be extended with proper roles system)
+export async function isUserAdmin(): Promise<boolean> {
+  try {
+    // This is a placeholder function that should be replaced with proper role checking
+    // For a real implementation, you would check against a roles table in the database
+    const session = await supabase.auth.getSession();
+    // For now we're checking if the user is authenticated at all
+    return !!session.data.session;
+  } catch (error) {
+    console.error("Error checking admin status:", error);
+    return false;
   }
 }
