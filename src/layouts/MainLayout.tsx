@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -21,6 +20,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { syncApiKeysWithSupabase } from '@/services/storage';
 import { supabase } from '@/integrations/supabase/client';
 import { Message } from '@/services/apiTypes';
+import { Code, X } from 'lucide-react';
 
 interface MainLayoutProps {
   apiKeyModalOpen: boolean;
@@ -47,6 +47,7 @@ const MainLayout = ({
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [errorReportOpen, setErrorReportOpen] = useState(false);
+  const [showCodeEditor, setShowCodeEditor] = useState(false);
   const lastScrollPosition = useRef(0);
   const headerRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -117,6 +118,14 @@ const MainLayout = ({
     }
   }, [lastError]);
 
+  // Check if we have generated code
+  const hasGeneratedCode = !!(generatedCode.html || generatedCode.css || generatedCode.js);
+
+  // Function to toggle code editor visibility for mobile
+  const toggleCodeEditor = () => {
+    setShowCodeEditor(prev => !prev);
+  };
+
   // If in preview mode, show the preview component with full screen display
   if (isPreviewMode && generatedCode.preview) {
     return (
@@ -137,13 +146,15 @@ const MainLayout = ({
           selectedModel={selectedModel}
           onModelSelectClick={() => setModelSelectorOpen(true)}
           onNewChatClick={() => setShowClearChatConfirm(true)}
+          projectName={projectName}
         />
       </div>
       
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+        {/* Always display chat container (mobile or desktop) */}
         <div 
           ref={chatContainerRef}
-          className="w-full md:w-1/2 flex flex-col overflow-hidden border-r border-border"
+          className={`w-full ${!isMobile && hasGeneratedCode ? 'md:w-1/2' : ''} flex flex-col overflow-hidden border-r border-border`}
         >
           <ChatContainer 
             messages={messages} 
@@ -187,26 +198,47 @@ const MainLayout = ({
           </div>
         </div>
         
-        <div className="hidden md:flex md:w-1/2 overflow-hidden flex-col border-l border-border">
-          {(generatedCode.html || generatedCode.css || generatedCode.js) ? (
+        {/* Desktop: Show code editor in split view */}
+        {!isMobile && hasGeneratedCode && (
+          <div className="hidden md:flex md:w-1/2 overflow-hidden flex-col border-l border-border">
             <CodeDisplay code={generatedCode} />
-          ) : (
-            <div className="flex items-center justify-center h-full p-4 bg-muted/10">
-              <div className="text-center space-y-2 max-w-sm glass-morphism p-6 rounded-xl">
-                <h3 className="text-lg font-medium">No Code Generated Yet</h3>
-                <p className="text-sm text-muted-foreground">
-                  Ask the AI to generate code and it will appear here. You can generate HTML, CSS, and JavaScript components.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
+      
+      {/* Mobile: Show code toggle button if we have code */}
+      {isMobile && hasGeneratedCode && (
+        <Button
+          variant="default"
+          size="sm"
+          className="fixed bottom-20 right-4 z-50 rounded-full shadow-lg flex items-center gap-1 bg-primary"
+          onClick={toggleCodeEditor}
+        >
+          <Code className="h-4 w-4" />
+          <span>{showCodeEditor ? "Hide Code" : "View Code"}</span>
+        </Button>
+      )}
+      
+      {/* Mobile: Show code editor in full screen when toggled */}
+      {isMobile && showCodeEditor && (
+        <div className="fixed inset-0 z-50 bg-background">
+          <div className="h-full flex flex-col">
+            <div className="border-b border-border p-4 flex justify-between items-center">
+              <h2 className="text-lg font-medium">Code Editor</h2>
+              <Button variant="ghost" size="sm" onClick={toggleCodeEditor}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-auto">
+              <CodeDisplay code={generatedCode} />
+            </div>
+          </div>
+        </div>
+      )}
       
       <ApiKeyModal 
         open={apiKeyModalOpen} 
         onOpenChange={onApiKeyModalOpenChange}
-        // onApiKeySaved is now optional, so we don't need to provide it
       />
       
       <ModelSelectorDialog

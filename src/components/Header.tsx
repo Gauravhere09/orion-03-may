@@ -1,7 +1,7 @@
 
 import { AIModel } from '@/data/models';
 import { Button } from '@/components/ui/button';
-import { Settings, Plus, Sun, Moon, Save, ChevronDown } from 'lucide-react';
+import { Settings, Plus, Sun, Moon, Save, ChevronDown, NavigationMenu } from 'lucide-react';
 import { useUiStore } from '@/stores/uiStore';
 import { useState } from 'react';
 import {
@@ -10,6 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Link } from 'react-router-dom';
 
 interface HeaderProps {
   selectedModel: AIModel;
@@ -68,6 +69,38 @@ const Header = ({
             </DropdownMenuContent>
           </DropdownMenu>
         )}
+
+        {/* Navigation Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="flex items-center gap-1 text-sm px-2 h-8 ml-2"
+            >
+              <NavigationMenu className="h-4 w-4" />
+              <span>Navigate</span>
+              <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link to="/">Chat AI</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link to="/image-generator">Image Generator</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link to="/explore">Explore</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link to="/dashboard">Dashboard</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link to="/admin">Admin</Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       
       {/* Right - New Chat, Save, Theme, and Settings buttons */}

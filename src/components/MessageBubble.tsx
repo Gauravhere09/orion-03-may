@@ -80,7 +80,8 @@ const MessageBubble = ({
   };
   
   // Determine which model generated this response - for AI messages only
-  const responseModel = !isUser && message.model ? message.model : modelName;
+  // Use the message's own model property if available, otherwise use the passed modelName prop
+  const responseModel = !isUser ? (message.model || modelName) : undefined;
   
   return (
     <div className={cn(

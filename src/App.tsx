@@ -12,6 +12,7 @@ import NotFound from "./pages/NotFound";
 import AdminPage from './pages/Admin';
 import ExplorePage from './pages/explore';
 import Dashboard from "./pages/Dashboard";
+import ImageGenerator from "./pages/ImageGenerator";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ function App() {
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/explore" element={<ExplorePage />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/image-generator" element={<ImageGenerator />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
