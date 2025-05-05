@@ -1,6 +1,7 @@
 
 import { useEffect, useRef } from 'react';
-import { Message, getMessageText, hasCodeBlocks } from '@/services/api';
+import { Message } from '@/services/apiTypes';
+import { getMessageText, hasCodeBlocks } from '@/services/api';
 import MessageBubble from '@/components/MessageBubble';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useModelStore } from '@/stores/modelStore';

@@ -1,5 +1,6 @@
 
-import { Message, GeneratedCode, sendMessageWithFallback, enhancePrompt, parseCodeResponse, getMessageText, prepareMessageContent } from '@/services/api';
+import { Message, GeneratedCode } from '@/services/apiTypes';
+import { sendMessageWithFallback, enhancePrompt, parseCodeResponse, getMessageText, prepareMessageContent } from '@/services/api';
 import { hasApiKeys, saveChat, getChats } from '@/services/storage';
 import { useModelStore } from './modelStore';
 import { useUiStore } from './uiStore';

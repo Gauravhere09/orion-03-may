@@ -1,8 +1,7 @@
-
 import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { GeneratedCode } from '@/services/api';
+import { GeneratedCode } from '@/services/apiTypes';
 
 interface CodePreviewProps {
   code: GeneratedCode;

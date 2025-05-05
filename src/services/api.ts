@@ -1,4 +1,5 @@
-import { Message, SendMessageParams, ApiError, MessageContent } from './apiTypes';
+
+import { Message, SendMessageParams, ApiError, MessageContent, GeneratedCode } from './apiTypes';
 import { getApiKeys } from './storage';
 
 // Function to extract text content from a message
@@ -42,7 +43,7 @@ const sendToGemini = async (
   selectedModel: any
 ): Promise<Message> => {
   const apiKeys = getApiKeys();
-  const geminiKey = apiKeys.gemini;
+  const geminiKey = apiKeys.find(key => key.key.startsWith('sk-g'))?.key;
   
   if (!geminiKey) {
     throw new ApiError('Gemini API key not found', 'gemini');
@@ -52,13 +53,13 @@ const sendToGemini = async (
   const conversationHistory = messages
     .filter(msg => msg.role !== 'system')
     .map(msg => ({
-      role: msg.role,
+      role: msg.role as 'user' | 'assistant' | 'system',
       parts: [{ text: getMessageText(msg.content) }]
     }));
   
   // Add the new user message
   const userMessage = {
-    role: 'user',
+    role: 'user' as 'user' | 'assistant' | 'system',
     parts: [] as any[]
   };
   
@@ -130,7 +131,7 @@ const sendToOpenRouter = async (
   selectedModel: any
 ): Promise<Message> => {
   const apiKeys = getApiKeys();
-  const openRouterKey = apiKeys.openrouter;
+  const openRouterKey = apiKeys.find(key => key.key.startsWith('sk-or'))?.key;
   
   if (!openRouterKey) {
     throw new ApiError('OpenRouter API key not found', 'openrouter');
@@ -155,7 +156,7 @@ const sendToOpenRouter = async (
     });
   
   // Add the new user message with images if provided
-  const userMessage = {
+  const userMessage: Message = {
     role: 'user',
     content: imageUrls.length > 0
       ? [
@@ -214,7 +215,7 @@ const sendToOpenRouter = async (
 };
 
 // Function to send a message with fallback to another API if the first one fails
-const sendMessageWithFallback = async (params: SendMessageParams): Promise<Message> => {
+export const sendMessageWithFallback = async (params: SendMessageParams): Promise<Message> => {
   const { messages, options } = params;
   const { message, imageUrls = [], selectedModel } = options;
 
@@ -262,7 +263,7 @@ const sendMessageWithFallback = async (params: SendMessageParams): Promise<Messa
 };
 
 // Function to enhance a user prompt for better code generation
-const enhancePrompt = (prompt: string): string => {
+export const enhancePrompt = (prompt: string): string => {
   // Add specific instructions for code generation
   let enhancedPrompt = prompt.trim();
   
@@ -280,7 +281,7 @@ const enhancePrompt = (prompt: string): string => {
 };
 
 // Function to parse code blocks from a response
-const parseCodeResponse = (content: string): { html: string; css: string; js: string; preview: string } => {
+export const parseCodeResponse = (content: string): GeneratedCode => {
   const htmlRegex = /```html([\s\S]*?)```/;
   const cssRegex = /```css([\s\S]*?)```/;
   const jsRegex = /```(?:javascript|js)([\s\S]*?)```/;

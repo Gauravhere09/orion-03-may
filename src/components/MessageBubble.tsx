@@ -1,7 +1,8 @@
 
 import { useState } from 'react';
 import { cn } from "@/lib/utils";
-import { Message, getMessageText } from "@/services/api";
+import { Message } from "@/services/apiTypes";
+import { getMessageText } from "@/services/api";
 import { Copy, RefreshCw, Check, Eye, ThumbsUp, ThumbsDown, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";

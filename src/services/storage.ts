@@ -1,4 +1,4 @@
-import { Message } from './api';
+import { Message } from './apiTypes';
 
 const API_KEYS_STORAGE_KEY = 'openrouter_api_keys';
 const CHATS_STORAGE_KEY = 'ai_code_generator_chats';

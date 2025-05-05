@@ -1,7 +1,7 @@
 
 import { AIModel } from '@/data/models';
 import { Button } from '@/components/ui/button';
-import { Settings, Plus, Sun, Moon, Save, ChevronDown, NavigationMenu } from 'lucide-react';
+import { Settings, Plus, Sun, Moon, Save, ChevronDown } from 'lucide-react';
 import { useUiStore } from '@/stores/uiStore';
 import { useState } from 'react';
 import {
@@ -78,7 +78,6 @@ const Header = ({
               size="sm"
               className="flex items-center gap-1 text-sm px-2 h-8 ml-2"
             >
-              <NavigationMenu className="h-4 w-4" />
               <span>Navigate</span>
               <ChevronDown className="h-3.5 w-3.5 opacity-70" />
             </Button>
