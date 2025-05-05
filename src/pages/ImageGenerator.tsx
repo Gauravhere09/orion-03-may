@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -248,7 +247,7 @@ const ImageGenerator = () => {
                               <SelectValue placeholder="Select style (optional)" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">None (Default)</SelectItem>
+                              <SelectItem value="none">None (Default)</SelectItem>
                               {DREAM_STUDIO_STYLE_PRESETS.map(preset => (
                                 <SelectItem key={preset.value} value={preset.value}>{preset.label}</SelectItem>
                               ))}
