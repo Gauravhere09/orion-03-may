@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const ImageGenerator = () => {
-  const { selectedModel, models } = useModelStore();
+  const { selectedModel } = useModelStore();
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [prompt, setPrompt] = useState('');

@@ -1,4 +1,3 @@
-
 import { Message, SendMessageParams, ApiError, MessageContent, GeneratedCode } from './apiTypes';
 import { getApiKeys } from './storage';
 
@@ -321,5 +320,3 @@ export const hasCodeBlocks = (content: string | any[]): boolean => {
          text.includes("```js") || 
          text.includes("```javascript");
 };
-
-export { sendMessageWithFallback, enhancePrompt, parseCodeResponse };
