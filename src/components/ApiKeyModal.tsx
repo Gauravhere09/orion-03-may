@@ -40,40 +40,15 @@ const ApiKeyModal = ({ open, onOpenChange, onApiKeySaved = () => {} }: ApiKeyMod
         return;
       }
       
-      if (user) {
-        // Save to Supabase if logged in
-        const saved = await saveSupabaseApiKey(service, apiKey);
-        if (!saved) {
-          toast.error("Failed to save API key", {
-            description: "There was an error saving your API key to the database"
-          });
-          return;
-        }
-      } else {
-        // Save to localStorage if not logged in
-        if (service === 'openrouter') {
-          // Initialize default OpenRouter keys if needed
-          if (!hasApiKeys()) {
-            initializeApiKeys();
-          }
-          
-          // Save OpenRouter key to localStorage
-          saveApiKey(apiKey);
-        } else {
-          // For non-OpenRouter keys, warn user about logging in
-          toast.warning("Not logged in", {
-            description: "Your API key is saved locally. Log in to store securely."
-          });
-          
-          // Store in localStorage with service prefix
-          localStorage.setItem(`${service}_api_key`, apiKey);
-        }
-      }
-
-      onApiKeySaved();
+      // Save to localStorage with service prefix
+      localStorage.setItem(`${service}_api_key`, apiKey);
+      
       toast.success("API key saved", {
         description: `Your ${API_SERVICES.find(s => s.id === service)?.name} API key has been saved`
       });
+      
+      // Notify parent component
+      onApiKeySaved();
       onOpenChange(false);
       setApiKey('');
     } catch (error) {

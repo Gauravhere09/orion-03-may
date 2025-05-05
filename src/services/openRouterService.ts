@@ -15,11 +15,17 @@ const getOpenRouterApiKey = async (): Promise<string> => {
   }
   
   // Fallback to localStorage
+  const localKey = localStorage.getItem('openrouter_api_key');
+  if (localKey) {
+    return localKey;
+  }
+  
+  // Try to get from storage.ts
   const apiKeys = getApiKeys();
   const openRouterKey = apiKeys.find(key => key.key.startsWith('sk-or'))?.key;
   
   if (!openRouterKey) {
-    throw new ApiError('OpenRouter API key not found', 'openrouter');
+    throw new Error('OpenRouter API key not found. Please add your API key in the settings.');
   }
   
   return openRouterKey;
@@ -33,7 +39,7 @@ export const sendMessageToOpenRouter = async (
   try {
     const apiKey = await getOpenRouterApiKey();
     
-    // Use the model ID from the data source
+    // Use the correct model ID from the data source
     const modelId = model.openRouterModel;
     
     if (!modelId || modelId === 'custom-gemini') {

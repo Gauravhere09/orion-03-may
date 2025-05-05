@@ -13,12 +13,23 @@ export async function generateDreamStudioImage(options: DreamStudioGenerateOptio
   try {
     const { prompt, aspectRatio = "1:1", stylePreset, outputFormat = "webp" } = options;
     
+    // First try to get API key from localStorage
+    const apiKey = localStorage.getItem('dream_studio_api_key');
+    
+    if (!apiKey) {
+      toast.error("Dream Studio API key not found", {
+        description: "Please add your Dream Studio API key in the settings"
+      });
+      return null;
+    }
+    
     const { data, error } = await supabase.functions.invoke('dream-studio-generate', {
       body: {
         prompt,
         aspect_ratio: aspectRatio,
         style_preset: stylePreset !== "none" ? stylePreset : undefined,
-        output_format: outputFormat
+        output_format: outputFormat,
+        api_key: apiKey
       }
     });
     

@@ -11,8 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/ui/sonner';
 import { generateDreamStudioImage, DREAM_STUDIO_STYLE_PRESETS, DREAM_STUDIO_ASPECT_RATIOS } from '@/services/dreamStudioService';
-import { listApiKeyServices } from '@/services/apiKeyService';
-import { useAuth } from '@/contexts/AuthContext';
+import ApiKeyModal from '@/components/ApiKeyModal';
 
 const ImageGenerator = () => {
   const { selectedModel } = useModelStore();
@@ -21,25 +20,26 @@ const ImageGenerator = () => {
   const [prompt, setPrompt] = useState('');
   const [size, setSize] = useState('1:1');
   const [style, setStyle] = useState('none');
-  const [availableServices, setAvailableServices] = useState<string[]>([]);
-  const { user } = useAuth();
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
 
-  // Check available API keys
+  // Check if Dream Studio API key is available
+  const [isDreamStudioKeyAvailable, setIsDreamStudioKeyAvailable] = useState(false);
+  
   useEffect(() => {
-    const checkAvailableServices = async () => {
-      if (user) {
-        // If logged in, check which API services are available in Supabase
-        const services = await listApiKeyServices();
-        setAvailableServices(services);
-      }
-    };
-    checkAvailableServices();
-  }, [user]);
+    // Check if the user has a Dream Studio API key in localStorage
+    const dreamStudioApiKey = localStorage.getItem('dream_studio_api_key');
+    setIsDreamStudioKeyAvailable(!!dreamStudioApiKey);
+  }, []);
 
   // Generate image using Dream Studio
   const generateImages = async () => {
     if (!prompt.trim()) {
       toast.error("Please enter a prompt");
+      return;
+    }
+
+    if (!isDreamStudioKeyAvailable) {
+      setIsApiKeyModalOpen(true);
       return;
     }
     
@@ -95,7 +95,11 @@ const ImageGenerator = () => {
     setImages([]);
   };
 
-  const isDreamStudioAvailable = availableServices.includes('dream_studio');
+  const handleApiKeyUpdated = () => {
+    // Check if API key is now available
+    const dreamStudioApiKey = localStorage.getItem('dream_studio_api_key');
+    setIsDreamStudioKeyAvailable(!!dreamStudioApiKey);
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -108,6 +112,14 @@ const ImageGenerator = () => {
       <div className="container mx-auto p-4 flex-1">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">AI Image Generator</h1>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setIsApiKeyModalOpen(true)}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            API Key Settings
+          </Button>
         </div>
         
         <Tabs defaultValue="generate" className="mb-6">
@@ -173,7 +185,7 @@ const ImageGenerator = () => {
                       <Button 
                         type="submit" 
                         className="w-full" 
-                        disabled={loading || !prompt.trim() || !isDreamStudioAvailable}
+                        disabled={loading || !prompt.trim()}
                       >
                         {loading ? (
                           <>
@@ -188,9 +200,9 @@ const ImageGenerator = () => {
                         )}
                       </Button>
                       
-                      {!isDreamStudioAvailable && (
+                      {!isDreamStudioKeyAvailable && (
                         <div className="text-amber-600 dark:text-amber-400 text-sm text-center">
-                          Dream Studio API key not available. Please contact an administrator.
+                          Dream Studio API key not available. Click "API Key Settings" to add your key.
                         </div>
                       )}
                     </form>
@@ -244,9 +256,9 @@ const ImageGenerator = () => {
                         Enter a prompt and click 'Generate' to create AI-powered images
                       </p>
                       
-                      {!isDreamStudioAvailable && (
+                      {!isDreamStudioKeyAvailable && (
                         <div className="mt-4 text-amber-600 dark:text-amber-400">
-                          Dream Studio API key not configured. Contact an administrator.
+                          Dream Studio API key not configured. Click "API Key Settings" to add your key.
                         </div>
                       )}
                     </div>
@@ -266,6 +278,12 @@ const ImageGenerator = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      <ApiKeyModal
+        open={isApiKeyModalOpen}
+        onOpenChange={setIsApiKeyModalOpen}
+        onApiKeySaved={handleApiKeyUpdated}
+      />
     </div>
   );
 };

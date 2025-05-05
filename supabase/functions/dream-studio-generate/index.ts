@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { supabaseAdmin } from "../_shared/supabase-admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,25 +13,15 @@ serve(async (req) => {
   }
 
   try {
-    // Get Dream Studio API key from database
-    const { data: apiKeyData, error: apiKeyError } = await supabaseAdmin
-      .from('api_keys')
-      .select('api_key')
-      .eq('service', 'dream_studio')
-      .maybeSingle();
-
-    if (apiKeyError) {
-      console.error('Error fetching Dream Studio API key:', apiKeyError);
-      throw new Error(`Failed to fetch API key: ${apiKeyError.message}`);
-    }
-
-    if (!apiKeyData?.api_key) {
+    // Get request data
+    const requestData = await req.json();
+    const { prompt, aspect_ratio = "1:1", style_preset, output_format = "webp", api_key } = requestData;
+    
+    let dreamStudioApiKey = api_key;
+    
+    if (!dreamStudioApiKey) {
       throw new Error('Dream Studio API key not found');
     }
-
-    const dreamStudioApiKey = apiKeyData.api_key;
-    const requestData = await req.json();
-    const { prompt, aspect_ratio = "1:1", style_preset, output_format = "webp" } = requestData;
 
     if (!prompt) {
       return new Response(
@@ -76,7 +65,9 @@ serve(async (req) => {
 
     // Convert binary response to base64
     const imageBuffer = await response.arrayBuffer();
-    const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
+    const uint8Array = new Uint8Array(imageBuffer);
+    const binary = Array.from(uint8Array).map(byte => String.fromCharCode(byte)).join('');
+    const base64Image = btoa(binary);
     const dataUrl = `data:image/${output_format};base64,${base64Image}`;
 
     return new Response(
@@ -86,7 +77,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in Dream Studio function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || "Unknown error occurred" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }

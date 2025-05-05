@@ -6,6 +6,11 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { saveApiKey } from '@/services/apiKeyService';
+import { useForm } from 'react-hook-form';
 
 const AdminPage = () => {
   const { user } = useAuth();
@@ -14,6 +19,9 @@ const AdminPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [selectedService, setSelectedService] = useState('openrouter');
+  const [apiKey, setApiKey] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   
   // For demo purposes, these are the admin credentials
   const ADMIN_EMAIL = 'admin@example.com';
@@ -39,7 +47,6 @@ const AdminPage = () => {
 
         // Since is_admin doesn't exist in the profiles table yet, we'll 
         // simulate the admin check using email for now
-        // A proper implementation would check a roles table or a specific admin flag
         const userEmail = data?.email || '';
         const adminCheck = userEmail.includes('admin') || false;
         setIsAdmin(adminCheck);
@@ -67,6 +74,29 @@ const AdminPage = () => {
     }
     
     setIsAuthenticating(false);
+  };
+
+  const handleSaveApiKey = async () => {
+    if (!apiKey.trim()) {
+      toast.error('Please enter an API key');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const saved = await saveApiKey(selectedService, apiKey);
+      if (saved) {
+        toast.success('API key saved to database');
+        setApiKey('');
+      } else {
+        toast.error('Failed to save API key');
+      }
+    } catch (error) {
+      console.error('Error saving API key:', error);
+      toast.error('Failed to save API key: ' + (error.message || 'Unknown error'));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (isLoading) {
@@ -131,38 +161,57 @@ const AdminPage = () => {
     <div className="flex flex-col items-center justify-center min-h-screen p-4 space-y-6 bg-background">
       <h1 className="text-3xl font-bold">Admin Dashboard</h1>
       <p className="text-muted-foreground text-center max-w-md">
-        Welcome, Admin! You now have access to the admin features.
+        Welcome, Admin! Here you can manage API keys for the application.
       </p>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
-        <Card>
-          <CardHeader>
-            <CardTitle>User Management</CardTitle>
-            <CardDescription>Manage user accounts and permissions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>Total users: 128</p>
-            <p>Active in last 30 days: 84</p>
-          </CardContent>
-          <CardFooter>
-            <Button variant="outline" className="w-full">View Users</Button>
-          </CardFooter>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Analytics</CardTitle>
-            <CardDescription>System usage statistics</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>API Requests: 1,245</p>
-            <p>Average response time: 1.2s</p>
-          </CardContent>
-          <CardFooter>
-            <Button variant="outline" className="w-full">View Analytics</Button>
-          </CardFooter>
-        </Card>
-      </div>
+      <Card className="w-full max-w-lg">
+        <CardHeader>
+          <CardTitle>API Key Management</CardTitle>
+          <CardDescription>Add or update API keys for various services</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <Label>Select Service</Label>
+              <Select 
+                value={selectedService} 
+                onValueChange={setSelectedService}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select service" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="openrouter">OpenRouter</SelectItem>
+                  <SelectItem value="gemini">Google Gemini</SelectItem>
+                  <SelectItem value="dream_studio">Dream Studio</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>API Key</Label>
+              <Input 
+                type="password" 
+                placeholder="Enter API key" 
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                {selectedService === 'openrouter' && 'Get your key from OpenRouter Console'}
+                {selectedService === 'gemini' && 'Get your key from Google AI Studio'}
+                {selectedService === 'dream_studio' && 'Get your key from Stability AI Platform'}
+              </p>
+            </div>
+            
+            <Button 
+              onClick={handleSaveApiKey} 
+              disabled={isSaving}
+            >
+              {isSaving ? 'Saving...' : 'Save API Key'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

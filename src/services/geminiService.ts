@@ -19,8 +19,7 @@ const getGeminiApiKey = async (): Promise<string> => {
   const localKey = localStorage.getItem('gemini_api_key');
   if (localKey) return localKey;
   
-  // Fallback to default key (for development only)
-  return "AIzaSyAzD5oKhOg1xt7wuUvORklBZ5qaO7TT8g8";
+  throw new Error('Gemini API key not found. Please add your API key in the settings.');
 }
 
 // Convert our message format to Gemini's format
