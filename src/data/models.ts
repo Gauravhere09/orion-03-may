@@ -55,7 +55,7 @@ export const aiModels: AIModel[] = [
     strengths: ['Chat', 'Knowledge', 'Reasoning']
   },
   {
-    id: 'deepseek-r1:free',
+    id: 'deepseek/deepseek-r1:free',
     name: 'DeepSeek',
     version: 'R1',
     provider: 'DeepSeek',
