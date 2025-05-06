@@ -1,9 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { GeneratedCode } from '@/services/apiTypes';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Copy, Save, Edit, Check, Phone } from 'lucide-react';
+import { Copy, Edit, Check, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import Editor from '@monaco-editor/react';
 import { useChatStore } from '@/stores/chatStore';
@@ -16,10 +15,7 @@ interface CodeDisplayProps {
 
 const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
   const [editableHtml, setEditableHtml] = useState(code.html || '');
-  const [editableCss, setEditableCss] = useState(code.css || '');
-  const [editableJs, setEditableJs] = useState(code.js || '');
   const [isEditing, setIsEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState('html');
 
   const { setGeneratedCode } = useChatStore();
   const { isDarkMode } = useUiStore();
@@ -29,33 +25,31 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
   useEffect(() => {
     if (!isEditing) {
       setEditableHtml(code.html || '');
-      setEditableCss(code.css || '');
-      setEditableJs(code.js || '');
     }
   }, [code, isEditing]);
   
-  const copyToClipboard = (text: string, label: string) => {
+  const copyToClipboard = (text: string) => {
     if (!text) return;
     navigator.clipboard.writeText(text);
-    toast(`${label} copied to clipboard`);
+    toast(`HTML copied to clipboard`);
   };
 
   const handleSaveChanges = () => {
     const updatedCode = {
       html: editableHtml,
-      css: editableCss,
-      js: editableJs,
+      css: code.css || '',
+      js: code.js || '',
       preview: `
         <!DOCTYPE html>
         <html lang="en">
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>${editableCss || ''}</style>
+          <style>${code.css || ''}</style>
         </head>
         <body>
           ${editableHtml}
-          <script>${editableJs || ''}</script>
+          <script>${code.js || ''}</script>
         </body>
         </html>
       `
@@ -95,18 +89,9 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
   );
   
   return (
-    <Tabs 
-      value={activeTab} 
-      onValueChange={setActiveTab}
-      className="h-full flex flex-col overflow-hidden"
-    >
-      <div className="flex justify-between items-center px-2">
-        <TabsList className="grid grid-cols-3">
-          <TabsTrigger value="html">HTML</TabsTrigger>
-          <TabsTrigger value="css">CSS</TabsTrigger>
-          <TabsTrigger value="js">JavaScript</TabsTrigger>
-        </TabsList>
-        
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="flex justify-between items-center px-4 py-2 border-b">
+        <h2 className="text-sm font-medium">HTML Code</h2>
         <div className="flex gap-1">
           <Button 
             variant="outline" 
@@ -126,32 +111,31 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
               </>
             )}
           </Button>
-        </div>
-      </div>
-      
-      <TabsContent value="html" className="flex-1 overflow-auto p-1 flex flex-col">
-        <div className="flex justify-end mb-2 gap-2">
-          {isEditing && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center gap-1"
-              onClick={handleSaveChanges}
-            >
-              <Save className="h-3.5 w-3.5" />
-              <span>Save</span>
-            </Button>
-          )}
           <Button 
             variant="outline" 
             size="sm" 
             className="w-8 h-8 p-0"
-            onClick={() => copyToClipboard(editableHtml, 'HTML')}
+            onClick={() => copyToClipboard(editableHtml)}
             title="Copy HTML"
           >
             <Copy className="h-3.5 w-3.5" />
           </Button>
         </div>
+      </div>
+      
+      <div className="flex-1 p-2 flex flex-col">
+        {isEditing && (
+          <div className="mb-2 flex justify-end">
+            <Button 
+              variant="default" 
+              size="sm" 
+              className="flex items-center gap-1"
+              onClick={handleSaveChanges}
+            >
+              Save Changes
+            </Button>
+          </div>
+        )}
         
         <div className="flex-1 border rounded-md overflow-hidden h-full">
           <Editor
@@ -170,97 +154,11 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
             onChange={(value) => setEditableHtml(value || '')}
           />
         </div>
-      </TabsContent>
-      
-      <TabsContent value="css" className="flex-1 overflow-auto p-1 flex flex-col">
-        <div className="flex justify-end mb-2 gap-2">
-          {isEditing && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center gap-1"
-              onClick={handleSaveChanges}
-            >
-              <Save className="h-3.5 w-3.5" />
-              <span>Save</span>
-            </Button>
-          )}
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-8 h-8 p-0"
-            onClick={() => copyToClipboard(editableCss, 'CSS')}
-            title="Copy CSS"
-          >
-            <Copy className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-        
-        <div className="flex-1 border rounded-md overflow-hidden h-full">
-          <Editor
-            height="100%"
-            language="css"
-            value={editableCss}
-            theme={isDarkMode ? "vs-dark" : "light"}
-            options={{
-              readOnly: !isEditing,
-              minimap: { enabled: false },
-              fontSize: 14,
-              tabSize: 2,
-              scrollBeyondLastLine: false,
-              automaticLayout: true,
-            }}
-            onChange={(value) => setEditableCss(value || '')}
-          />
-        </div>
-      </TabsContent>
-      
-      <TabsContent value="js" className="flex-1 overflow-auto p-1 flex flex-col">
-        <div className="flex justify-end mb-2 gap-2">
-          {isEditing && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center gap-1"
-              onClick={handleSaveChanges}
-            >
-              <Save className="h-3.5 w-3.5" />
-              <span>Save</span>
-            </Button>
-          )}
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="w-8 h-8 p-0" 
-            onClick={() => copyToClipboard(editableJs, 'JavaScript')}
-            title="Copy JavaScript"
-          >
-            <Copy className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-        
-        <div className="flex-1 border rounded-md overflow-hidden h-full">
-          <Editor
-            height="100%"
-            language="javascript"
-            value={editableJs}
-            theme={isDarkMode ? "vs-dark" : "light"}
-            options={{
-              readOnly: !isEditing,
-              minimap: { enabled: false },
-              fontSize: 14,
-              tabSize: 2,
-              scrollBeyondLastLine: false,
-              automaticLayout: true,
-            }}
-            onChange={(value) => setEditableJs(value || '')}
-          />
-        </div>
-      </TabsContent>
+      </div>
       
       {/* Mobile edit button */}
       {isMobile && <MobileEditButton />}
-    </Tabs>
+    </div>
   );
 };
 

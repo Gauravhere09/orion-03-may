@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -49,7 +50,6 @@ const MainLayout = ({
   const [errorReportOpen, setErrorReportOpen] = useState(false);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
   const lastScrollPosition = useRef(0);
-  const headerRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   
@@ -87,29 +87,6 @@ const MainLayout = ({
       console.error('Error loading current project:', e);
     }
   }, [loadChatFromSaved]);
-  
-  // Handle scroll behavior for header
-  useEffect(() => {
-    const container = chatContainerRef.current;
-    if (!container) return;
-    
-    const handleScroll = () => {
-      const currentScrollPos = container.scrollTop;
-      const isScrollingDown = currentScrollPos > lastScrollPosition.current;
-      
-      // Only hide header after scrolling down a bit
-      if (isScrollingDown && currentScrollPos > 60) {
-        setIsHeaderVisible(false);
-      } else {
-        setIsHeaderVisible(true);
-      }
-      
-      lastScrollPosition.current = currentScrollPos;
-    };
-    
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, []);
 
   // Open error report form when there's an error
   useEffect(() => {
@@ -119,7 +96,7 @@ const MainLayout = ({
   }, [lastError]);
 
   // Check if we have generated code
-  const hasGeneratedCode = !!(generatedCode.html || generatedCode.css || generatedCode.js);
+  const hasGeneratedCode = !!(generatedCode.html);
 
   // Function to toggle code editor visibility for mobile
   const toggleCodeEditor = () => {
@@ -138,19 +115,15 @@ const MainLayout = ({
 
   return (
     <div className="flex flex-col h-screen max-h-screen overflow-hidden bg-background text-foreground">
-      <div 
-        ref={headerRef}
-        className={`transition-transform duration-300 ease-in-out ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'} sticky top-0 z-10`}
-      >
-        <Header 
-          selectedModel={selectedModel}
-          onModelSelectClick={() => setModelSelectorOpen(true)}
-          onNewChatClick={() => setShowClearChatConfirm(true)}
-          projectName={projectName}
-        />
-      </div>
+      <Header 
+        selectedModel={selectedModel}
+        onModelSelectClick={() => setModelSelectorOpen(true)}
+        onNewChatClick={() => setShowClearChatConfirm(true)}
+        projectName={projectName}
+      />
       
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+      {/* Add extra padding to account for fixed header */}
+      <div className="pt-14 flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Always display chat container (mobile or desktop) */}
         <div 
           ref={chatContainerRef}

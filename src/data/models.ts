@@ -55,12 +55,12 @@ export const aiModels: AIModel[] = [
     strengths: ['Chat', 'Knowledge', 'Reasoning']
   },
   {
-    id: 'deepseek/deepseek-r1:free',
+    id: 'deepseek-r1',
     name: 'DeepSeek',
     version: 'R1',
     provider: 'DeepSeek',
     description: 'Advanced reasoning model with robust knowledge capabilities.',
-    openRouterModel: 'deepseek/deepseek-r1',
+    openRouterModel: 'deepseek/deepseek-r1:free',
     contextWindow: 32768,
     image: '/placeholder.svg',
     gradient: 'from-teal-400 to-emerald-600',

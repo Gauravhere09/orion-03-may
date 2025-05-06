@@ -17,6 +17,7 @@ const ImageGenerator = () => {
   const { selectedModel } = useModelStore();
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<string[]>([]);
+  const [imageHistory, setImageHistory] = useState<string[]>([]);
   const [prompt, setPrompt] = useState('');
   const [size, setSize] = useState('1:1');
   const [style, setStyle] = useState('none');
@@ -29,7 +30,24 @@ const ImageGenerator = () => {
     // Check if the user has a Dream Studio API key in localStorage
     const dreamStudioApiKey = localStorage.getItem('dream_studio_api_key');
     setIsDreamStudioKeyAvailable(!!dreamStudioApiKey);
+    
+    // Load image history from localStorage
+    try {
+      const savedHistory = localStorage.getItem('image_history');
+      if (savedHistory) {
+        setImageHistory(JSON.parse(savedHistory));
+      }
+    } catch (error) {
+      console.error("Error loading image history:", error);
+    }
   }, []);
+
+  // Save image history to localStorage
+  const saveImageToHistory = (imageUrl: string) => {
+    const updatedHistory = [imageUrl, ...imageHistory.slice(0, 19)]; // Keep only the 20 most recent images
+    setImageHistory(updatedHistory);
+    localStorage.setItem('image_history', JSON.stringify(updatedHistory));
+  };
 
   // Generate image using Dream Studio
   const generateImages = async () => {
@@ -56,6 +74,7 @@ const ImageGenerator = () => {
       
       if (image) {
         setImages([image]);
+        saveImageToHistory(image);
         toast.success("Image generated successfully");
       } else {
         throw new Error("Failed to generate image with Dream Studio");
@@ -101,15 +120,51 @@ const ImageGenerator = () => {
     setIsDreamStudioKeyAvailable(!!dreamStudioApiKey);
   };
 
+  // Render individual image card
+  const ImageCard = ({ image, index }: { image: string, index: number }) => (
+    <Card key={index} className="overflow-hidden">
+      <div className="relative aspect-square">
+        <img 
+          src={image} 
+          alt={`Generated image ${index + 1}`} 
+          className="w-full h-full object-cover"
+        />
+      </div>
+      <div className="p-2 flex gap-2 justify-end">
+        <Button 
+          size="sm" 
+          variant="outline"
+          onClick={() => copyImage(image)}
+        >
+          <Copy className="h-4 w-4" />
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => downloadImage(image)}
+        >
+          <Download className="h-4 w-4" />
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+        >
+          <Share2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </Card>
+  );
+
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Header with pt-14 to account for fixed header space */}
       <Header 
         selectedModel={selectedModel} 
         onModelSelectClick={handleModelSelect}
         onNewChatClick={handleNewProject}
       />
       
-      <div className="container mx-auto p-4 flex-1">
+      <div className="container mx-auto p-4 pt-16 flex-1">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">AI Image Generator</h1>
           <Button 
@@ -211,40 +266,20 @@ const ImageGenerator = () => {
               </div>
               
               <div className="lg:col-span-2">
-                {images.length > 0 ? (
+                {loading ? (
+                  <div className="h-full flex items-center justify-center border-2 border-dashed rounded-lg p-12 animate-pulse">
+                    <div className="text-center">
+                      <Loader2 className="h-16 w-16 mx-auto opacity-50 mb-4 animate-spin" />
+                      <h3 className="text-xl font-medium mb-2">Generating your image...</h3>
+                      <p className="text-muted-foreground">
+                        This may take a few seconds depending on the complexity
+                      </p>
+                    </div>
+                  </div>
+                ) : images.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {images.map((img, index) => (
-                      <Card key={index} className="overflow-hidden">
-                        <div className="relative aspect-square">
-                          <img 
-                            src={img} 
-                            alt={`Generated image ${index + 1}`} 
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="p-2 flex gap-2 justify-end">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => copyImage(img)}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => downloadImage(img)}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                          >
-                            <Share2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </Card>
+                      <ImageCard key={index} image={img} index={index} />
                     ))}
                   </div>
                 ) : (
@@ -269,12 +304,21 @@ const ImageGenerator = () => {
           </TabsContent>
           
           <TabsContent value="history">
-            <div className="text-center p-8">
-              <h3 className="text-xl font-medium">Image History</h3>
-              <p className="text-muted-foreground mt-2">
-                Your generated images will be saved here
-              </p>
-            </div>
+            {imageHistory.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {imageHistory.map((img, index) => (
+                  <ImageCard key={index} image={img} index={index} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center p-12 border-2 border-dashed rounded-lg">
+                <ImageIcon className="h-12 w-12 mx-auto opacity-50 mb-4" />
+                <h3 className="text-xl font-medium mb-2">No image history</h3>
+                <p className="text-muted-foreground">
+                  Generated images will appear here
+                </p>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

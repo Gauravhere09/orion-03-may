@@ -9,7 +9,6 @@ import { useUiStore } from "./stores/uiStore";
 import { AuthProvider } from "./contexts/AuthContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import AdminPage from './pages/Admin';
 import ExplorePage from './pages/explore';
 import Dashboard from "./pages/Dashboard";
 import ImageGenerator from "./pages/ImageGenerator";
@@ -26,6 +25,9 @@ function App() {
     } else {
       document.documentElement.classList.remove('dark');
     }
+    
+    // Add CSS for smooth scrolling
+    document.documentElement.style.scrollBehavior = 'smooth';
   }, [isDarkMode]);
   
   // Set favicon based on theme
@@ -45,7 +47,6 @@ function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/admin" element={<AdminPage />} />
               <Route path="/explore" element={<ExplorePage />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/image-generator" element={<ImageGenerator />} />
