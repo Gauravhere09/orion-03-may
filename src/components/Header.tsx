@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 
 interface HeaderProps {
   selectedModel: AIModel;
-  onModelSelectClick: () => void;
+  onModelSelectClick?: () => void; // Made optional with the ? mark
   onNewChatClick: () => void;
   onSettingsClick?: () => void;
   onSaveClick?: () => void;
@@ -96,7 +96,7 @@ const Header = ({
           </DropdownMenu>
 
           {/* Only show model selector on chat page */}
-          {isMainChat && (
+          {isMainChat && onModelSelectClick && (
             <Button
               variant="ghost"
               size="sm"

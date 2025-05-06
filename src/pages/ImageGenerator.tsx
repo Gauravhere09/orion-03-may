@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -222,6 +221,7 @@ const ImageGenerator = () => {
           setPrompt('');
           setImages([]);
         }}
+        onModelSelectClick={() => {}} // Add the missing prop
       />
       
       <div className="container mx-auto p-4 pt-16 flex-1 overflow-y-auto scrollbar-none">
