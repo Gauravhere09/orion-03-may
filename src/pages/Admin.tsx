@@ -8,9 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
-import { saveApiKey } from '@/services/apiKeyService';
-import { useForm } from 'react-hook-form';
+import { saveApiKey, isUserAdmin, listApiKeys, deleteApiKey } from '@/services/apiKeyService';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Trash2 } from "lucide-react";
 
 const AdminPage = () => {
   const { user } = useAuth();
@@ -22,6 +22,9 @@ const AdminPage = () => {
   const [selectedService, setSelectedService] = useState('openrouter');
   const [apiKey, setApiKey] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [apiKeys, setApiKeys] = useState<{ id: string, api_key: string, priority: number }[]>([]);
+  const [isLoadingKeys, setIsLoadingKeys] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // For demo purposes, these are the admin credentials
   const ADMIN_EMAIL = 'admin@example.com';
@@ -36,20 +39,8 @@ const AdminPage = () => {
       }
 
       try {
-        // Check if user is an admin by querying a separate admin table or checking roles
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (error) throw error;
-
-        // Since is_admin doesn't exist in the profiles table yet, we'll 
-        // simulate the admin check using email for now
-        const userEmail = data?.email || '';
-        const adminCheck = userEmail.includes('admin') || false;
-        setIsAdmin(adminCheck);
+        const adminStatus = await isUserAdmin();
+        setIsAdmin(adminStatus);
       } catch (error) {
         console.error('Error checking admin status:', error);
         setIsAdmin(false);
@@ -60,6 +51,27 @@ const AdminPage = () => {
 
     checkAdminStatus();
   }, [user]);
+  
+  useEffect(() => {
+    if (isAdmin && selectedService) {
+      loadApiKeys();
+    }
+  }, [isAdmin, selectedService]);
+
+  const loadApiKeys = async () => {
+    if (!selectedService) return;
+    
+    setIsLoadingKeys(true);
+    try {
+      const keys = await listApiKeys(selectedService);
+      setApiKeys(keys);
+    } catch (error) {
+      console.error(`Error loading ${selectedService} API keys:`, error);
+      toast.error(`Failed to load API keys: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsLoadingKeys(false);
+    }
+  };
 
   const handleAdminLogin = (e) => {
     e.preventDefault();
@@ -88,14 +100,33 @@ const AdminPage = () => {
       if (saved) {
         toast.success('API key saved to database');
         setApiKey('');
+        await loadApiKeys();
       } else {
         toast.error('Failed to save API key');
       }
     } catch (error) {
       console.error('Error saving API key:', error);
-      toast.error('Failed to save API key: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to save API key: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsSaving(false);
+    }
+  };
+  
+  const handleDeleteApiKey = async (key: string) => {
+    setIsDeleting(true);
+    try {
+      const deleted = await deleteApiKey(selectedService, key);
+      if (deleted) {
+        toast.success('API key deleted');
+        await loadApiKeys();
+      } else {
+        toast.error('Failed to delete API key');
+      }
+    } catch (error) {
+      console.error('Error deleting API key:', error);
+      toast.error('Failed to delete API key: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -169,13 +200,16 @@ const AdminPage = () => {
           <CardTitle>API Key Management</CardTitle>
           <CardDescription>Add or update API keys for various services</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <div className="grid gap-4">
             <div className="space-y-2">
               <Label>Select Service</Label>
               <Select 
                 value={selectedService} 
-                onValueChange={setSelectedService}
+                onValueChange={(value) => {
+                  setSelectedService(value);
+                  setApiKeys([]);
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select service" />
@@ -209,6 +243,45 @@ const AdminPage = () => {
             >
               {isSaving ? 'Saving...' : 'Save API Key'}
             </Button>
+          </div>
+          
+          <div className="space-y-2">
+            <h3 className="text-md font-medium">Current API Keys</h3>
+            {isLoadingKeys ? (
+              <p className="text-sm text-muted-foreground">Loading keys...</p>
+            ) : apiKeys.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>API Key</TableHead>
+                    <TableHead>Priority</TableHead>
+                    <TableHead className="w-[60px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {apiKeys.map((key) => (
+                    <TableRow key={key.id}>
+                      <TableCell className="font-mono">
+                        {key.api_key.substring(0, 6)}...{key.api_key.substring(key.api_key.length - 4)}
+                      </TableCell>
+                      <TableCell>{key.priority}</TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeleteApiKey(key.api_key)}
+                          disabled={isDeleting}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="text-sm text-muted-foreground">No API keys found for this service.</p>
+            )}
           </div>
         </CardContent>
       </Card>

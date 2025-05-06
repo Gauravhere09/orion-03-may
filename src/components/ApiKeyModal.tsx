@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { saveApiKey, hasApiKeys, initializeApiKeys } from '@/services/storage';
 import { toast } from '@/components/ui/sonner';
-import { saveApiKey as saveSupabaseApiKey } from '@/services/apiKeyService';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface ApiKeyModalProps {
@@ -44,7 +43,7 @@ const ApiKeyModal = ({ open, onOpenChange, onApiKeySaved = () => {} }: ApiKeyMod
       localStorage.setItem(`${service}_api_key`, apiKey);
       
       toast.success("API key saved", {
-        description: `Your ${API_SERVICES.find(s => s.id === service)?.name} API key has been saved`
+        description: `Your ${API_SERVICES.find(s => s.id === service)?.name} API key has been saved to local storage`
       });
       
       // Notify parent component

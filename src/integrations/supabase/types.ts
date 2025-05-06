@@ -14,6 +14,8 @@ export type Database = {
           api_key: string
           created_at: string | null
           id: string
+          is_active: boolean | null
+          priority: number | null
           service: string
           updated_at: string | null
         }
@@ -21,6 +23,8 @@ export type Database = {
           api_key: string
           created_at?: string | null
           id?: string
+          is_active?: boolean | null
+          priority?: number | null
           service: string
           updated_at?: string | null
         }
@@ -28,7 +32,63 @@ export type Database = {
           api_key?: string
           created_at?: string | null
           id?: string
+          is_active?: boolean | null
+          priority?: number | null
           service?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      dream_studio_api_keys: {
+        Row: {
+          api_key: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          priority: number
+          updated_at: string | null
+        }
+        Insert: {
+          api_key: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority: number
+          updated_at?: string | null
+        }
+        Update: {
+          api_key?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      gemini_api_keys: {
+        Row: {
+          api_key: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          priority: number
+          updated_at: string | null
+        }
+        Insert: {
+          api_key: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority: number
+          updated_at?: string | null
+        }
+        Update: {
+          api_key?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number
           updated_at?: string | null
         }
         Relationships: []
@@ -65,18 +125,21 @@ export type Database = {
           created_at: string | null
           email: string | null
           id: string
+          is_admin: boolean | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           email?: string | null
           id: string
+          is_admin?: boolean | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           email?: string | null
           id?: string
+          is_admin?: boolean | null
           updated_at?: string | null
         }
         Relationships: []

@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
+import { getApiKey } from "./apiKeyService";
 
 export interface DreamStudioGenerateOptions {
   prompt: string;
@@ -13,8 +14,18 @@ export async function generateDreamStudioImage(options: DreamStudioGenerateOptio
   try {
     const { prompt, aspectRatio = "1:1", stylePreset, outputFormat = "webp" } = options;
     
-    // First try to get API key from localStorage
-    const apiKey = localStorage.getItem('dream_studio_api_key');
+    // First try to get API key from localStorage as a fallback
+    const localApiKey = localStorage.getItem('dream_studio_api_key');
+    
+    // Get API key from Supabase if the user is logged in
+    let supabaseKey = null;
+    const session = await supabase.auth.getSession();
+    if (session.data.session) {
+      supabaseKey = await getApiKey('dream_studio');
+    }
+    
+    // Use the Supabase key if available, otherwise use the localStorage key
+    const apiKey = supabaseKey || localApiKey;
     
     if (!apiKey) {
       toast.error("Dream Studio API key not found", {

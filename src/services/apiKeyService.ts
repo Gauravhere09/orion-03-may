@@ -4,10 +4,24 @@ import { supabase } from "@/integrations/supabase/client";
 // Get API key for a specific service
 export async function getApiKey(service: string): Promise<string | null> {
   try {
+    let tableName = 'api_keys';
+    
+    // Map service to the correct table
+    if (service === 'openrouter') {
+      tableName = 'openrouter_apis';
+    } else if (service === 'gemini') {
+      tableName = 'gemini_api_keys';
+    } else if (service === 'dream_studio') {
+      tableName = 'dream_studio_api_keys';
+    }
+    
+    // Query the appropriate table
     const { data, error } = await supabase
-      .from('api_keys')
+      .from(tableName)
       .select('api_key')
-      .eq('service', service)
+      .order('priority', { ascending: true })
+      .eq('is_active', true)
+      .limit(1)
       .maybeSingle();
     
     if (error) {
@@ -23,29 +37,28 @@ export async function getApiKey(service: string): Promise<string | null> {
 }
 
 // Save or update API key for a service (admin only)
-export async function saveApiKey(service: string, apiKey: string): Promise<boolean> {
+export async function saveApiKey(service: string, apiKey: string, priority = 1): Promise<boolean> {
   try {
-    // Check if service already exists
-    const { data } = await supabase
-      .from('api_keys')
-      .select('id')
-      .eq('service', service)
-      .single();
+    let tableName = 'api_keys';
     
-    let result;
-    
-    if (data?.id) {
-      // Update existing key
-      result = await supabase
-        .from('api_keys')
-        .update({ api_key: apiKey, updated_at: new Date().toISOString() })
-        .eq('service', service);
-    } else {
-      // Insert new key
-      result = await supabase
-        .from('api_keys')
-        .insert({ service, api_key: apiKey });
+    // Map service to the correct table
+    if (service === 'openrouter') {
+      tableName = 'openrouter_apis';
+    } else if (service === 'gemini') {
+      tableName = 'gemini_api_keys';
+    } else if (service === 'dream_studio') {
+      tableName = 'dream_studio_api_keys';
     }
+    
+    // Insert new key
+    const result = await supabase
+      .from(tableName)
+      .insert({
+        api_key: apiKey,
+        priority: priority,
+        is_active: true,
+        updated_at: new Date().toISOString()
+      });
     
     if (result.error) {
       console.error(`Error saving ${service} API key:`, result.error);
@@ -60,12 +73,23 @@ export async function saveApiKey(service: string, apiKey: string): Promise<boole
 }
 
 // Delete API key for a service (admin only)
-export async function deleteApiKey(service: string): Promise<boolean> {
+export async function deleteApiKey(service: string, apiKey: string): Promise<boolean> {
   try {
+    let tableName = 'api_keys';
+    
+    // Map service to the correct table
+    if (service === 'openrouter') {
+      tableName = 'openrouter_apis';
+    } else if (service === 'gemini') {
+      tableName = 'gemini_api_keys';
+    } else if (service === 'dream_studio') {
+      tableName = 'dream_studio_api_keys';
+    }
+    
     const { error } = await supabase
-      .from('api_keys')
+      .from(tableName)
       .delete()
-      .eq('service', service);
+      .eq('api_key', apiKey);
     
     if (error) {
       console.error(`Error deleting ${service} API key:`, error);
@@ -79,33 +103,58 @@ export async function deleteApiKey(service: string): Promise<boolean> {
   }
 }
 
-// List all available API key services
-export async function listApiKeyServices(): Promise<string[]> {
+// List all API keys for a service
+export async function listApiKeys(service: string): Promise<{ id: string, api_key: string, priority: number }[]> {
   try {
+    let tableName = 'api_keys';
+    
+    // Map service to the correct table
+    if (service === 'openrouter') {
+      tableName = 'openrouter_apis';
+    } else if (service === 'gemini') {
+      tableName = 'gemini_api_keys';
+    } else if (service === 'dream_studio') {
+      tableName = 'dream_studio_api_keys';
+    }
+    
     const { data, error } = await supabase
-      .from('api_keys')
-      .select('service');
+      .from(tableName)
+      .select('id, api_key, priority')
+      .order('priority', { ascending: true });
     
     if (error) {
-      console.error("Error fetching API key services:", error);
+      console.error(`Error listing ${service} API keys:`, error);
       return [];
     }
     
-    return data.map(item => item.service);
+    return data || [];
   } catch (error) {
-    console.error("Error fetching API key services:", error);
+    console.error(`Error listing ${service} API keys:`, error);
     return [];
   }
 }
 
-// Check if user is an admin (can be extended with proper roles system)
+// Check if user is an admin
 export async function isUserAdmin(): Promise<boolean> {
   try {
-    // This is a placeholder function that should be replaced with proper role checking
-    // For a real implementation, you would check against a roles table in the database
     const session = await supabase.auth.getSession();
-    // For now we're checking if the user is authenticated at all
-    return !!session.data.session;
+    
+    if (!session.data.session?.user?.id) {
+      return false;
+    }
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', session.data.session.user.id)
+      .maybeSingle();
+    
+    if (error || !data) {
+      console.error("Error checking admin status:", error);
+      return false;
+    }
+    
+    return data.is_admin === true;
   } catch (error) {
     console.error("Error checking admin status:", error);
     return false;
