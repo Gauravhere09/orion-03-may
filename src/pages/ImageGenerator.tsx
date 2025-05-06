@@ -6,36 +6,62 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Header from '@/components/Header';
 import { useModelStore } from '@/stores/modelStore';
-import { Loader2, Download, Copy, Share2, Image as ImageIcon, Wand2, Settings } from 'lucide-react';
+import { Loader2, Download, Copy, Share2, Wand2, Image as ImageIcon } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/ui/sonner';
 import { generateDreamStudioImage, DREAM_STUDIO_STYLE_PRESETS, DREAM_STUDIO_ASPECT_RATIOS } from '@/services/dreamStudioService';
-import ApiKeyModal from '@/components/ApiKeyModal';
+import { getAllDreamStudioKeys } from '@/services/apiKeyService';
+import ImageGenerationLoading from '@/components/ImageGenerationLoading';
+import ImageViewer from '@/components/ImageViewer';
 
 const ImageGenerator = () => {
   const { selectedModel } = useModelStore();
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<string[]>([]);
-  const [imageHistory, setImageHistory] = useState<string[]>([]);
+  const [imageHistory, setImageHistory] = useState<{ url: string, prompt: string }[]>([]);
   const [prompt, setPrompt] = useState('');
   const [size, setSize] = useState('1:1');
   const [style, setStyle] = useState('none');
-  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
-
-  // Check if Dream Studio API key is available
   const [isDreamStudioKeyAvailable, setIsDreamStudioKeyAvailable] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<{ url: string, prompt: string } | null>(null);
   
   useEffect(() => {
-    // Check if the user has a Dream Studio API key in localStorage
-    const dreamStudioApiKey = localStorage.getItem('dream_studio_api_key');
-    setIsDreamStudioKeyAvailable(!!dreamStudioApiKey);
+    // Check if Dream Studio API keys are available
+    const checkApiKeys = async () => {
+      try {
+        // Try to get keys from Supabase
+        const keys = await getAllDreamStudioKeys();
+        if (keys.length > 0) {
+          setIsDreamStudioKeyAvailable(true);
+          return;
+        }
+        
+        // Fallback to localStorage
+        const localApiKey = localStorage.getItem('dream_studio_api_key');
+        setIsDreamStudioKeyAvailable(!!localApiKey);
+      } catch (error) {
+        console.error("Error checking Dream Studio API keys:", error);
+        // Fallback to localStorage check
+        const localApiKey = localStorage.getItem('dream_studio_api_key');
+        setIsDreamStudioKeyAvailable(!!localApiKey);
+      }
+    };
+    
+    checkApiKeys();
     
     // Load image history from localStorage
     try {
       const savedHistory = localStorage.getItem('image_history');
       if (savedHistory) {
-        setImageHistory(JSON.parse(savedHistory));
+        const parsedHistory = JSON.parse(savedHistory);
+        // Convert old format if needed
+        const formattedHistory = Array.isArray(parsedHistory) 
+          ? parsedHistory.map(url => 
+              typeof url === 'string' ? { url, prompt: 'Generated image' } : url
+            )
+          : [];
+        setImageHistory(formattedHistory);
       }
     } catch (error) {
       console.error("Error loading image history:", error);
@@ -43,8 +69,9 @@ const ImageGenerator = () => {
   }, []);
 
   // Save image history to localStorage
-  const saveImageToHistory = (imageUrl: string) => {
-    const updatedHistory = [imageUrl, ...imageHistory.slice(0, 19)]; // Keep only the 20 most recent images
+  const saveImageToHistory = (imageUrl: string, imagePrompt: string) => {
+    const newImage = { url: imageUrl, prompt: imagePrompt };
+    const updatedHistory = [newImage, ...imageHistory.slice(0, 19)]; // Keep only the 20 most recent images
     setImageHistory(updatedHistory);
     localStorage.setItem('image_history', JSON.stringify(updatedHistory));
   };
@@ -57,7 +84,9 @@ const ImageGenerator = () => {
     }
 
     if (!isDreamStudioKeyAvailable) {
-      setIsApiKeyModalOpen(true);
+      toast.error("Dream Studio API key not available", {
+        description: "Please contact your administrator to add a Dream Studio API key"
+      });
       return;
     }
     
@@ -74,7 +103,7 @@ const ImageGenerator = () => {
       
       if (image) {
         setImages([image]);
-        saveImageToHistory(image);
+        saveImageToHistory(image, prompt);
         toast.success("Image generated successfully");
       } else {
         throw new Error("Failed to generate image with Dream Studio");
@@ -89,41 +118,30 @@ const ImageGenerator = () => {
     }
   };
   
-  const downloadImage = (url: string) => {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `generated-image-${Date.now()}.webp`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+  const viewImage = (image: { url: string, prompt: string }) => {
+    setSelectedImage(image);
   };
   
-  const copyImage = (url: string) => {
-    navigator.clipboard.writeText(url)
-      .then(() => toast.success("Image URL copied to clipboard"))
-      .catch(() => toast.error("Failed to copy image URL"));
+  const deleteImage = (index: number) => {
+    const updatedHistory = [...imageHistory];
+    updatedHistory.splice(index, 1);
+    setImageHistory(updatedHistory);
+    localStorage.setItem('image_history', JSON.stringify(updatedHistory));
+    toast.success("Image removed from history");
+    
+    // If this was the selected image, close the modal
+    if (selectedImage && selectedImage.url === imageHistory[index].url) {
+      setSelectedImage(null);
+    }
   };
 
-  const handleModelSelect = () => {
-    // Show model selection dialog
-  };
-  
-  const handleNewProject = () => {
-    // Reset the form and generated images
-    setPrompt('');
-    setImages([]);
-  };
-
-  const handleApiKeyUpdated = () => {
-    // Check if API key is now available
-    const dreamStudioApiKey = localStorage.getItem('dream_studio_api_key');
-    setIsDreamStudioKeyAvailable(!!dreamStudioApiKey);
-  };
-
-  // Render individual image card
+  // Render individual image card for the generated image
   const ImageCard = ({ image, index }: { image: string, index: number }) => (
-    <Card key={index} className="overflow-hidden">
-      <div className="relative aspect-square">
+    <Card key={index} className="overflow-hidden hover-scale">
+      <div 
+        className="relative aspect-square cursor-pointer"
+        onClick={() => viewImage({ url: image, prompt })}
+      >
         <img 
           src={image} 
           alt={`Generated image ${index + 1}`} 
@@ -134,20 +152,46 @@ const ImageGenerator = () => {
         <Button 
           size="sm" 
           variant="outline"
-          onClick={() => copyImage(image)}
+          onClick={() => {
+            navigator.clipboard.writeText(image);
+            toast.success("Image URL copied to clipboard");
+          }}
         >
           <Copy className="h-4 w-4" />
         </Button>
         <Button
           size="sm"
           variant="outline"
-          onClick={() => downloadImage(image)}
+          onClick={() => {
+            const a = document.createElement('a');
+            a.href = image;
+            a.download = `generated-image-${Date.now()}.webp`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }}
         >
           <Download className="h-4 w-4" />
         </Button>
         <Button
           size="sm"
           variant="outline"
+          onClick={async () => {
+            if (navigator.share) {
+              try {
+                await navigator.share({
+                  title: 'AI Generated Image',
+                  text: prompt,
+                  url: image,
+                });
+              } catch (error) {
+                console.error('Error sharing:', error);
+              }
+            } else {
+              navigator.clipboard.writeText(image);
+              toast.info("Sharing not supported, URL copied instead");
+            }
+          }}
         >
           <Share2 className="h-4 w-4" />
         </Button>
@@ -155,26 +199,34 @@ const ImageGenerator = () => {
     </Card>
   );
 
+  // Render thumbnail for history
+  const ImageThumbnail = ({ image, index }: { image: { url: string, prompt: string }, index: number }) => (
+    <div 
+      className="relative aspect-square cursor-pointer rounded-md overflow-hidden border border-border hover:border-primary transition-colors"
+      onClick={() => viewImage(image)}
+    >
+      <img 
+        src={image.url} 
+        alt={`History image ${index + 1}`} 
+        className="w-full h-full object-cover"
+      />
+    </div>
+  );
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col overflow-hidden scrollbar-none">
       {/* Header with pt-14 to account for fixed header space */}
       <Header 
         selectedModel={selectedModel} 
-        onModelSelectClick={handleModelSelect}
-        onNewChatClick={handleNewProject}
+        onNewChatClick={() => {
+          setPrompt('');
+          setImages([]);
+        }}
       />
       
-      <div className="container mx-auto p-4 pt-16 flex-1">
+      <div className="container mx-auto p-4 pt-16 flex-1 overflow-y-auto scrollbar-none">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">AI Image Generator</h1>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setIsApiKeyModalOpen(true)}
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            API Key Settings
-          </Button>
         </div>
         
         <Tabs defaultValue="generate" className="mb-6">
@@ -198,7 +250,7 @@ const ImageGenerator = () => {
                           placeholder="Describe the image you want to create..."
                           value={prompt}
                           onChange={(e) => setPrompt(e.target.value)}
-                          className="resize-none h-32"
+                          className="resize-none h-32 scrollbar-none"
                         />
                       </div>
                       
@@ -257,7 +309,7 @@ const ImageGenerator = () => {
                       
                       {!isDreamStudioKeyAvailable && (
                         <div className="text-amber-600 dark:text-amber-400 text-sm text-center">
-                          Dream Studio API key not available. Click "API Key Settings" to add your key.
+                          Dream Studio API key not available. Please contact your administrator.
                         </div>
                       )}
                     </form>
@@ -267,15 +319,7 @@ const ImageGenerator = () => {
               
               <div className="lg:col-span-2">
                 {loading ? (
-                  <div className="h-full flex items-center justify-center border-2 border-dashed rounded-lg p-12 animate-pulse">
-                    <div className="text-center">
-                      <Loader2 className="h-16 w-16 mx-auto opacity-50 mb-4 animate-spin" />
-                      <h3 className="text-xl font-medium mb-2">Generating your image...</h3>
-                      <p className="text-muted-foreground">
-                        This may take a few seconds depending on the complexity
-                      </p>
-                    </div>
-                  </div>
+                  <ImageGenerationLoading className="bg-background/20 backdrop-blur-sm rounded-lg border-2 border-dashed border-border" />
                 ) : images.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {images.map((img, index) => (
@@ -293,7 +337,7 @@ const ImageGenerator = () => {
                       
                       {!isDreamStudioKeyAvailable && (
                         <div className="mt-4 text-amber-600 dark:text-amber-400">
-                          Dream Studio API key not configured. Click "API Key Settings" to add your key.
+                          Dream Studio API key not configured. Contact your administrator.
                         </div>
                       )}
                     </div>
@@ -305,9 +349,9 @@ const ImageGenerator = () => {
           
           <TabsContent value="history">
             {imageHistory.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {imageHistory.map((img, index) => (
-                  <ImageCard key={index} image={img} index={index} />
+                  <ImageThumbnail key={index} image={img} index={index} />
                 ))}
               </div>
             ) : (
@@ -323,11 +367,25 @@ const ImageGenerator = () => {
         </Tabs>
       </div>
       
-      <ApiKeyModal
-        open={isApiKeyModalOpen}
-        onOpenChange={setIsApiKeyModalOpen}
-        onApiKeySaved={handleApiKeyUpdated}
-      />
+      {/* Image viewer modal */}
+      {selectedImage && (
+        <ImageViewer
+          open={!!selectedImage}
+          onOpenChange={(isOpen) => !isOpen && setSelectedImage(null)}
+          image={selectedImage.url}
+          prompt={selectedImage.prompt}
+          onDelete={
+            // Find the index of the selected image to delete it
+            () => {
+              const index = imageHistory.findIndex(img => img.url === selectedImage.url);
+              if (index !== -1) {
+                deleteImage(index);
+                setSelectedImage(null);
+              }
+            }
+          }
+        />
+      )}
     </div>
   );
 };

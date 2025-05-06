@@ -2,26 +2,33 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import ChatContainer from '@/components/ChatContainer';
-import ChatInput from '@/components/ChatInput';
 import ApiKeyModal from '@/components/ApiKeyModal';
 import ModelSelectorDialog from '@/components/ModelSelectorDialog';
 import CodeDisplay from '@/components/CodeDisplay';
 import CodePreview from '@/components/CodePreview';
 import Header from '@/components/Header';
 import ErrorReportForm from '@/components/ErrorReportForm';
+import ChatArea from '@/components/layout/ChatArea';
+import CodeArea from '@/components/layout/CodeArea';
 import { Button } from '@/components/ui/button';
 import { useChatStore } from '@/stores/chatStore';
 import { useModelStore } from '@/stores/modelStore';
 import { useUiStore } from '@/stores/uiStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { hasApiKeys } from '@/services/storage';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { syncApiKeysWithSupabase } from '@/services/storage';
 import { supabase } from '@/integrations/supabase/client';
-import { Message } from '@/services/apiTypes';
 import { Code, X } from 'lucide-react';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from '@/components/ui/alert-dialog';
 
 interface MainLayoutProps {
   apiKeyModalOpen: boolean;
@@ -36,21 +43,16 @@ const MainLayout = ({
   isPreviewMode,
   onExitPreview
 }: MainLayoutProps) => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
   const { messages, isLoading, isGenerating, handleSendMessage, handleRegenerateResponse, 
           handleStopGeneration, handleNewChat, generatedCode, showClearChatConfirm, 
           setShowClearChatConfirm, confirmClearChat, enhanceUserPrompt, lastError, 
           setLastError, loadChatFromSaved, chatId, projectName, autoSaveIfNeeded } = useChatStore();
   const { selectedModel, handleModelSelect } = useModelStore();
-  const { isChatMode, toggleChatMode, isDarkMode } = useUiStore();
+  const { isChatMode } = useUiStore();
   
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
-  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [errorReportOpen, setErrorReportOpen] = useState(false);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
-  const lastScrollPosition = useRef(0);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   
   // Sync API keys from Supabase on initial load
@@ -114,7 +116,7 @@ const MainLayout = ({
   }
 
   return (
-    <div className="flex flex-col h-screen max-h-screen overflow-hidden bg-background text-foreground">
+    <div className="flex flex-col h-screen max-h-screen overflow-hidden bg-background text-foreground scrollbar-none">
       <Header 
         selectedModel={selectedModel}
         onModelSelectClick={() => setModelSelectorOpen(true)}
@@ -122,17 +124,16 @@ const MainLayout = ({
         projectName={projectName}
       />
       
-      {/* Add extra padding to account for fixed header */}
       <div className="pt-14 flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Always display chat container (mobile or desktop) */}
-        <div 
-          ref={chatContainerRef}
-          className={`w-full ${!isMobile && hasGeneratedCode ? 'md:w-1/2' : ''} flex flex-col overflow-hidden border-r border-border`}
-        >
-          <ChatContainer 
-            messages={messages} 
-            isLoading={isLoading} 
+        <div className={`w-full ${!isMobile && hasGeneratedCode ? 'md:w-1/2' : ''} flex flex-col overflow-hidden border-r border-border`}>
+          <ChatArea 
+            messages={messages}
+            isLoading={isLoading}
+            isGenerating={isGenerating}
             onRegenerate={handleRegenerateResponse}
+            onSendMessage={handleSendMessage}
+            onStopGeneration={handleStopGeneration}
             onViewPreview={(code) => {
               const parsedCode = useChatStore.getState().parseCodeFromResponse(code);
               if (parsedCode.preview) {
@@ -140,42 +141,13 @@ const MainLayout = ({
                 useUiStore.getState().setIsPreviewMode(true);
               }
             }}
+            onEnhancePrompt={enhanceUserPrompt}
           />
-          
-          <div className="flex items-center justify-center">
-            {isGenerating && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleStopGeneration}
-                className="flex items-center gap-2 my-2 border-primary/20 text-xs"
-              >
-                <div className="h-3 w-3 rounded-full border-2 border-current border-r-transparent animate-spin" />
-                <span>Stop Generating</span>
-              </Button>
-            )}
-          </div>
-          
-          <div className="relative px-4">
-            <ChatInput 
-              onSendMessage={(msg, imageUrls) => handleSendMessage(msg, imageUrls)} 
-              disabled={isLoading || !hasApiKeys()}
-              placeholder={isChatMode 
-                ? "Chat with AI assistant..." 
-                : "Describe the code you want to generate..."}
-              isChatMode={isChatMode}
-              onToggleChatMode={toggleChatMode}
-              onEnhancePrompt={enhanceUserPrompt}
-              selectedModel={selectedModel}
-            />
-          </div>
         </div>
         
         {/* Desktop: Show code editor in split view */}
         {!isMobile && hasGeneratedCode && (
-          <div className="hidden md:flex md:w-1/2 overflow-hidden flex-col border-l border-border">
-            <CodeDisplay code={generatedCode} />
-          </div>
+          <CodeArea code={generatedCode} />
         )}
       </div>
       

@@ -1,125 +1,66 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { 
+  getOpenRouterApiKey, 
+  saveOpenRouterApiKey, 
+  listOpenRouterApiKeys, 
+  deleteOpenRouterApiKey 
+} from "./apiKeys/openRouterKeyService";
+import { 
+  getGeminiApiKey, 
+  saveGeminiApiKey, 
+  listGeminiApiKeys, 
+  deleteGeminiApiKey 
+} from "./apiKeys/geminiKeyService";
+import { 
+  getDreamStudioApiKey, 
+  saveDreamStudioApiKey, 
+  listDreamStudioApiKeys, 
+  deleteDreamStudioApiKey,
+  getAllDreamStudioApiKeys 
+} from "./apiKeys/dreamStudioKeyService";
+import { 
+  getGenericApiKey, 
+  saveGenericApiKey, 
+  listGenericApiKeys, 
+  deleteGenericApiKey 
+} from "./apiKeys/genericKeyService";
 
 // Get API key for a specific service
 export async function getApiKey(service: string): Promise<string | null> {
   try {
-    let data = null;
-    let error = null;
-    
-    // Query the appropriate table based on service name
     if (service === 'openrouter') {
-      const result = await supabase
-        .from('openrouter_apis')
-        .select('api_key')
-        .order('priority', { ascending: true })
-        .eq('is_default', true)
-        .limit(1)
-        .maybeSingle();
-      
-      data = result.data;
-      error = result.error;
+      return await getOpenRouterApiKey();
     } else if (service === 'gemini') {
-      const result = await supabase
-        .from('gemini_api_keys')
-        .select('api_key')
-        .order('priority', { ascending: true })
-        .eq('is_active', true)
-        .limit(1)
-        .maybeSingle();
-      
-      data = result.data;
-      error = result.error;
+      return await getGeminiApiKey();
     } else if (service === 'dream_studio') {
-      const result = await supabase
-        .from('dream_studio_api_keys')
-        .select('api_key')
-        .order('priority', { ascending: true })
-        .eq('is_active', true)
-        .limit(1)
-        .maybeSingle();
-      
-      data = result.data;
-      error = result.error;
+      return await getDreamStudioApiKey();
     } else {
-      // For any other service, try the general api_keys table
-      const result = await supabase
-        .from('api_keys')
-        .select('api_key')
-        .eq('service', service)
-        .eq('is_active', true)
-        .order('priority', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      
-      data = result.data;
-      error = result.error;
+      return await getGenericApiKey(service);
     }
-    
-    if (error) {
-      console.error(`Error fetching ${service} API key:`, error);
-      return null;
-    }
-    
-    return data?.api_key || null;
   } catch (error) {
     console.error(`Error fetching ${service} API key:`, error);
     return null;
   }
 }
 
+// Get all API keys for DreamStudio to enable multi-API usage
+export async function getAllDreamStudioKeys(): Promise<string[]> {
+  return await getAllDreamStudioApiKeys();
+}
+
 // Save or update API key for a service (admin only)
 export async function saveApiKey(service: string, apiKey: string, priority = 1): Promise<boolean> {
   try {
-    let result = null;
-    
-    // Insert into the appropriate table based on service name
     if (service === 'openrouter') {
-      result = await supabase
-        .from('openrouter_apis')
-        .insert({
-          api_key: apiKey,
-          priority: priority,
-          is_default: true,
-          updated_at: new Date().toISOString()
-        });
+      return await saveOpenRouterApiKey(apiKey, priority);
     } else if (service === 'gemini') {
-      result = await supabase
-        .from('gemini_api_keys')
-        .insert({
-          api_key: apiKey,
-          priority: priority,
-          is_active: true,
-          updated_at: new Date().toISOString()
-        });
+      return await saveGeminiApiKey(apiKey, priority);
     } else if (service === 'dream_studio') {
-      result = await supabase
-        .from('dream_studio_api_keys')
-        .insert({
-          api_key: apiKey,
-          priority: priority,
-          is_active: true,
-          updated_at: new Date().toISOString()
-        });
+      return await saveDreamStudioApiKey(apiKey, priority);
     } else {
-      // For any other service, use the general api_keys table
-      result = await supabase
-        .from('api_keys')
-        .insert({
-          api_key: apiKey,
-          service: service,
-          priority: priority,
-          is_active: true,
-          updated_at: new Date().toISOString()
-        });
+      return await saveGenericApiKey(service, apiKey, priority);
     }
-    
-    if (result.error) {
-      console.error(`Error saving ${service} API key:`, result.error);
-      return false;
-    }
-    
-    return true;
   } catch (error) {
     console.error(`Error saving ${service} API key:`, error);
     return false;
@@ -129,39 +70,15 @@ export async function saveApiKey(service: string, apiKey: string, priority = 1):
 // Delete API key for a service (admin only)
 export async function deleteApiKey(service: string, apiKey: string): Promise<boolean> {
   try {
-    let result = null;
-    
-    // Delete from the appropriate table based on service name
     if (service === 'openrouter') {
-      result = await supabase
-        .from('openrouter_apis')
-        .delete()
-        .eq('api_key', apiKey);
+      return await deleteOpenRouterApiKey(apiKey);
     } else if (service === 'gemini') {
-      result = await supabase
-        .from('gemini_api_keys')
-        .delete()
-        .eq('api_key', apiKey);
+      return await deleteGeminiApiKey(apiKey);
     } else if (service === 'dream_studio') {
-      result = await supabase
-        .from('dream_studio_api_keys')
-        .delete()
-        .eq('api_key', apiKey);
+      return await deleteDreamStudioApiKey(apiKey);
     } else {
-      // For any other service, use the general api_keys table
-      result = await supabase
-        .from('api_keys')
-        .delete()
-        .eq('api_key', apiKey)
-        .eq('service', service);
+      return await deleteGenericApiKey(service, apiKey);
     }
-    
-    if (result.error) {
-      console.error(`Error deleting ${service} API key:`, result.error);
-      return false;
-    }
-    
-    return true;
   } catch (error) {
     console.error(`Error deleting ${service} API key:`, error);
     return false;
@@ -171,39 +88,15 @@ export async function deleteApiKey(service: string, apiKey: string): Promise<boo
 // List all API keys for a service
 export async function listApiKeys(service: string): Promise<{ id: string, api_key: string, priority: number }[]> {
   try {
-    let result = null;
-    
-    // Query the appropriate table based on service name
     if (service === 'openrouter') {
-      result = await supabase
-        .from('openrouter_apis')
-        .select('id, api_key, priority')
-        .order('priority', { ascending: true });
+      return await listOpenRouterApiKeys();
     } else if (service === 'gemini') {
-      result = await supabase
-        .from('gemini_api_keys')
-        .select('id, api_key, priority')
-        .order('priority', { ascending: true });
+      return await listGeminiApiKeys();
     } else if (service === 'dream_studio') {
-      result = await supabase
-        .from('dream_studio_api_keys')
-        .select('id, api_key, priority')
-        .order('priority', { ascending: true });
+      return await listDreamStudioApiKeys();
     } else {
-      // For any other service, use the general api_keys table
-      result = await supabase
-        .from('api_keys')
-        .select('id, api_key, priority')
-        .eq('service', service)
-        .order('priority', { ascending: true });
+      return await listGenericApiKeys(service);
     }
-    
-    if (result.error) {
-      console.error(`Error listing ${service} API keys:`, result.error);
-      return [];
-    }
-    
-    return result.data as { id: string, api_key: string, priority: number }[] || [];
   } catch (error) {
     console.error(`Error listing ${service} API keys:`, error);
     return [];

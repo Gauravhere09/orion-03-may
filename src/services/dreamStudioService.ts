@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
-import { getApiKey } from "./apiKeyService";
+import { getAllDreamStudioKeys } from "./apiKeyService";
 
 export interface DreamStudioGenerateOptions {
   prompt: string;
@@ -14,26 +14,54 @@ export async function generateDreamStudioImage(options: DreamStudioGenerateOptio
   try {
     const { prompt, aspectRatio = "1:1", stylePreset, outputFormat = "webp" } = options;
     
-    // First try to get API key from localStorage as a fallback
-    const localApiKey = localStorage.getItem('dream_studio_api_key');
+    // Get all available Dream Studio API keys from Supabase
+    let apiKeys = await getAllDreamStudioKeys();
     
-    // Get API key from Supabase if the user is logged in
-    let supabaseKey = null;
-    const session = await supabase.auth.getSession();
-    if (session.data.session) {
-      supabaseKey = await getApiKey('dream_studio');
+    // If no keys in Supabase, check localStorage as a fallback
+    if (apiKeys.length === 0) {
+      const localApiKey = localStorage.getItem('dream_studio_api_key');
+      if (localApiKey) {
+        apiKeys = [localApiKey];
+      }
     }
     
-    // Use the Supabase key if available, otherwise use the localStorage key
-    const apiKey = supabaseKey || localApiKey;
-    
-    if (!apiKey) {
-      toast.error("Dream Studio API key not found", {
+    if (apiKeys.length === 0) {
+      toast.error("No Dream Studio API keys found", {
         description: "Please add your Dream Studio API key in the settings"
       });
       return null;
     }
     
+    // Use the first API key (highest priority) for the initial attempt
+    let result = await attemptImageGeneration(apiKeys[0], prompt, aspectRatio, stylePreset, outputFormat);
+    
+    // If first key fails but we have other keys, try them in order
+    if (!result && apiKeys.length > 1) {
+      for (let i = 1; i < apiKeys.length; i++) {
+        console.log(`First API key failed, trying alternate key ${i}...`);
+        result = await attemptImageGeneration(apiKeys[i], prompt, aspectRatio, stylePreset, outputFormat);
+        if (result) break;
+      }
+    }
+    
+    return result;
+  } catch (error) {
+    console.error("Error generating Dream Studio image:", error);
+    toast.error("Failed to generate image", {
+      description: error instanceof Error ? error.message : "An unexpected error occurred"
+    });
+    return null;
+  }
+}
+
+async function attemptImageGeneration(
+  apiKey: string, 
+  prompt: string, 
+  aspectRatio: string, 
+  stylePreset?: string,
+  outputFormat: string = 'webp'
+): Promise<string | null> {
+  try {
     const { data, error } = await supabase.functions.invoke('dream-studio-generate', {
       body: {
         prompt,
@@ -46,24 +74,17 @@ export async function generateDreamStudioImage(options: DreamStudioGenerateOptio
     
     if (error) {
       console.error("Dream Studio API error:", error);
-      toast.error("Failed to generate image", {
-        description: error.message || "An unexpected error occurred"
-      });
       return null;
     }
     
     if (!data.image) {
       console.error("No image data returned from Dream Studio API");
-      toast.error("No image was generated");
       return null;
     }
     
     return data.image;
   } catch (error) {
-    console.error("Error generating Dream Studio image:", error);
-    toast.error("Failed to generate image", {
-      description: error instanceof Error ? error.message : "An unexpected error occurred"
-    });
+    console.error(`Error with specific Dream Studio key:`, error);
     return null;
   }
 }

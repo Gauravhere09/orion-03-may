@@ -2,7 +2,7 @@
 import { FormEvent, useState, useRef, ChangeEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Image, Sparkles, Code, MessageSquare, Send } from 'lucide-react';
+import { Image, Sparkles, MessageSquare, Send } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Toggle } from '@/components/ui/toggle';
 import { AIModel } from '@/data/models';
@@ -113,7 +113,7 @@ const ChatInput = ({
 
   return (
     <>
-      <form onSubmit={handleSubmit} className={`${inputContainerClasses} px-1 py-1`}>
+      <form onSubmit={handleSubmit} className={`${inputContainerClasses} px-1 py-1 scrollbar-none`}>
         {/* Image previews */}
         {images.length > 0 && (
           <div className="flex gap-2 mb-2 flex-wrap">
@@ -144,7 +144,7 @@ const ChatInput = ({
         )}
         
         <div className="flex-col max-w-3xl mx-auto glass-morphism rounded-xl p-2">
-          {/* Mode toggle and image button above input in row */}
+          {/* Chat mode toggle */}
           <div className="flex justify-start gap-2 items-center py-2">
             <Toggle
               pressed={isChatMode}
@@ -161,7 +161,7 @@ const ChatInput = ({
                 </>
               ) : (
                 <>
-                  <Code className="h-3.5 w-3.5" />
+                  <Sparkles className="h-3.5 w-3.5" />
                   <span>Code</span>
                 </>
               )}

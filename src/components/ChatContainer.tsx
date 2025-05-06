@@ -1,11 +1,12 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Message } from '@/services/apiTypes';
 import { getMessageText, hasCodeBlocks } from '@/services/api';
 import MessageBubble from '@/components/MessageBubble';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useModelStore } from '@/stores/modelStore';
 import { useUiStore } from '@/stores/uiStore';
+import ScrollToBottom from './layout/ScrollToBottom';
 
 interface ChatContainerProps {
   messages: Message[];
@@ -17,15 +18,32 @@ interface ChatContainerProps {
 const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview }: ChatContainerProps) => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const { selectedModel } = useModelStore();
   const { isChatMode } = useUiStore();
 
-  // Scroll to bottom whenever messages change or loading state changes
+  // Auto scroll only for new messages if user is at the bottom
   useEffect(() => {
-    if (bottomRef.current) {
+    if (bottomRef.current && shouldAutoScroll) {
       bottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isLoading]);
+  }, [messages, isLoading, shouldAutoScroll]);
+  
+  // Track scroll position to determine if auto-scroll should happen
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      // Consider "at bottom" if within 100px of the bottom
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+      setShouldAutoScroll(isAtBottom);
+    };
+    
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Filter out system messages from display and validate message structure
   const displayMessages = Array.isArray(messages) 
@@ -86,6 +104,8 @@ const ChatContainer = ({ messages, isLoading, onRegenerate, onViewPreview }: Cha
         </div>
       )}
       <div ref={bottomRef} />
+      
+      {/* Scroll to bottom button is now handled by ScrollToBottom component */}
     </div>
   );
 };

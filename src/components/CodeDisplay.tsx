@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { GeneratedCode } from '@/services/apiTypes';
 import { Button } from '@/components/ui/button';
-import { Copy, Edit, Check, Phone } from 'lucide-react';
+import { Copy, Edit, Check, Phone, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import Editor from '@monaco-editor/react';
 import { useChatStore } from '@/stores/chatStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useUiStore } from '@/stores/uiStore';
+import { useNavigate } from 'react-router-dom';
 
 interface CodeDisplayProps {
   code: GeneratedCode;
@@ -18,8 +19,9 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
   const [isEditing, setIsEditing] = useState(false);
 
   const { setGeneratedCode } = useChatStore();
-  const { isDarkMode } = useUiStore();
+  const { isDarkMode, setIsPreviewMode } = useUiStore();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   
   // Update editable content when code prop changes
   useEffect(() => {
@@ -72,6 +74,10 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
         description: "You can now edit the code"
       });
     }
+  };
+
+  const viewPreview = () => {
+    setIsPreviewMode(true);
   };
 
   // Mobile edit button for quick access
@@ -150,10 +156,27 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ code }) => {
               tabSize: 2,
               scrollBeyondLastLine: false,
               automaticLayout: true,
+              scrollbar: {
+                vertical: 'hidden',
+                horizontal: 'hidden'
+              }
             }}
             onChange={(value) => setEditableHtml(value || '')}
           />
         </div>
+      </div>
+      
+      {/* Preview button at bottom */}
+      <div className="p-2 border-t flex justify-center">
+        <Button 
+          variant="default" 
+          size="sm" 
+          className="flex items-center gap-1" 
+          onClick={viewPreview}
+        >
+          <Eye className="h-4 w-4" />
+          View Preview
+        </Button>
       </div>
       
       {/* Mobile edit button */}
