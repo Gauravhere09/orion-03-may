@@ -17,14 +17,6 @@ export async function generateDreamStudioImage(options: DreamStudioGenerateOptio
     // Get all available Dream Studio API keys from Supabase
     let apiKeys = await getAllDreamStudioKeys();
     
-    // If no keys in Supabase, check localStorage as a fallback
-    if (apiKeys.length === 0) {
-      const localApiKey = localStorage.getItem('dream_studio_api_key');
-      if (localApiKey) {
-        apiKeys = [localApiKey];
-      }
-    }
-    
     if (apiKeys.length === 0) {
       toast.error("No Dream Studio API keys found", {
         description: "Please add your Dream Studio API key in the settings"

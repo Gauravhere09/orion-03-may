@@ -1,111 +1,136 @@
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, Copy, Share2, Trash2 } from 'lucide-react';
-import { toast } from '@/components/ui/sonner';
+import { Download, Share2, Trash2, X } from 'lucide-react';
 
 interface ImageViewerProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  image: string;
-  prompt: string;
+  imageUrl: string;
+  prompt?: string;
   onDelete?: () => void;
 }
 
-const ImageViewer = ({ open, onOpenChange, image, prompt, onDelete }: ImageViewerProps) => {
-  const copyImage = () => {
-    navigator.clipboard.writeText(image)
-      .then(() => toast.success("Image URL copied to clipboard"))
-      .catch(() => toast.error("Failed to copy image URL"));
-  };
-  
+const ImageViewer = ({ imageUrl, prompt, onDelete }: ImageViewerProps) => {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
   const downloadImage = () => {
-    const a = document.createElement('a');
-    a.href = image;
-    a.download = `generated-image-${Date.now()}.webp`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = `generated-image-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
-  
+
   const shareImage = async () => {
     if (navigator.share) {
       try {
+        // Convert image URL to blob for sharing
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        const file = new File([blob], 'generated-image.png', { type: blob.type });
+        
         await navigator.share({
-          title: 'AI Generated Image',
-          text: prompt,
-          url: image,
+          title: 'Generated Image',
+          text: prompt || 'Check out this AI generated image!',
+          files: [file]
         });
-        toast.success("Shared successfully");
       } catch (error) {
-        console.error('Error sharing:', error);
-        toast.error("Failed to share image");
+        console.error('Error sharing image:', error);
+        // Fallback for browsers that don't support file sharing
+        navigator.share({
+          title: 'Generated Image',
+          text: prompt || 'Check out this AI generated image!',
+          url: imageUrl
+        });
       }
     } else {
-      copyImage();
-      toast.info("Sharing not supported, URL copied instead");
+      console.log('Web Share API not supported');
+      // Copy image URL to clipboard as fallback
+      navigator.clipboard.writeText(imageUrl);
+      alert('Image URL copied to clipboard!');
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[90vw] w-auto sm:max-w-[80vw] md:max-w-[70vw] lg:max-w-[60vw] xl:max-w-[50vw] max-h-[90vh] overflow-auto">
-        <DialogHeader>
-          <DialogTitle>Generated Image</DialogTitle>
-        </DialogHeader>
-        
-        <div className="overflow-hidden">
-          <img src={image} alt="AI Generated" className="w-full h-auto object-contain" />
-        </div>
-        
-        <div className="mt-2 bg-secondary/10 p-2 rounded-md max-h-24 overflow-y-auto scrollbar-none">
-          <p className="text-sm">{prompt}</p>
-        </div>
-        
-        <DialogFooter className="flex justify-between items-center mt-4 gap-2">
-          <div className="flex-1">
-            {onDelete && (
+    <>
+      <div 
+        className="overflow-hidden rounded-lg cursor-pointer hover:shadow-lg transition-all"
+        onClick={() => setIsFullscreen(true)}
+      >
+        <img 
+          src={imageUrl} 
+          alt="Generated" 
+          className="w-full h-auto object-contain"
+          loading="lazy"
+        />
+      </div>
+
+      <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
+        <DialogContent className="max-w-4xl w-[90vw] p-1 bg-background">
+          <div className="relative flex flex-col h-full">
+            <div className="absolute top-2 right-2 z-10">
               <Button 
-                variant="destructive" 
-                size="sm" 
-                onClick={onDelete}
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full bg-black/30 hover:bg-black/50 text-white"
+                onClick={() => setIsFullscreen(false)}
               >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
+                <X className="h-4 w-4" />
               </Button>
-            )}
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4">
+              <img 
+                src={imageUrl} 
+                alt="Generated" 
+                className="w-full h-auto object-contain"
+              />
+            </div>
+            
+            <div className="p-4 bg-background border-t">
+              {prompt && (
+                <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                  {prompt}
+                </p>
+              )}
+              <div className="flex justify-end gap-2">
+                {onDelete && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      onDelete();
+                      setIsFullscreen(false);
+                    }}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                    Delete
+                  </Button>
+                )}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={shareImage}
+                >
+                  <Share2 className="mr-2 h-4 w-4 text-cyan-500" />
+                  Share
+                </Button>
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="bg-cyan-500 hover:bg-cyan-600"
+                  onClick={downloadImage}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download
+                </Button>
+              </div>
+            </div>
           </div>
-          
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={copyImage}
-            >
-              <Copy className="h-4 w-4 mr-2" />
-              Copy
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={downloadImage}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Download
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={shareImage}
-            >
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

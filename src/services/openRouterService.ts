@@ -1,31 +1,16 @@
 
 import { AIModel } from '@/data/models';
 import { Message, ChatCompletionResponse, ErrorResponse, ApiError } from './apiTypes';
-import { getApiKeys } from './storage';
 import { getApiKey } from './apiKeyService';
 import { supabase } from "@/integrations/supabase/client";
 
-// Get OpenRouter API keys (from Supabase and localStorage)
+// Get OpenRouter API keys (only from Supabase)
 const getOpenRouterApiKeys = async (): Promise<string[]> => {
   const keys = [];
   
-  // First try to get from Supabase if user is authenticated
-  const session = await supabase.auth.getSession();
-  if (session.data.session) {
-    const supabaseKey = await getApiKey('openrouter');
-    if (supabaseKey) keys.push(supabaseKey);
-  }
-  
-  // Fallback to localStorage
-  const localKey = localStorage.getItem('openrouter_api_key');
-  if (localKey) {
-    keys.push(localKey);
-  }
-  
-  // Try to get from storage.ts
-  const storedApiKeys = getApiKeys();
-  const openRouterKeys = storedApiKeys.filter(key => key.key.startsWith('sk-or')).map(key => key.key);
-  keys.push(...openRouterKeys);
+  // Get from Supabase
+  const supabaseKey = await getApiKey('openrouter');
+  if (supabaseKey) keys.push(supabaseKey);
   
   if (keys.length === 0) {
     throw new Error('OpenRouter API key not found. Please add your API key in the settings.');

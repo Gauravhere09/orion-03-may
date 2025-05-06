@@ -1,44 +1,22 @@
 
-import { CSSProperties } from 'react';
-import { cn } from '@/lib/utils';
+import React from 'react';
 
 interface ImageGenerationLoadingProps {
-  className?: string;
+  visible: boolean;
 }
 
-const ImageGenerationLoading = ({ className }: ImageGenerationLoadingProps) => {
-  // Generate layers for the loading animation
-  const layers = Array(5).fill(0);
+const ImageGenerationLoading: React.FC<ImageGenerationLoadingProps> = ({ visible }) => {
+  if (!visible) return null;
   
   return (
-    <div className={cn(
-      "flex items-center justify-center w-full h-full min-h-[300px] relative", 
-      className
-    )}>
-      <div className="relative w-48 h-48">
-        {layers.map((_, index) => (
-          <div 
-            key={index} 
-            className="absolute inset-0 border-4 border-dashed rounded-full animate-spin" 
-            style={{
-              borderColor: `hsla(${200 + index * 30}, 70%, 60%, 0.${7 - index})`,
-              animationDuration: `${10 - index}s`,
-              animationDirection: index % 2 === 0 ? 'normal' : 'reverse',
-              width: `${100 - index * 5}%`,
-              height: `${100 - index * 5}%`,
-              top: `${index * 2.5}%`,
-              left: `${index * 2.5}%`
-            } as CSSProperties}
-          />
-        ))}
-        
-        <div className="absolute inset-0 flex items-center justify-center text-center">
-          <div>
-            <p className="text-lg font-medium mb-2">Generating your image...</p>
-            <p className="text-sm text-muted-foreground">
-              Creating something amazing
-            </p>
-          </div>
+    <div className="relative w-full h-full flex items-center justify-center min-h-[300px] bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden loading-bar">
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent animate-loader-move"></div>
+      <div className="z-10 flex flex-col items-center">
+        <div className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Generating image...
+        </div>
+        <div className="text-sm text-gray-500 dark:text-gray-400">
+          This might take a moment
         </div>
       </div>
     </div>

@@ -75,8 +75,8 @@ const Header = ({
                 size="sm"
                 className="flex items-center gap-1 text-sm px-2 h-8"
               >
-                <Menu className="h-4 w-4" />
-                <span>Navigate</span>
+                <Menu className="h-4 w-4 text-cyan-500" />
+                <span className="text-cyan-600">Navigate</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
@@ -104,7 +104,7 @@ const Header = ({
               className="flex items-center gap-1.5 px-2 text-sm h-8 hover:bg-secondary/20"
             >
               <div className="w-4 h-4 relative">
-                <div className={`absolute inset-0 rounded-full ${selectedModel.id === 'gemini' ? 'bg-cyan-500/60' : 'bg-violet-500/60'}`}></div>
+                <div className={`absolute inset-0 rounded-full ${selectedModel.id === 'gemini' ? 'bg-cyan-500/60' : 'bg-cyan-500/60'}`}></div>
               </div>
               <span className="font-medium truncate max-w-[150px]">{selectedModel.name}</span>
             </Button>
@@ -144,7 +144,7 @@ const Header = ({
             className="h-8 w-8 rounded-full"
             title="New Chat"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-4 w-4 text-cyan-500" />
           </Button>
           
           {onSaveClick && (
@@ -155,7 +155,7 @@ const Header = ({
               className="h-8 w-8 rounded-full"
               title="Save Project"
             >
-              <Save className="h-4 w-4" />
+              <Save className="h-4 w-4 text-cyan-500" />
             </Button>
           )}
           
@@ -166,7 +166,7 @@ const Header = ({
             className="h-8 w-8 rounded-full"
             title={isDarkMode ? "Light Mode" : "Dark Mode"}
           >
-            {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {isDarkMode ? <Sun className="h-4 w-4 text-cyan-400" /> : <Moon className="h-4 w-4 text-cyan-600" />}
           </Button>
           
           {onSettingsClick && !isImageGenerator && (
@@ -177,7 +177,7 @@ const Header = ({
               className="h-8 w-8 rounded-full"
               title="Settings"
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-4 w-4 text-cyan-500" />
             </Button>
           )}
         </div>

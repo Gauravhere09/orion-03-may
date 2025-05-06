@@ -6,20 +6,13 @@ import { supabase } from "@/integrations/supabase/client";
 
 const GEMINI_API_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
-// Get Gemini API key (first try Supabase, then fallback to localStorage)
+// Get Gemini API key (only from Supabase)
 const getGeminiApiKeys = async (): Promise<string[]> => {
   const keys = [];
   
-  // First try to get from Supabase if user is authenticated
-  const session = await supabase.auth.getSession();
-  if (session.data.session) {
-    const supabaseKey = await getApiKey('gemini');
-    if (supabaseKey) keys.push(supabaseKey);
-  }
-  
-  // Try localStorage
-  const localKey = localStorage.getItem('gemini_api_key');
-  if (localKey) keys.push(localKey);
+  // Get from Supabase
+  const supabaseKey = await getApiKey('gemini');
+  if (supabaseKey) keys.push(supabaseKey);
   
   if (keys.length === 0) {
     throw new Error('Gemini API key not found. Please add your API key in the settings.');

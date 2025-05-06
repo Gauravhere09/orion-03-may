@@ -34,6 +34,9 @@
     --ring: 240 5.9% 10%;
  
     --radius: 0.5rem;
+    
+    --cyan: 186 100% 42%;
+    --cyan-foreground: 0 0% 98%;
   }
  
   .dark {
@@ -64,6 +67,9 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
+    
+    --cyan: 186 100% 42%;
+    --cyan-foreground: 0 0% 98%;
   }
 }
  
@@ -99,5 +105,14 @@
   
   .glass-morphism {
     @apply backdrop-blur-xl bg-white/5 border border-white/10 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3)];
+  }
+  
+  .loading-bar {
+    @apply relative overflow-hidden;
+  }
+  
+  .loading-bar::after {
+    content: '';
+    @apply absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent animate-loader-move;
   }
 }
