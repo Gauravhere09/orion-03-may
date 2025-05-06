@@ -4,25 +4,57 @@ import { supabase } from "@/integrations/supabase/client";
 // Get API key for a specific service
 export async function getApiKey(service: string): Promise<string | null> {
   try {
-    let tableName = 'api_keys';
+    let data = null;
+    let error = null;
     
-    // Map service to the correct table
+    // Query the appropriate table based on service name
     if (service === 'openrouter') {
-      tableName = 'openrouter_apis';
+      const result = await supabase
+        .from('openrouter_apis')
+        .select('api_key')
+        .order('priority', { ascending: true })
+        .eq('is_default', true)
+        .limit(1)
+        .maybeSingle();
+      
+      data = result.data;
+      error = result.error;
     } else if (service === 'gemini') {
-      tableName = 'gemini_api_keys';
+      const result = await supabase
+        .from('gemini_api_keys')
+        .select('api_key')
+        .order('priority', { ascending: true })
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();
+      
+      data = result.data;
+      error = result.error;
     } else if (service === 'dream_studio') {
-      tableName = 'dream_studio_api_keys';
+      const result = await supabase
+        .from('dream_studio_api_keys')
+        .select('api_key')
+        .order('priority', { ascending: true })
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();
+      
+      data = result.data;
+      error = result.error;
+    } else {
+      // For any other service, try the general api_keys table
+      const result = await supabase
+        .from('api_keys')
+        .select('api_key')
+        .eq('service', service)
+        .eq('is_active', true)
+        .order('priority', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      
+      data = result.data;
+      error = result.error;
     }
-    
-    // Query the appropriate table
-    const { data, error } = await supabase
-      .from(tableName)
-      .select('api_key')
-      .order('priority', { ascending: true })
-      .eq('is_active', true)
-      .limit(1)
-      .maybeSingle();
     
     if (error) {
       console.error(`Error fetching ${service} API key:`, error);
@@ -39,26 +71,48 @@ export async function getApiKey(service: string): Promise<string | null> {
 // Save or update API key for a service (admin only)
 export async function saveApiKey(service: string, apiKey: string, priority = 1): Promise<boolean> {
   try {
-    let tableName = 'api_keys';
+    let result = null;
     
-    // Map service to the correct table
+    // Insert into the appropriate table based on service name
     if (service === 'openrouter') {
-      tableName = 'openrouter_apis';
+      result = await supabase
+        .from('openrouter_apis')
+        .insert({
+          api_key: apiKey,
+          priority: priority,
+          is_default: true,
+          updated_at: new Date().toISOString()
+        });
     } else if (service === 'gemini') {
-      tableName = 'gemini_api_keys';
+      result = await supabase
+        .from('gemini_api_keys')
+        .insert({
+          api_key: apiKey,
+          priority: priority,
+          is_active: true,
+          updated_at: new Date().toISOString()
+        });
     } else if (service === 'dream_studio') {
-      tableName = 'dream_studio_api_keys';
+      result = await supabase
+        .from('dream_studio_api_keys')
+        .insert({
+          api_key: apiKey,
+          priority: priority,
+          is_active: true,
+          updated_at: new Date().toISOString()
+        });
+    } else {
+      // For any other service, use the general api_keys table
+      result = await supabase
+        .from('api_keys')
+        .insert({
+          api_key: apiKey,
+          service: service,
+          priority: priority,
+          is_active: true,
+          updated_at: new Date().toISOString()
+        });
     }
-    
-    // Insert new key
-    const result = await supabase
-      .from(tableName)
-      .insert({
-        api_key: apiKey,
-        priority: priority,
-        is_active: true,
-        updated_at: new Date().toISOString()
-      });
     
     if (result.error) {
       console.error(`Error saving ${service} API key:`, result.error);
@@ -75,24 +129,35 @@ export async function saveApiKey(service: string, apiKey: string, priority = 1):
 // Delete API key for a service (admin only)
 export async function deleteApiKey(service: string, apiKey: string): Promise<boolean> {
   try {
-    let tableName = 'api_keys';
+    let result = null;
     
-    // Map service to the correct table
+    // Delete from the appropriate table based on service name
     if (service === 'openrouter') {
-      tableName = 'openrouter_apis';
+      result = await supabase
+        .from('openrouter_apis')
+        .delete()
+        .eq('api_key', apiKey);
     } else if (service === 'gemini') {
-      tableName = 'gemini_api_keys';
+      result = await supabase
+        .from('gemini_api_keys')
+        .delete()
+        .eq('api_key', apiKey);
     } else if (service === 'dream_studio') {
-      tableName = 'dream_studio_api_keys';
+      result = await supabase
+        .from('dream_studio_api_keys')
+        .delete()
+        .eq('api_key', apiKey);
+    } else {
+      // For any other service, use the general api_keys table
+      result = await supabase
+        .from('api_keys')
+        .delete()
+        .eq('api_key', apiKey)
+        .eq('service', service);
     }
     
-    const { error } = await supabase
-      .from(tableName)
-      .delete()
-      .eq('api_key', apiKey);
-    
-    if (error) {
-      console.error(`Error deleting ${service} API key:`, error);
+    if (result.error) {
+      console.error(`Error deleting ${service} API key:`, result.error);
       return false;
     }
     
@@ -106,28 +171,39 @@ export async function deleteApiKey(service: string, apiKey: string): Promise<boo
 // List all API keys for a service
 export async function listApiKeys(service: string): Promise<{ id: string, api_key: string, priority: number }[]> {
   try {
-    let tableName = 'api_keys';
+    let result = null;
     
-    // Map service to the correct table
+    // Query the appropriate table based on service name
     if (service === 'openrouter') {
-      tableName = 'openrouter_apis';
+      result = await supabase
+        .from('openrouter_apis')
+        .select('id, api_key, priority')
+        .order('priority', { ascending: true });
     } else if (service === 'gemini') {
-      tableName = 'gemini_api_keys';
+      result = await supabase
+        .from('gemini_api_keys')
+        .select('id, api_key, priority')
+        .order('priority', { ascending: true });
     } else if (service === 'dream_studio') {
-      tableName = 'dream_studio_api_keys';
+      result = await supabase
+        .from('dream_studio_api_keys')
+        .select('id, api_key, priority')
+        .order('priority', { ascending: true });
+    } else {
+      // For any other service, use the general api_keys table
+      result = await supabase
+        .from('api_keys')
+        .select('id, api_key, priority')
+        .eq('service', service)
+        .order('priority', { ascending: true });
     }
     
-    const { data, error } = await supabase
-      .from(tableName)
-      .select('id, api_key, priority')
-      .order('priority', { ascending: true });
-    
-    if (error) {
-      console.error(`Error listing ${service} API keys:`, error);
+    if (result.error) {
+      console.error(`Error listing ${service} API keys:`, result.error);
       return [];
     }
     
-    return data || [];
+    return result.data as { id: string, api_key: string, priority: number }[] || [];
   } catch (error) {
     console.error(`Error listing ${service} API keys:`, error);
     return [];
