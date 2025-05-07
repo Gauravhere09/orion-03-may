@@ -37,6 +37,8 @@ export async function generateDreamStudioImage(options: DreamStudioGenerateOptio
       return null;
     }
     
+    console.log(`Found ${apiKeys.length} Dream Studio API keys to try`);
+    
     // Use the first API key (highest priority) for the initial attempt
     let result = await attemptImageGeneration(apiKeys[0], prompt, aspectRatio, stylePreset, outputFormat);
     
@@ -67,6 +69,8 @@ async function attemptImageGeneration(
   outputFormat: string = 'webp'
 ): Promise<string | null> {
   try {
+    console.log("Attempting image generation with Dream Studio key:", apiKey.substring(0, 5) + "...");
+    
     const { data, error } = await supabase.functions.invoke('dream-studio-generate', {
       body: {
         prompt,

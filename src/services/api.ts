@@ -41,7 +41,7 @@ const sendToGemini = async (
   imageUrls: string[] = [],
   selectedModel: any
 ): Promise<Message> => {
-  // Get all available Gemini API keys directly from Supabase via the apiKeyService
+  // Get Gemini API key from Supabase using apiKeyService
   const apiKey = await getApiKey('gemini');
   
   if (!apiKey) {
@@ -81,6 +81,8 @@ const sendToGemini = async (
   conversationHistory.push(userMessage);
   
   try {
+    console.log("Sending request to Gemini API with key:", apiKey.substring(0, 5) + "...");
+    
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
@@ -172,6 +174,9 @@ const sendToOpenRouter = async (
   conversationHistory.push(userMessage);
   
   try {
+    console.log("Sending request to OpenRouter with model:", selectedModel.id);
+    console.log("Using OpenRouter API key:", apiKey.substring(0, 5) + "...");
+    
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -229,10 +234,12 @@ export const sendMessageWithFallback = async (params: SendMessageParams): Promis
   try {
     // First, try to send to Gemini if it's selected
     if (selectedModel.id === 'gemini') {
+      console.log("Using Gemini API for primary request...");
       const geminiResponse = await sendToGemini(messages, message, imageUrls, selectedModel);
       return geminiResponse;
     } else {
       // Otherwise use OpenRouter
+      console.log("Using OpenRouter API for primary request...");
       const openRouterResponse = await sendToOpenRouter(messages, message, imageUrls, selectedModel);
       return openRouterResponse;
     }
@@ -243,10 +250,12 @@ export const sendMessageWithFallback = async (params: SendMessageParams): Promis
     try {
       // If Gemini was the first choice, try OpenRouter as fallback
       if (selectedModel.id === 'gemini') {
+        console.log("Primary API (Gemini) failed, trying OpenRouter as fallback...");
         const fallbackResponse = await sendToOpenRouter(messages, message, imageUrls, selectedModel);
         return fallbackResponse;
       } else {
         // If OpenRouter was first choice, try Gemini as fallback
+        console.log("Primary API (OpenRouter) failed, trying Gemini as fallback...");
         const fallbackResponse = await sendToGemini(messages, message, imageUrls, selectedModel);
         return fallbackResponse;
       }

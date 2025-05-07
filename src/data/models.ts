@@ -1,110 +1,83 @@
 
+import { ReactNode } from "react";
+
 export interface AIModel {
-  id: string;
-  name: string;
-  version: string;
-  provider: string;
-  description: string;
-  openRouterModel: string;
-  contextWindow: number;
-  image: string;
-  gradient: string;
-  visionCapable: boolean;
-  strengths: string[];
-  supportsStreaming?: boolean;
-  supportsImages?: boolean;
+  id: string; // Used as unique identifier and to match with OpenRouter models
+  name: string; // Display name
+  provider: string; // Provider name (e.g., "Anthropic", "Google", etc.)
+  description: string; // Brief description
+  contextTokens: number; // Maximum context size
+  openRouterModel: string; // Model ID used for OpenRouter API
+  version: string; // Version string
+  isPaid?: boolean; // Whether this is a paid model
+  isVisible?: boolean; // Whether to show in selector
+  supportsImages?: boolean; // Whether model supports image input
+  geminiVersion?: string; // For Gemini models, specific version
+  maxTokens?: number;
 }
 
-// AI models available for code generation and chat
+// Update model IDs to match OpenRouter's free tier models
 export const aiModels: AIModel[] = [
   {
-    id: 'llama-4-maverick',
-    name: 'Llama 4',
-    version: 'Maverick',
-    provider: 'Meta',
-    description: 'Latest powerful open-source large language model by Meta with vision capabilities.',
-    openRouterModel: 'meta-llama/llama-4-maverick:free',
-    contextWindow: 128000,
-    image: '/placeholder.svg',
-    gradient: 'from-blue-400 to-blue-600',
-    visionCapable: true,
-    supportsStreaming: true,
+    id: "gemini",
+    name: "Gemini",
+    provider: "Google",
+    description: "Multimodal model from Google with strong image understanding capabilities",
+    contextTokens: 32000,
+    openRouterModel: "gemini",
+    version: "Pro 1.0",
+    isVisible: true,
     supportsImages: true,
-    strengths: ['Fast', 'Vision', 'Cutting Edge']
+    geminiVersion: "gemini-pro-vision",
+    maxTokens: 8192,
   },
   {
-    id: 'deepseek-chat',
-    name: 'DeepSeek',
-    version: 'Chat',
-    provider: 'DeepSeek',
-    description: 'Versatile language model by DeepSeek with strong reasoning capabilities.',
-    openRouterModel: 'deepseek/deepseek-chat',
-    contextWindow: 16384,
-    image: '/placeholder.svg',
-    gradient: 'from-amber-400 to-amber-600',
-    visionCapable: false,
-    supportsStreaming: true,
+    id: "mistralai/mixtral-8x7b-instruct",
+    name: "Mixtral",
+    provider: "Mistral AI",
+    description: "Mixtral 8x7B is a high-quality sparse mixture of experts model (SMoE)",
+    contextTokens: 32000,
+    openRouterModel: "mistralai/mixtral-8x7b-instruct:free",
+    version: "8x7B",
+    isVisible: true,
     supportsImages: false,
-    strengths: ['Reasoning', 'Precise', 'Efficient']
+    maxTokens: 4096,
   },
   {
-    id: 'deepseek-chat-v3',
-    name: 'DeepSeek',
-    version: 'Chat v3',
-    provider: 'DeepSeek',
-    description: 'Latest DeepSeek Chat model with enhanced conversational abilities.',
-    openRouterModel: 'deepseek/deepseek-chat-v3-0324',
-    contextWindow: 32768,
-    image: '/placeholder.svg',
-    gradient: 'from-purple-400 to-purple-600',
-    visionCapable: false,
-    supportsStreaming: true,
+    id: "meta-llama/llama-3-8b-instruct",
+    name: "Llama 3",
+    provider: "Meta",
+    description: "Meta's latest Llama model with strong reasoning capabilities",
+    contextTokens: 8192,
+    openRouterModel: "meta-llama/llama-3-8b-instruct:free",
+    version: "8B",
+    isVisible: true,
     supportsImages: false,
-    strengths: ['Chat', 'Knowledge', 'Reasoning']
+    maxTokens: 4096,
   },
   {
-    id: 'deepseek-r1',
-    name: 'DeepSeek',
-    version: 'R1',
-    provider: 'DeepSeek',
-    description: 'Advanced reasoning model with robust knowledge capabilities.',
-    openRouterModel: 'deepseek/deepseek-r1:free',
-    contextWindow: 32768,
-    image: '/placeholder.svg',
-    gradient: 'from-teal-400 to-emerald-600',
-    visionCapable: false,
-    supportsStreaming: true,
+    id: "deepseek/deepseek-r1",
+    name: "DeepSeek",
+    provider: "DeepSeek",
+    description: "Advanced model with strong mathematical and reasoning capabilities",
+    contextTokens: 32000,
+    openRouterModel: "deepseek/deepseek-r1:free",
+    version: "R1",
+    isVisible: true,
     supportsImages: false,
-    strengths: ['Knowledge', 'Detailed', 'Reliable']
+    maxTokens: 4096,
   },
   {
-    id: 'nemotron-ultra',
-    name: 'Nemotron',
-    version: 'Ultra 253B',
-    provider: 'NVIDIA',
-    description: 'NVIDIA\'s massive 253B parameter model based on Llama 3.1 architecture.',
-    openRouterModel: 'nvidia/llama-3.1-nemotron-ultra-253b-v1',
-    contextWindow: 32768,
-    image: '/placeholder.svg',
-    gradient: 'from-green-400 to-green-600',
-    visionCapable: false,
-    supportsStreaming: true,
+    id: "meta-llama/codellama-34b-instruct",
+    name: "CodeLlama",
+    provider: "Meta",
+    description: "Specialized in code generation and understanding",
+    contextTokens: 16000,
+    openRouterModel: "meta-llama/codellama-34b-instruct:free",
+    version: "34B",
+    isVisible: true,
     supportsImages: false,
-    strengths: ['Powerful', 'Comprehensive', 'Advanced']
-  },
-  {
-    id: 'gemini',
-    name: 'Gemini',
-    version: '2.0 Flash',
-    provider: 'Google',
-    description: 'Google\'s multimodal AI system with advanced reasoning capabilities.',
-    openRouterModel: 'custom-gemini', // Not used directly with OpenRouter
-    contextWindow: 16384,
-    image: '/placeholder.svg',
-    gradient: 'from-red-400 to-red-600',
-    visionCapable: true,
-    supportsStreaming: true,
-    supportsImages: true,
-    strengths: ['Multimodal', 'Reasoning', 'Comprehensive']
+    maxTokens: 4096,
   }
 ];
+

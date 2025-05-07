@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { saveApiKey, hasApiKeys, initializeApiKeys } from '@/services/storage';
+import { saveApiKey } from '@/services/apiKeyService';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -36,47 +36,30 @@ const ApiKeyModal = ({ open, onOpenChange, onApiKeySaved = () => {} }: ApiKeyMod
         toast.error("Invalid API key", {
           description: `Please enter a valid ${API_SERVICES.find(s => s.id === service)?.name} API key`
         });
+        setIsSubmitting(false);
         return;
       }
       
-      // Save to localStorage with service prefix
-      localStorage.setItem(`${service}_api_key`, apiKey);
+      // Save API key to Supabase via the apiKeyService
+      const success = await saveApiKey(service, apiKey);
       
-      toast.success("API key saved", {
-        description: `Your ${API_SERVICES.find(s => s.id === service)?.name} API key has been saved to local storage`
-      });
-      
-      // Notify parent component
-      onApiKeySaved();
-      onOpenChange(false);
-      setApiKey('');
+      if (success) {
+        toast.success("API key saved", {
+          description: `Your ${API_SERVICES.find(s => s.id === service)?.name} API key has been saved to Supabase`
+        });
+        
+        // Notify parent component
+        onApiKeySaved();
+        onOpenChange(false);
+        setApiKey('');
+      } else {
+        toast.error("Failed to save API key", {
+          description: "There was a problem connecting to Supabase"
+        });
+      }
     } catch (error) {
       console.error("Error saving API key:", error);
       toast.error("Failed to save API key", {
-        description: error instanceof Error ? error.message : "Unknown error occurred"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-  const handleUseDefaultKeys = () => {
-    if (service !== 'openrouter') {
-      toast.error("Default keys are only available for OpenRouter");
-      return;
-    }
-    
-    setIsSubmitting(true);
-    try {
-      initializeApiKeys();
-      onApiKeySaved();
-      onOpenChange(false);
-      toast.success("Default API keys activated", {
-        description: "Using the provided default OpenRouter API keys"
-      });
-    } catch (error) {
-      console.error("Error initializing default keys:", error);
-      toast.error("Failed to initialize default keys", {
         description: error instanceof Error ? error.message : "Unknown error occurred"
       });
     } finally {
@@ -91,6 +74,7 @@ const ApiKeyModal = ({ open, onOpenChange, onApiKeySaved = () => {} }: ApiKeyMod
           <DialogTitle>Add API Key</DialogTitle>
           <DialogDescription>
             Enter your API key to use with our AI features. You can add keys for different services.
+            Keys are stored securely in Supabase.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -137,17 +121,7 @@ const ApiKeyModal = ({ open, onOpenChange, onApiKeySaved = () => {} }: ApiKeyMod
               )}
             </p>
           </div>
-          <DialogFooter className="flex justify-between">
-            {service === 'openrouter' && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleUseDefaultKeys}
-                disabled={isSubmitting}
-              >
-                Use Default Keys
-              </Button>
-            )}
+          <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Saving..." : "Save API Key"}
             </Button>

@@ -23,9 +23,11 @@ serve(async (req) => {
     
     if (userProvidedApiKey) {
       dreamStudioApiKeys = [userProvidedApiKey];
+      console.log("Using user-provided Dream Studio API key");
     } else {
       // Fetch API keys from Supabase
       dreamStudioApiKeys = await getDreamStudioApiKeys();
+      console.log(`Fetched ${dreamStudioApiKeys.length} Dream Studio API keys from Supabase`);
     }
     
     if (dreamStudioApiKeys.length === 0) {
@@ -50,6 +52,8 @@ serve(async (req) => {
     
     for (const apiKey of dreamStudioApiKeys) {
       try {
+        console.log(`Attempting with Dream Studio key: ${apiKey.substring(0, 5)}...`);
+        
         // Create payload for Stability AI API
         const formData = new FormData();
         formData.append('prompt', prompt);
