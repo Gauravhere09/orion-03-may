@@ -6,6 +6,18 @@ import ChatInput from '@/components/ChatInput';
 import { useModelStore } from '@/stores/modelStore';
 import { useUiStore } from '@/stores/uiStore';
 import ScrollToBottom from './ScrollToBottom';
+import { create } from 'zustand';
+
+// Create useChatActions store that was missing
+interface ChatActionsState {
+  selectedCodeBlock: string | null;
+  setSelectedCodeBlock: (id: string | null) => void;
+}
+
+export const useChatActions = create<ChatActionsState>((set) => ({
+  selectedCodeBlock: null,
+  setSelectedCodeBlock: (id) => set({ selectedCodeBlock: id }),
+}));
 
 interface ChatAreaProps {
   messages: Message[];

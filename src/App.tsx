@@ -24,8 +24,27 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  const { isDarkMode, logoUrl } = useUiStore();
+  // Wrap the store access in a state to ensure it's only accessed after component mount
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [logoUrl, setLogoUrl] = useState('');
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  
+  // Use the store only after the component is mounted
+  useEffect(() => {
+    const { isDarkMode: darkMode, logoUrl: logo } = useUiStore.getState();
+    setIsDarkMode(darkMode);
+    setLogoUrl(logo);
+    
+    // Subscribe to store changes
+    const unsubscribe = useUiStore.subscribe(
+      state => {
+        setIsDarkMode(state.isDarkMode);
+        setLogoUrl(state.logoUrl);
+      }
+    );
+    
+    return () => unsubscribe();
+  }, []);
   
   useEffect(() => {
     // Apply dark mode class to html element
@@ -41,6 +60,8 @@ function App() {
   
   // Set favicon based on theme
   useEffect(() => {
+    if (!logoUrl) return;
+    
     const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
     if (link) {
       link.href = logoUrl;

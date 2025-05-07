@@ -110,21 +110,24 @@
   .loading-bar {
     @apply relative overflow-hidden;
   }
+  
+  @keyframes loader-move {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+  
+  .animate-loader-move {
+    animation: loader-move 1.5s infinite ease-in-out;
+  }
 }
 
 @layer components {
   .loading-bar::after {
     content: '';
-    @apply absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent;
-    animation: loader-move 1.5s infinite ease-in-out;
-  }
-}
-
-@keyframes loader-move {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
+    @apply absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent animate-loader-move;
   }
 }

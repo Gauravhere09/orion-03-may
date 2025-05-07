@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -31,6 +30,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 interface MainLayoutProps {
+  children?: React.ReactNode;
   apiKeyModalOpen: boolean;
   onApiKeyModalOpenChange: (open: boolean) => void;
   isPreviewMode: boolean;
@@ -40,6 +40,7 @@ interface MainLayoutProps {
 }
 
 const MainLayout = ({ 
+  children,
   apiKeyModalOpen, 
   onApiKeyModalOpenChange,
   isPreviewMode,
@@ -130,29 +131,38 @@ const MainLayout = ({
       />
       
       <div className="pt-14 flex-1 flex flex-col md:flex-row overflow-hidden">
-        {/* Always display chat container (mobile or desktop) */}
-        <div className={`w-full ${!isMobile && hasGeneratedCode ? 'md:w-1/2' : ''} flex flex-col overflow-hidden border-r border-border`}>
-          <ChatArea 
-            messages={messages}
-            isLoading={isLoading}
-            isGenerating={isGenerating}
-            loadingMessage="Thinking..."
-            onRegenerate={handleRegenerateResponse}
-            onSendMessage={handleSendMessage}
-            onStopGeneration={handleStopGeneration}
-            onViewPreview={onExitPreview}
-            onEnhancePrompt={enhanceUserPrompt}
-          />
-        </div>
-        
-        {/* Desktop: Show code editor in split view */}
-        {!isMobile && hasGeneratedCode && (
-          <CodeArea code={generatedCode} />
+        {/* Main content area */}
+        {children ? (
+          <div className="flex-1 overflow-y-auto scrollbar-none">
+            {children}
+          </div>
+        ) : (
+          <>
+            {/* Chat container (mobile or desktop) */}
+            <div className={`w-full ${!isMobile && hasGeneratedCode ? 'md:w-1/2' : ''} flex flex-col overflow-hidden border-r border-border`}>
+              <ChatArea 
+                messages={messages}
+                isLoading={isLoading}
+                isGenerating={isGenerating}
+                loadingMessage="Thinking..."
+                onRegenerate={handleRegenerateResponse}
+                onSendMessage={handleSendMessage}
+                onStopGeneration={handleStopGeneration}
+                onViewPreview={onExitPreview}
+                onEnhancePrompt={enhanceUserPrompt}
+              />
+            </div>
+            
+            {/* Desktop: Show code editor in split view */}
+            {!isMobile && hasGeneratedCode && (
+              <CodeArea code={generatedCode} />
+            )}
+          </>
         )}
       </div>
       
       {/* Mobile: Show code toggle button if we have code */}
-      {isMobile && hasGeneratedCode && (
+      {isMobile && hasGeneratedCode && !children && (
         <Button
           variant="default"
           size="sm"
