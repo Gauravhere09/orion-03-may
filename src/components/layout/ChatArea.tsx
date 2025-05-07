@@ -9,13 +9,20 @@ import { Button } from '@/components/ui/button';
 interface ChatAreaProps {
   messages: Message[];
   isLoading: boolean;
+  isGenerating?: boolean;
   loadingMessage?: string;
   selectedCode?: string;
+  onRegenerate?: () => void;
+  onSendMessage?: (message: string, imageUrls?: string[]) => Promise<void>;
+  onStopGeneration?: () => void;
+  onViewPreview?: (code: any) => void;
+  onEnhancePrompt?: (prompt: string) => string;
 }
 
 const ChatArea: React.FC<ChatAreaProps> = ({
   messages,
   isLoading,
+  isGenerating,
   loadingMessage,
   selectedCode,
 }) => {
@@ -57,8 +64,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         <MessageBubble
           key={index}
           message={message}
-          isSelected={selectedCode === `code-${index}`}
-          onSelectCode={() => setSelectedCodeBlock(`code-${index}`)}
+          messageIndex={index}
+          isChatMode={true}
         />
       ))}
       
@@ -68,7 +75,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             role: 'assistant',
             content: loadingMessage || 'Thinking...',
           }}
-          isLoading={true}
+          messageIndex={-1}
+          isChatMode={true}
         />
       )}
       

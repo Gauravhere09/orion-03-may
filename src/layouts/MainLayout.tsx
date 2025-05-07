@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -131,17 +130,7 @@ const MainLayout = ({
             messages={messages}
             isLoading={isLoading}
             isGenerating={isGenerating}
-            onRegenerate={handleRegenerateResponse}
-            onSendMessage={handleSendMessage}
-            onStopGeneration={handleStopGeneration}
-            onViewPreview={(code) => {
-              const parsedCode = useChatStore.getState().parseCodeFromResponse(code);
-              if (parsedCode.preview) {
-                useChatStore.getState().setGeneratedCode(parsedCode);
-                useUiStore.getState().setIsPreviewMode(true);
-              }
-            }}
-            onEnhancePrompt={enhanceUserPrompt}
+            loadingMessage="Thinking..."
           />
         </div>
         

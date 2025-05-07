@@ -32,7 +32,14 @@ const mockModel: AIModel = {
   id: 'dream_studio',
   name: 'Dream Studio',
   provider: 'stability',
+  version: '',
+  description: '',
   openRouterModel: '',
+  contextWindow: 0,
+  image: '',
+  gradient: '',
+  visionCapable: false,
+  strengths: [],
   supportsStreaming: false,
   supportsImages: true
 };
@@ -115,7 +122,7 @@ const ImageGenerator = () => {
           setPrompt('');
           setImages([]);
         }}
-        onModelSelectClick={() => {}} // Add the missing prop
+        onModelSelectClick={() => {}} 
       />
       
       <div className="container mx-auto p-4 pt-16 flex-1 overflow-y-auto scrollbar-none">

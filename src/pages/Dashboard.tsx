@@ -13,7 +13,14 @@ const mockModel: AIModel = {
   id: 'dashboard',
   name: 'Dashboard',
   provider: 'orion',
+  version: '',
+  description: '',
   openRouterModel: '',
+  contextWindow: 0,
+  image: '',
+  gradient: '',
+  visionCapable: false,
+  strengths: [],
   supportsStreaming: false,
   supportsImages: false
 };

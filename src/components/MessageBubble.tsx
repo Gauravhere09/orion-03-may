@@ -19,6 +19,9 @@ interface MessageBubbleProps {
   onViewPreview?: () => void;
   modelName?: string;
   isChatMode: boolean;
+  isSelected?: boolean;
+  onSelectCode?: () => void;
+  isLoading?: boolean;
 }
 
 const MessageBubble = ({ 
@@ -27,7 +30,10 @@ const MessageBubble = ({
   onRegenerate, 
   onViewPreview, 
   modelName, 
-  isChatMode 
+  isChatMode,
+  isSelected = false,
+  onSelectCode,
+  isLoading = false
 }: MessageBubbleProps) => {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
@@ -83,6 +89,16 @@ const MessageBubble = ({
   // Determine which model generated this response - for AI messages only
   // Use the message's own model property if available, otherwise use the passed modelName prop
   const responseModel = !isUser ? (message.model || modelName) : undefined;
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col w-full mb-4 items-start">
+        <div className="max-w-[85%] rounded-2xl px-4 py-3 text-sm glass-morphism text-foreground rounded-tl-none">
+          <p className="leading-relaxed">{messageText}</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className={cn(

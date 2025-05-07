@@ -11,6 +11,8 @@ export interface AIModel {
   gradient: string;
   visionCapable: boolean;
   strengths: string[];
+  supportsStreaming?: boolean;
+  supportsImages?: boolean;
 }
 
 // AI models available for code generation and chat
@@ -26,6 +28,8 @@ export const aiModels: AIModel[] = [
     image: '/placeholder.svg',
     gradient: 'from-blue-400 to-blue-600',
     visionCapable: true,
+    supportsStreaming: true,
+    supportsImages: true,
     strengths: ['Fast', 'Vision', 'Cutting Edge']
   },
   {
@@ -39,6 +43,8 @@ export const aiModels: AIModel[] = [
     image: '/placeholder.svg',
     gradient: 'from-amber-400 to-amber-600',
     visionCapable: false,
+    supportsStreaming: true,
+    supportsImages: false,
     strengths: ['Reasoning', 'Precise', 'Efficient']
   },
   {
@@ -52,6 +58,8 @@ export const aiModels: AIModel[] = [
     image: '/placeholder.svg',
     gradient: 'from-purple-400 to-purple-600',
     visionCapable: false,
+    supportsStreaming: true,
+    supportsImages: false,
     strengths: ['Chat', 'Knowledge', 'Reasoning']
   },
   {
@@ -65,6 +73,8 @@ export const aiModels: AIModel[] = [
     image: '/placeholder.svg',
     gradient: 'from-teal-400 to-emerald-600',
     visionCapable: false,
+    supportsStreaming: true,
+    supportsImages: false,
     strengths: ['Knowledge', 'Detailed', 'Reliable']
   },
   {
@@ -78,6 +88,8 @@ export const aiModels: AIModel[] = [
     image: '/placeholder.svg',
     gradient: 'from-green-400 to-green-600',
     visionCapable: false,
+    supportsStreaming: true,
+    supportsImages: false,
     strengths: ['Powerful', 'Comprehensive', 'Advanced']
   },
   {
@@ -91,6 +103,8 @@ export const aiModels: AIModel[] = [
     image: '/placeholder.svg',
     gradient: 'from-red-400 to-red-600',
     visionCapable: true,
+    supportsStreaming: true,
+    supportsImages: true,
     strengths: ['Multimodal', 'Reasoning', 'Comprehensive']
   }
 ];
