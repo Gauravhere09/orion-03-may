@@ -8,9 +8,11 @@ interface ImageViewerProps {
   imageUrl: string;
   prompt?: string;
   onDelete?: () => void;
+  alt?: string; // Added alt property
+  caption?: string; // Added caption property
 }
 
-const ImageViewer = ({ imageUrl, prompt, onDelete }: ImageViewerProps) => {
+const ImageViewer = ({ imageUrl, prompt, onDelete, alt, caption }: ImageViewerProps) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const downloadImage = () => {
@@ -32,7 +34,7 @@ const ImageViewer = ({ imageUrl, prompt, onDelete }: ImageViewerProps) => {
         
         await navigator.share({
           title: 'Generated Image',
-          text: prompt || 'Check out this AI generated image!',
+          text: prompt || caption || 'Check out this AI generated image!',
           files: [file]
         });
       } catch (error) {
@@ -40,7 +42,7 @@ const ImageViewer = ({ imageUrl, prompt, onDelete }: ImageViewerProps) => {
         // Fallback for browsers that don't support file sharing
         navigator.share({
           title: 'Generated Image',
-          text: prompt || 'Check out this AI generated image!',
+          text: prompt || caption || 'Check out this AI generated image!',
           url: imageUrl
         });
       }
@@ -60,7 +62,7 @@ const ImageViewer = ({ imageUrl, prompt, onDelete }: ImageViewerProps) => {
       >
         <img 
           src={imageUrl} 
-          alt="Generated" 
+          alt={alt || caption || prompt || "Generated"} 
           className="w-full h-auto object-contain"
           loading="lazy"
         />
@@ -83,15 +85,15 @@ const ImageViewer = ({ imageUrl, prompt, onDelete }: ImageViewerProps) => {
             <div className="flex-1 overflow-y-auto p-4">
               <img 
                 src={imageUrl} 
-                alt="Generated" 
+                alt={alt || caption || prompt || "Generated"} 
                 className="w-full h-auto object-contain"
               />
             </div>
             
             <div className="p-4 bg-background border-t">
-              {prompt && (
+              {(prompt || caption) && (
                 <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                  {prompt}
+                  {prompt || caption}
                 </p>
               )}
               <div className="flex justify-end gap-2">

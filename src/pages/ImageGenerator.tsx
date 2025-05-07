@@ -268,7 +268,10 @@ const ImageGenerator = ({ authModalOpen, setAuthModalOpen }: ImageGeneratorProps
                 ) : generatedImage ? (
                   <Card className="overflow-hidden">
                     <CardContent className="p-0">
-                      <ImageViewer imageUrl={generatedImage} alt="Generated image" />
+                      <ImageViewer 
+                        imageUrl={generatedImage} 
+                        prompt={form.getValues('prompt')}
+                      />
                     </CardContent>
                   </Card>
                 ) : (
@@ -308,8 +311,7 @@ const ImageGenerator = ({ authModalOpen, setAuthModalOpen }: ImageGeneratorProps
                     <CardContent className="p-0">
                       <ImageViewer 
                         imageUrl={image.url} 
-                        alt={image.prompt}
-                        caption={image.prompt} 
+                        prompt={image.prompt}
                       />
                     </CardContent>
                   </Card>
