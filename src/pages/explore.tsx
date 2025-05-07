@@ -1,451 +1,160 @@
-import React, { useState, useEffect } from "react";
-import emailjs from "@emailjs/browser";
-import { EMAILJS_SERVICE_ID, EMAILJS_CONTACT_TEMPLATE_ID } from "@/utils/emailjs";
-import { addStoredContactMessage } from "@/utils/localStorageBackup";
+
+import { useState } from 'react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router-dom";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  ArrowRight, CheckCircle, Code, MessageCircle, Search, Mail, Phone, MapPin,
-  ChevronDown 
-} from "lucide-react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUiStore } from "@/stores/uiStore";
-import AuthModal from "@/components/AuthModal";
+import MainLayout from '@/layouts/MainLayout';
 
-// Feature card component
-const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
-  <Card className="border-2 border-gray-100 dark:border-gray-800 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 relative overflow-hidden group">
-    <div className="absolute -right-10 -top-10 w-20 h-20 bg-primary/10 rounded-full group-hover:scale-150 transition-all duration-500"></div>
-    <div className="absolute -left-10 -bottom-10 w-20 h-20 bg-primary/5 rounded-full group-hover:scale-150 transition-all duration-500 delay-100"></div>
-    <CardHeader className="relative z-10">
-      <div className="flex items-center gap-3 mb-3">
-        <div className="p-2.5 rounded-xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground transition-all duration-300 group-hover:bg-primary group-hover:text-white transform group-hover:rotate-3 group-hover:scale-110">
-          {icon}
-        </div>
-        <CardTitle className="text-xl">{title}</CardTitle>
-      </div>
-      <CardDescription className="text-base">{description}</CardDescription>
-    </CardHeader>
-  </Card>
-);
+interface ExplorePageProps {
+  authModalOpen: boolean;
+  setAuthModalOpen: (open: boolean) => void;
+}
 
-// Testimonial card component
-const TestimonialCard = ({ name, role, content, avatar }: { name: string, role: string, content: string, avatar: string }) => (
-  <Card className="border-2 border-gray-100 dark:border-gray-800">
-    <CardContent className="p-6">
-      <div className="flex gap-4 items-center mb-4">
-        <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden">
-          {avatar ? <img src={avatar} alt={name} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-primary/20" />}
-        </div>
-        <div>
-          <h3 className="font-bold">{name}</h3>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">{role}</p>
-        </div>
-      </div>
-      <p className="italic text-gray-700 dark:text-gray-300">{content}</p>
-    </CardContent>
-  </Card>
-);
-
-// How to use step component
-const HowToUseStep = ({ number, title, description }: { number: number, title: string, description: string }) => (
-  <div className="flex gap-6 group">
-    <div className="flex-shrink-0 w-14 h-14 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-all duration-300 group-hover:scale-110 relative">
-      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary to-purple-500 animate-pulse opacity-50 blur-sm group-hover:opacity-80"></div>
-      <span className="relative z-10">{number}</span>
-    </div>
-    <div className="pt-2">
-      <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors duration-300">{title}</h3>
-      <p className="text-gray-600 dark:text-gray-300 text-lg">{description}</p>
-    </div>
-  </div>
-);
-
-const ExplorePage: React.FC = () => {
+const ExplorePage = ({ authModalOpen, setAuthModalOpen }: ExplorePageProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isDarkMode } = useUiStore();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   
-  const { register: registerLogin, handleSubmit: handleLoginSubmit, formState: { errors: loginErrors } } = useForm();
-  const { register: registerSignUp, handleSubmit: handleSignUpSubmit, formState: { errors: signUpErrors } } = useForm();
-  const { register: registerContact, handleSubmit: handleContactSubmit, reset: resetContactForm } = useForm();
-
-  const onLoginSubmit = (data: any) => {
-    setIsLoading(true);
-    // Simulate login
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.success("Login successful!");
-      setIsAuthModalOpen(false);
-      navigate("/");
-    }, 1500);
+  const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  
+  const handleTryNow = () => {
+    navigate('/');
   };
-
-  const onSignUpSubmit = (data: any) => {
-    setIsLoading(true);
-    // Simulate sign up
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.success("Account created successfully!");
-      setIsAuthModalOpen(false);
-      navigate("/");
-    }, 1500);
+  
+  const handleImageGenerator = () => {
+    navigate('/image-generator');
   };
-
-  const onContactSubmit = async (data: any) => {
-    setIsLoading(true);
-    
-    try {
-      // Send email using EmailJS
-      await emailjs.send(
-        EMAILJS_SERVICE_ID, // Service ID
-        EMAILJS_CONTACT_TEMPLATE_ID, // Template ID
-        {
-          name: data.name,
-          email: data.email,
-          subject: data.subject,
-          message: data.message
-        }
-      );
-      
-      console.log('Contact form data sent:', data);
-      toast.success("Message sent! We'll get back to you soon.");
-      resetContactForm();
-    } catch (error) {
-      console.error('Failed to send contact form:', error);
-      // Log the form data so it's not lost even if EmailJS fails
-      console.log('Contact form data (saved despite error):', data);
-      
-      // Store the form data in localStorage as a backup using our utility function
-      addStoredContactMessage(data);
-      
-      toast.error("Message saved locally. We'll process it when connection is restored.");
-      resetContactForm();
-    } finally {
-      setIsLoading(false);
-    }
+  
+  const handleExitPreview = () => {
+    setIsPreviewMode(false);
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-10 w-72 h-72 bg-purple-300 dark:bg-purple-900 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-xl opacity-30 animate-blob"></div>
-        <div className="absolute top-32 left-10 w-72 h-72 bg-pink-300 dark:bg-pink-900 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-10 right-1/3 w-72 h-72 bg-blue-300 dark:bg-blue-900 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-xl opacity-30 animate-blob animation-delay-4000"></div>
-        <div className="absolute -top-40 -right-20 w-80 h-80 border border-purple-200 dark:border-purple-800 rounded-full"></div>
-        <div className="absolute top-40 -left-20 w-60 h-60 border border-pink-200 dark:border-pink-800 rounded-full"></div>
-        <div className="hidden md:block absolute top-1/3 left-1/3 w-40 h-40 border border-blue-200 dark:border-blue-800 rounded-full"></div>
-        <div className="absolute top-20 left-1/4 w-4 h-4 bg-purple-400 dark:bg-purple-600 rounded-full animate-pulse"></div>
-        <div className="absolute top-40 right-1/3 w-3 h-3 bg-pink-400 dark:bg-pink-600 rounded-full animate-pulse animation-delay-2000"></div>
-        <div className="absolute bottom-1/3 right-1/4 w-5 h-5 bg-blue-400 dark:bg-blue-600 rounded-full animate-pulse animation-delay-4000"></div>
-      </div>
-
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-purple-50 to-white dark:from-gray-900 dark:to-gray-950 p-4 pt-20">
-        <div className="container mx-auto max-w-6xl p-0">
-          <div className="text-center mb-12">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 flex justify-center items-center select-none">
-              Build with<span className="text-black dark:text-white">
-                {isDarkMode ? (
-                  <img src="/orion-white.png" className="h-52 w-52 translate-y-3 select-none pointer-events-none" alt="Orion" />
-                ) : (
-                  <img src="/orion-black.png" className="h-52 w-52 translate-y-3 select-none pointer-events-none" alt="Orion" />
-                )}
-              </span>
-            </h1>
-            <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-12">
-              From idea to app in seconds, with your personal full stack AI engineer
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
-                onClick={() => navigate("/")}
-                className="px-8 py-6 text-lg"
-              >
-                Start Building
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              
-              {user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="lg" className="px-8 py-6 text-lg border-2">
-                      Menu
-                      <ChevronDown className="ml-2 h-5 w-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => navigate("/")}>
-                      Chat with AI
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/dashboard")}>
-                      Dashboard
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  onClick={() => setIsAuthModalOpen(true)}
-                  className="px-8 py-6 text-lg border-2"
-                >
-                  Login
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20 px-4 relative" id="features">
-        {/* Decorative background elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-70">
-          <div className="absolute right-0 top-20 w-80 h-80 border border-purple-200 dark:border-purple-800 rounded-full opacity-20"></div>
-          <div className="absolute left-10 bottom-10 w-60 h-60 border border-blue-200 dark:border-blue-800 rounded-full opacity-20"></div>
-          <div className="absolute top-40 left-1/3 w-4 h-4 bg-pink-400 dark:bg-pink-600 rounded-full animate-pulse"></div>
-          <div className="absolute bottom-40 right-1/3 w-3 h-3 bg-purple-400 dark:bg-purple-600 rounded-full animate-pulse animation-delay-2000"></div>
-          <div className="absolute top-1/2 right-1/4 w-5 h-5 bg-blue-400 dark:bg-blue-600 rounded-full animate-pulse animation-delay-4000"></div>
-          <div className="hidden md:block absolute bottom-20 left-20 w-96 h-96 bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 rounded-full opacity-30 mix-blend-multiply dark:mix-blend-overlay filter blur-3xl"></div>
-        </div>
-        
-        <div className="container mx-auto max-w-6xl px-0 relative z-10">
-          <h2 className="text-3xl md:text-5xl font-bold text-center mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-primary to-purple-600">Why Choose Orion</h2>
-          <p className="text-center text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto">Powerful AI features to supercharge your development workflow</p>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <FeatureCard 
-              icon={<Code className="h-6 w-6 text-primary" />}
-              title="AI Code Generation"
-              description="Generate high-quality code for any project with our advanced AI models."
-            />
-            <FeatureCard 
-              icon={<CheckCircle className="h-6 w-6 text-green-500" />}
-              title="100% Free"
-              description="All core features are completely free to use, no hidden charges."
-            />
-            <FeatureCard 
-              icon={<MessageCircle className="h-6 w-6 text-blue-500" />}
-              title="Real-time Chat"
-              description="Interact with our AI in real-time to refine your projects and get instant feedback."
-            />
-            <FeatureCard 
-              icon={<Search className="h-6 w-6 text-yellow-500" />}
-              title="Multiple AI Models"
-              description="Choose from various AI models including GPT-4, DeepSeek, Llama, Gemini and many more with automated failover."
-            />
-            <FeatureCard 
-              icon={<ArrowRight className="h-6 w-6 text-purple-500" />}
-              title="Quick Prototyping"
-              description="Go from concept to working prototype in minutes, not days or weeks."
-            />
-            <FeatureCard 
-              icon={<CheckCircle className="h-6 w-6 text-indigo-500" />}
-              title="Modern Tech Stack"
-              description="Build with the latest technologies including React, Tailwind, and more."
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* How To Use Section */}
-      <section className="py-20 px-4 bg-gray-50 dark:bg-gray-900 relative overflow-hidden">
-        {/* Decorative background elements */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -right-20 top-40 w-[600px] h-[600px] border border-gray-200 dark:border-gray-700 rounded-full opacity-20 animate-float"></div>
-          <div className="absolute -left-10 top-20 w-[300px] h-[300px] border-2 border-gray-200 dark:border-gray-700 rounded-full opacity-20 animate-float animation-delay-2000"></div>
-          <div className="absolute bottom-0 left-1/3 w-[400px] h-[400px] border border-gray-200 dark:border-gray-700 rounded-full opacity-10 animate-float animation-delay-4000"></div>
-          <svg className="absolute right-0 bottom-0 w-64 h-64 text-primary/5" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-            <path fill="currentColor" d="M37,-65.1C47.2,-58,54.8,-45.9,62.5,-33.2C70.1,-20.6,77.8,-7.3,77.2,5.7C76.7,18.6,68,31.2,58.6,43.6C49.3,56.1,39.3,68.3,26.9,73.4C14.5,78.5,-0.4,76.5,-14.9,73C-29.5,69.5,-43.5,64.6,-56.5,55.7C-69.5,46.8,-81.5,33.9,-83.9,19.1C-86.3,4.3,-79.2,-12.3,-71.5,-27.4C-63.8,-42.4,-55.6,-55.9,-43.8,-62.4C-32.1,-69,-16,-68.7,-1.2,-66.7C13.7,-64.7,27.4,-61.1,37,-65.1Z" transform="translate(100 100)" />
-          </svg>
-          <svg className="absolute left-0 top-0 w-64 h-64 text-indigo-500/5" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-            <path fill="currentColor" d="M31.9,-54.4C38.4,-44.3,38.6,-30.4,43.9,-18.8C49.2,-7.2,59.5,2.1,62.3,13.6C65.1,25,60.3,38.5,50.6,46.4C41,54.3,26.5,56.6,12.7,58.9C-1.1,61.3,-14.2,63.7,-26.1,60.4C-38,57,-48.7,47.9,-53.5,36.5C-58.3,25.1,-57.3,11.3,-55.9,-1.4C-54.5,-14.1,-52.7,-25.8,-46.6,-35.3C-40.5,-44.8,-30.1,-52.2,-19.3,-57.4C-8.5,-62.6,2.8,-65.7,12.9,-63.1C22.9,-60.6,32.3,-52.5,31.9,-44.4Z" transform="translate(100 100)" />
-          </svg>
-        </div>
-        
-        <div className="container mx-auto max-w-4xl px-2 flex flex-col items-center relative z-10">
-          <h2 className="text-3xl md:text-5xl font-bold text-center mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-primary to-purple-500">How To Use Orion</h2>
-          <p className="text-center text-gray-600 dark:text-gray-300 mb-16 max-w-xl mx-auto">Follow these simple steps to create amazing applications with AI</p>
-          
-          <div className="space-y-8">
-            <HowToUseStep 
-              number={1}
-              title="Describe Your Project"
-              description="Tell Orion what you want to build using natural language. Be as specific or as vague as you like."
-            />
-            <HowToUseStep 
-              number={2}
-              title="Review & Refine"
-              description="Orion will generate code based on your description. Review it and ask for refinements if needed."
-            />
-            <HowToUseStep 
-              number={3}
-              title="Export & Use"
-              description="Once you're happy with the result, export the code and use it in your own projects."
-            />
-            <HowToUseStep 
-              number={4}
-              title="Build Amazing Things"
-              description="Use Orion to build websites, apps, components, or anything else you can imagine."
-            />
-          </div>
-          
-          <div className="text-center mt-12">
+    <MainLayout
+      apiKeyModalOpen={apiKeyModalOpen}
+      onApiKeyModalOpenChange={setApiKeyModalOpen}
+      isPreviewMode={isPreviewMode}
+      onExitPreview={handleExitPreview}
+      authModalOpen={authModalOpen}
+      setAuthModalOpen={setAuthModalOpen}
+    >
+      <div className="container max-w-6xl py-12">
+        {/* Hero section */}
+        <section className="mb-16 text-center">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            Create with <span className="text-cyan-500">AI</span> Assistance
+          </h1>
+          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Build websites, apps, and digital experiences with our AI-powered tools
+          </p>
+          <div className="flex flex-wrap gap-4 justify-center">
             <Button 
-              onClick={() => navigate("/")}
-              className="px-6 py-2"
+              onClick={handleTryNow}
+              className="cyan-glow px-8 py-6"
+              size="lg"
             >
-              Try It Now
-              <ArrowRight className="ml-2 h-4 w-4" />
+              Start Creating
             </Button>
           </div>
-        </div>
-      </section>
-
-      {/* Contact Section */}
-      <section className="py-20 px-2 bg-gray-50 dark:bg-gray-900 relative overflow-hidden" id="contact">
-        {/* Decorative background elements */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="hidden md:block absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-full filter blur-3xl opacity-70"></div>
-          <div className="hidden md:block absolute -bottom-20 -left-20 w-80 h-80 bg-gradient-to-tr from-blue-500/10 to-primary/10 rounded-full filter blur-3xl opacity-70"></div>
-          <div className="absolute top-1/4 left-10 w-3 h-3 bg-primary rounded-full animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-10 w-3 h-3 bg-purple-500 rounded-full animate-pulse animation-delay-2000"></div>
-          
-          {/* Decorative icons */}
-          <div className="absolute top-20 left-1/4 opacity-5">
-            <Mail className="w-16 h-16 text-primary" />
-          </div>
-          <div className="absolute bottom-20 right-1/4 opacity-5">
-            <Phone className="w-16 h-16 text-purple-500" />
-          </div>
-          <div className="absolute top-1/2 right-20 opacity-5">
-            <MapPin className="w-12 h-12 text-blue-500" />
-          </div>
-        </div>
+        </section>
         
-        <div className="container mx-auto max-w-4xl px-0 relative z-10">
-          <h2 className="text-3xl md:text-5xl font-bold text-center mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-500 via-primary to-indigo-500">Get In Touch</h2>
-          <p className="text-center text-gray-600 dark:text-gray-300 mb-12 max-w-xl mx-auto">Have questions or feedback? We'd love to hear from you!</p>
+        {/* Features section */}
+        <section className="mb-16">
+          <h2 className="text-3xl font-bold mb-10 text-center">
+            Powerful AI Tools
+          </h2>
           
-          <div className="flex justify-center">
-            <div>
-              <Card className="border-2 border-gray-100 dark:border-gray-800">
-                <CardContent className="p-6">
-                  <form onSubmit={handleContactSubmit(onContactSubmit)}>
-                    <div className="grid gap-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="name">Name</Label>
-                          <Input id="name" placeholder="Your name" {...registerContact("name", { required: "Name is required" })} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="email">Email</Label>
-                          <Input id="email" type="email" placeholder="Your email" {...registerContact("email", { required: "Email is required" })} />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="subject">Subject</Label>
-                        <Input id="subject" placeholder="How can we help you?" {...registerContact("subject", { required: "Subject is required" })} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="message">Message</Label>
-                        <textarea 
-                          id="message"
-                          className="w-full min-h-[120px] p-3 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950" 
-                          placeholder="Tell us more about your request..."
-                          {...registerContact("message", { required: "Message is required" })}
-                        ></textarea>
-                      </div>
-                      <Button type="submit" className="w-full" disabled={isLoading}>
-                        {isLoading ? (
-                          <div className="flex items-center gap-2">
-                            <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-                            <span>Sending...</span>
-                          </div>
-                        ) : "Send Message"}
-                      </Button>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-12 px-4 bg-gray-100 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
-        <div className="container mx-auto max-w-6xl px-2">
-          <div className="grid md:grid-cols-3 gap-8">
-            <div>
-              <h3 className="text-xl font-bold mb-4">Orion</h3>
-              <p className="text-gray-600 dark:text-gray-400">Your AI-powered code generation assistant.</p>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-4">Links</h3>
-              <ul className="space-y-2">
-                <li><Link to="/" className="text-gray-600 dark:text-gray-400 hover:text-cyan-500">Home</Link></li>
-                <li><a href="#features" className="text-gray-600 dark:text-gray-400 hover:text-cyan-500">Features</a></li>
-                <li><a href="#contact" className="text-gray-600 dark:text-gray-400 hover:text-cyan-500">Contact</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-4 text-cyan-600">Support Us</h3>
-              <div className="flex flex-col items-start gap-3">
-                <p className="text-gray-600 dark:text-gray-400">If you like our work, consider supporting us:</p>
-                <a 
-                  href="https://www.buymeacoffee.com/orionai" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2 bg-[#FFDD00] text-black rounded-md hover:bg-[#FFDD00]/90 transition-colors"
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="hover-scale">
+              <CardHeader>
+                <CardTitle>AI Code Generator</CardTitle>
+                <CardDescription>Generate code snippets and components</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Describe what you want to build, and our AI will generate the code for you. 
+                  Perfect for creating React components, animations, and more.
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" onClick={handleTryNow} className="w-full">Try Now</Button>
+              </CardFooter>
+            </Card>
+            
+            <Card className="hover-scale">
+              <CardHeader>
+                <CardTitle>Image Generator</CardTitle>
+                <CardDescription>Create stunning AI-generated images</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Turn your ideas into beautiful images with our AI image generator.
+                  Perfect for creating illustrations, mockups, and visual content.
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" onClick={handleImageGenerator} className="w-full">Generate Images</Button>
+              </CardFooter>
+            </Card>
+            
+            <Card className="hover-scale">
+              <CardHeader>
+                <CardTitle>Save & Organize</CardTitle>
+                <CardDescription>Keep track of your projects</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Save your projects and access them anytime. 
+                  Organize your work and continue where you left off.
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  variant="outline" 
+                  onClick={() => user ? navigate('/dashboard') : setAuthModalOpen(true)} 
+                  className="w-full"
                 >
-                  <svg width="24" height="24" viewBox="0 0 884 1279" fill="none">
-                    <path d="M791.109 297.518L790.231 297.002L788.201 296.383C789.018 297.072 790.04 297.472 791.109 297.518Z" fill="#0D0C22"></path>
-                    <path d="M803.896 388.891L802.916 389.166L803.896 388.891Z" fill="#0D0C22"></path>
-                    <path d="M791.484 297.377C791.359 297.361 791.237 297.332 791.118 297.29C791.111 297.371 791.111 297.453 791.118 297.534C791.252 297.516 791.379 297.462 791.484 297.377Z" fill="#0D0C22"></path>
-                    <path d="M791.113 297.529H791.244V297.447L791.113 297.529Z" fill="#0D0C22"></path>
-                    <path d="M803.111 388.726L804.591 387.883L805.142 387.573L805.641 387.04C804.702 387.444 803.846 388.016 803.111 388.726Z" fill="#0D0C22"></path>
-                    <path d="M793.669 299.515L792.223 298.138L791.243 297.605C791.77 298.535 792.641 299.221 793.669 299.515Z" fill="#0D0C22"></path>
-                    <path d="M430.019 1186.18C428.864 1186.68 427.852 1187.46 427.076 1188.45L427.988 1187.87C428.608 1187.3 429.485 1186.63 430.019 1186.18Z" fill="#0D0C22"></path>
-                    <path d="M641.187 1144.63C641.187 1143.33 640.551 1143.57 640.705 1148.21C640.705 1147.84 640.86 1147.46 640.929 1147.1C641.015 1146.27 641.084 1145.46 641.187 1144.63Z" fill="#0D0C22"></path>
-                    <path d="M619.284 1186.18C618.129 1186.68 617.118 1187.46 616.342 1188.45L617.254 1187.87C617.873 1187.3 618.751 1186.63 619.284 1186.18Z" fill="#0D0C22"></path>
-                    <path d="M281.304 1196.06C280.427 1195.3 279.354 1194.8 278.207 1194.61C279.136 1195.06 280.065 1195.51 280.684 1195.85L281.304 1196.06Z" fill="#0D0C22"></path>
-                    <path d="M247.841 1164.01C247.704 1162.66 247.288 1161.35 246.619 1160.16C247.093 1161.39 247.489 1162.66 247.806 1163.94L247.841 1164.01Z" fill="#0D0C22"></path>
-                    <path d="M472.623 590.836C426.682 583.931 377.504 620.928 372.844 671.145C369.754 705.343 374.675 736.852 373.055 771.049C371.44 805.246 361.059 843.96 332.451 853.856C320.976 858.126 308.264 859.399 296.765 863.326C262.173 875.357 247.763 911.844 248.42 944.755C252.528 1043.59 255.894 1150.78 316.947 1223.79C329.603 1239.76 344.744 1252.16 351.623 1272.28C362.782 1302.71 351.528 1342.7 363.018 1373.09C375.428 1406.15 420.638 1415.36 451.061 1433.81C478.708 1450.1 503.72 1472.65 511.036 1503.17C517.741 1530.83 511.587 1561.44 526.222 1584C526.709 1584.1 527.201 1584.17 527.698 1584.2C543.771 1571.96 555.346 1554.04 560.64 1534.19C570.222 1497.6 564.182 1459.05 557.593 1421.84C552.512 1393.33 547.47 1364.33 552.666 1335.9C556.345 1315.87 565.69 1297.27 572.672 1277.83C591.031 1222.51 578.233 1162.33 579.862 1104.61C581.623 1042.38 604.821 977.822 583.829 921.345C571.094 884.61 533.598 862.29 563.064 826.812C570.594 815.68 580.337 805.191 583.504 791.72C588.145 771.421 576.635 751.762 567.247 733.621C534.45 672.218 545.939 601.69 496.059 549.614C509.583 635.539 344.94 588.241 472.623 590.836Z" fill="#FFDD00"></path>
-                    <path d="M711.885 1134.56C693.098 1129.98 669.548 1125.5 656.179 1113.04C637.529 1095.93 647.304 1042.39 647.304 1019.07C647.304 992.33 643.158 977.61 651.239 951.522C654.807 939.034 654.845 926.151 654.576 913.209C654.299 899.982 651.239 880.952 654.942 868.19C655.459 856.728 659.855 846.342 659.855 834.87C659.855 823.398 654.439 812.479 654.439 801.718C654.439 781.179 661.573 762.788 673.241 746.645C683.809 732.333 694.638 719.545 702.23 703.303C709.963 686.674 715.341 666.482 724.323 650.647C736.674 628.294 747.247 606.377 761.478 585.22C773.242 568.228 773.549 544.89 791.724 534.983C796.912 531.781 802.261 529.376 806.388 525.26C818.88 512.79 818.312 495.178 821.283 478.579C824.482 460.581 822.453 441.6 823.926 423.585C824.84 412.868 826.516 401.905 829.761 391.63C833.222 380.817 836.189 369.949 840.429 359.373C849.2 336.807 857.007 314.845 861.519 290.647C866.393 264.602 868.773 238.303 869.211 212.213C869.626 187.521 868.206 163.089 863.826 138.683C859.762 116.057 854.958 94.4301 848.174 72.52C847.471 70.2106 837.418 48.0804 841.185 46.9691C833.634 41.1387 824.228 39.7669 815.352 36.7424C784.298 26.9168 751.606 20.8736 719.383 17.1655C670.233 11.536 620.832 10.8478 571.462 15.1063C519.779 19.627 469.011 29.5797 419.401 46.2739C392.867 55.3398 367.566 67.4737 342.604 80.1959C329.586 86.7531 317.639 94.9777 305.996 103.539C295.126 111.481 285.23 117.82 272.322 122.245C261.573 125.8 259.696 123.782 254.05 114.621C246.095 101.832 234.873 91.4777 221.435 85.1084C195.888 73.0698 159.219 71.4646 136.724 93.8536C115.974 114.585 116.531 147.876 125.759 174.021C133.499 195.452 147.422 213.841 164.882 228.103C173.468 235.216 183.71 240.371 192.827 246.724C206.456 256.035 212.414 264.462 212.414 281.424C212.414 313.299 212.414 345.173 212.414 377.047C212.414 399.469 210.992 421.88 213.569 444.178C215.509 460.812 220.098 473.971 230.968 487.055C240.768 498.823 251.814 514.233 255.422 529.574C261.553 555.21 241.675 583.918 229.555 603.682C214.717 628.185 201.763 647.654 182.068 668.689C177.614 673.41 172.678 677.713 167.849 682.284C148.943 700.147 143.342 719.094 143.342 746.232C143.342 775.883 143.342 805.535 143.342 835.186C143.342 861.551 143.792 883.909 129.33 907.12C122.532 917.757 114.775 929.159 112.809 942.081C110.163 959.548 119.752 971.03 130.398 983.648C153.986 1012.57 162.653 1054.96 175.729 1089.24C185.495 1114.84 198.134 1138.6 215.962 1159.39C233.315 1179.61 252.739 1200.39 281.308 1204.52C308.695 1208.45 334.783 1196.69 362.033 1192.43C387.926 1188.4 414.301 1190.17 440.602 1188.44C472.024 1186.34 503.891 1180.27 535.104 1176.81C562.272 1173.78 584.248 1187.03 599.67 1210.3C607.118 1221.54 616.14 1239.12 629.128 1244.61C642.114 1250.09 666.729 1239.56 680.585 1237.63C714.851 1232.94 756.156 1254.16 775.654 1216.02C801.166 1164.81 754.163 1143.49 711.885 1134.56Z" fill="#0D0C22"></path>
-                  </svg>
-                  <span>Buy Me a Coffee</span>
-                </a>
-              </div>
-            </div>
+                  {user ? 'View Dashboard' : 'Sign In'}
+                </Button>
+              </CardFooter>
+            </Card>
           </div>
-          <Separator className="my-8" />
-          <p className="text-center text-gray-600 dark:text-gray-400">© {new Date().getFullYear()} Orion. All rights reserved.</p>
-        </div>
-      </footer>
+        </section>
+        
+        {/* Orion logo section */}
+        <section className="py-12 text-center">
+          <div className="max-w-md mx-auto">
+            <img 
+              src="/lovable-uploads/b8b23fd4-5e37-45df-a71f-69c1687f384b.png" 
+              alt="Orion AI" 
+              className="h-16 mx-auto mb-6"
+              loading="eager"
+              fetchPriority="high"
+            />
+            <h2 className="text-2xl font-bold mb-4">Orion AI</h2>
+            <p className="text-muted-foreground mb-6">
+              Empowering creators with next-generation AI tools
+            </p>
+          </div>
+        </section>
 
-      {/* Auth Modal */}
-      <AuthModal open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />
-    </div>
+        {/* Support us section */}
+        <section className="mt-12 pt-6 border-t text-center">
+          <h3 className="text-lg font-medium mb-3">Support Us</h3>
+          <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+            If you find Orion AI helpful, consider supporting our development efforts
+          </p>
+          <Button
+            variant="outline"
+            className="bg-[#ffdd00] text-black hover:bg-[#ffcc00] border-[#ffcc00]"
+            onClick={() => window.open('https://www.buymeacoffee.com', '_blank')}
+          >
+            Buy me a coffee
+          </Button>
+        </section>
+      </div>
+    </MainLayout>
   );
 };
 

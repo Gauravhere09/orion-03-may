@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { 
-  getOpenRouterApiKey, 
+  getOpenRouterApiKey,
   saveOpenRouterApiKey, 
   listOpenRouterApiKeys, 
   deleteOpenRouterApiKey 
@@ -26,7 +26,7 @@ import {
   deleteGenericApiKey 
 } from "./apiKeys/genericKeyService";
 
-// Get API key for a specific service
+// Get API key for a specific service (only from Supabase)
 export async function getApiKey(service: string): Promise<string | null> {
   try {
     if (service === 'openrouter') {
@@ -44,7 +44,7 @@ export async function getApiKey(service: string): Promise<string | null> {
   }
 }
 
-// Get all API keys for DreamStudio to enable multi-API usage
+// Get all API keys for DreamStudio to enable multi-API usage (only from Supabase)
 export async function getAllDreamStudioKeys(): Promise<string[]> {
   return await getAllDreamStudioApiKeys();
 }

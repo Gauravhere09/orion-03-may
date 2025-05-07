@@ -1,95 +1,72 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { Message } from '@/services/apiTypes';
-import MessageBubble from '@/components/MessageBubble';
-import { useChatActions } from '@/stores/chatActions';
-import { ArrowDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import ChatContainer from '@/components/ChatContainer';
+import ChatInput from '@/components/ChatInput';
+import { useModelStore } from '@/stores/modelStore';
+import { useUiStore } from '@/stores/uiStore';
+import ScrollToBottom from './ScrollToBottom';
 
 interface ChatAreaProps {
   messages: Message[];
   isLoading: boolean;
   isGenerating?: boolean;
   loadingMessage?: string;
-  selectedCode?: string;
   onRegenerate?: () => void;
-  onSendMessage?: (message: string, imageUrls?: string[]) => Promise<void>;
+  onSendMessage?: (message: string, imageUrls?: string[]) => void;
   onStopGeneration?: () => void;
   onViewPreview?: (code: any) => void;
   onEnhancePrompt?: (prompt: string) => string;
 }
 
-const ChatArea: React.FC<ChatAreaProps> = ({
-  messages,
-  isLoading,
-  isGenerating,
-  loadingMessage,
-  selectedCode,
-}) => {
-  const chatRef = useRef<HTMLDivElement>(null);
-  const [isAtBottom, setIsAtBottom] = useState(true);
-  const { setSelectedCodeBlock } = useChatActions();
-
-  const handleScroll = () => {
-    if (!chatRef.current) return;
-    
-    const { scrollTop, scrollHeight, clientHeight } = chatRef.current;
-    const scrollPosition = scrollTop + clientHeight;
-    
-    // Consider "at bottom" if we're within 100px of the bottom
-    const isBottom = scrollHeight - scrollPosition < 100;
-    setIsAtBottom(isBottom);
-  };
-  
-  const scrollToBottom = () => {
-    if (chatRef.current) {
-      chatRef.current.scrollTop = chatRef.current.scrollHeight;
-    }
-  };
-
-  // Only scroll to bottom automatically on new messages if user was already at the bottom
-  useEffect(() => {
-    if (isAtBottom && messages.length > 0) {
-      setTimeout(() => scrollToBottom(), 100);
-    }
-  }, [messages.length, isAtBottom]);
+const ChatArea = ({ 
+  messages, 
+  isLoading, 
+  isGenerating = false,
+  loadingMessage = "Loading...",
+  onRegenerate,
+  onSendMessage,
+  onStopGeneration,
+  onViewPreview,
+  onEnhancePrompt
+}: ChatAreaProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { selectedModel } = useModelStore();
+  const { isChatMode, toggleChatMode } = useUiStore();
 
   return (
-    <div 
-      className="flex-1 overflow-y-auto p-4 pb-24 relative" 
-      ref={chatRef}
-      onScroll={handleScroll}
-    >
-      {messages.map((message, index) => (
-        <MessageBubble
-          key={index}
-          message={message}
-          messageIndex={index}
-          isChatMode={true}
-        />
-      ))}
+    <div ref={containerRef} className="flex flex-col h-full relative">
+      <ChatContainer 
+        messages={messages} 
+        isLoading={isLoading}
+        onRegenerate={onRegenerate}
+        onViewPreview={onViewPreview}
+      />
       
-      {isLoading && (
-        <MessageBubble
-          message={{
-            role: 'assistant',
-            content: loadingMessage || 'Thinking...',
-          }}
-          messageIndex={-1}
-          isChatMode={true}
-        />
-      )}
+      <div className="sticky bottom-0 w-full z-10">
+        {isGenerating && onStopGeneration ? (
+          <div className="flex justify-center py-4">
+            <button 
+              onClick={onStopGeneration}
+              className="px-4 py-1 text-sm bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center space-x-2 transition-all"
+            >
+              <span>Stop Generating</span>
+            </button>
+          </div>
+        ) : (
+          <ChatInput 
+            onSendMessage={(message, imageUrls) => onSendMessage && onSendMessage(message, imageUrls)} 
+            disabled={isLoading || !onSendMessage}
+            placeholder={isLoading ? loadingMessage : "Type your message..."}
+            isChatMode={isChatMode}
+            onToggleChatMode={toggleChatMode}
+            onEnhancePrompt={onEnhancePrompt}
+            selectedModel={selectedModel}
+          />
+        )}
+      </div>
       
-      {/* Scroll to bottom button */}
-      {!isAtBottom && (
-        <Button 
-          onClick={scrollToBottom}
-          className="fixed bottom-24 right-6 h-10 w-10 rounded-full bg-cyan-500 text-white hover:bg-cyan-600 shadow-md"
-          size="icon"
-        >
-          <ArrowDown size={20} />
-        </Button>
-      )}
+      <ScrollToBottom containerRef={containerRef} />
     </div>
   );
 };

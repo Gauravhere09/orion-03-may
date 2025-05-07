@@ -1,28 +1,32 @@
 
-import { useState, useEffect } from 'react';
-import { hasApiKeys } from '@/services/storage';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import MainLayout from '@/layouts/MainLayout';
-import { useUiStore } from '@/stores/uiStore';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 
-const Index = () => {
-  const { isPreviewMode, setIsPreviewMode } = useUiStore();
-  const { user, isLoading } = useAuth();
+interface IndexProps {
+  authModalOpen: boolean;
+  setAuthModalOpen: (open: boolean) => void;
+}
+
+const Index = ({ authModalOpen, setAuthModalOpen }: IndexProps) => {
   const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
-  
-  // Initialize API keys and check if they exist
-  useEffect(() => {
-    if (!hasApiKeys()) {
-      setApiKeyModalOpen(true);
-    }
-  }, []);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const { user } = useAuth();
+
+  const handleExitPreview = () => {
+    setIsPreviewMode(false);
+  };
 
   return (
-    <MainLayout 
+    <MainLayout
       apiKeyModalOpen={apiKeyModalOpen}
       onApiKeyModalOpenChange={setApiKeyModalOpen}
       isPreviewMode={isPreviewMode}
-      onExitPreview={() => setIsPreviewMode(false)}
+      onExitPreview={handleExitPreview}
+      authModalOpen={authModalOpen}
+      setAuthModalOpen={setAuthModalOpen}
     />
   );
 };

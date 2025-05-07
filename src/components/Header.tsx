@@ -1,187 +1,263 @@
 
-import { AIModel } from '@/data/models';
+import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Settings, Plus, Sun, Moon, Save, ChevronDown, Menu } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { AIModel } from '@/data/models';
 import { useUiStore } from '@/stores/uiStore';
-import { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Link } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { Moon, Sun, Settings, Save, LogOut, Menu, X, Image, PanelLeft, TrendingUp, User } from 'lucide-react';
 
 interface HeaderProps {
-  selectedModel: AIModel;
-  onModelSelectClick?: () => void; // Made optional with the ? mark
-  onNewChatClick: () => void;
-  onSettingsClick?: () => void;
-  onSaveClick?: () => void;
+  selectedModel?: AIModel;
+  onModelSelectClick?: () => void;
+  onNewChatClick?: () => void;
   projectName?: string | null;
+  setAuthModalOpen?: (open: boolean) => void;
 }
 
 const Header = ({ 
   selectedModel, 
   onModelSelectClick, 
-  onNewChatClick,
-  onSettingsClick,
-  onSaveClick,
-  projectName
+  onNewChatClick, 
+  projectName,
+  setAuthModalOpen
 }: HeaderProps) => {
-  const { isDarkMode, toggleDarkMode } = useUiStore();
-  const [isVisible, setIsVisible] = useState(true);
-  const [prevScrollY, setPrevScrollY] = useState(0);
+  const { isDarkMode, toggleDarkMode, logoUrl } = useUiStore();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
-  const isImageGenerator = location.pathname === '/image-generator';
-  const isMainChat = location.pathname === '/';
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
 
-  // Handle scroll to hide/show header
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      // Show header when scrolling up, hide when scrolling down
-      if (currentScrollY > prevScrollY && currentScrollY > 60) {
-        setIsVisible(false);
-      } else {
-        setIsVisible(true);
-      }
-      
-      setPrevScrollY(currentScrollY);
-    };
-    
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [prevScrollY]);
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  const handleSignIn = () => {
+    if (setAuthModalOpen) {
+      setAuthModalOpen(true);
+    }
+  };
 
   return (
-    <header className={cn(
-      "fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border p-3 transition-all duration-300 ease-in-out",
-      isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
-    )}>
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          {/* Navigation Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="flex items-center gap-1 text-sm px-2 h-8"
-              >
-                <Menu className="h-4 w-4 text-cyan-500" />
-                <span className="text-cyan-600">Navigate</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuItem asChild className="cursor-pointer">
-                <Link to="/">Chat AI</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild className="cursor-pointer">
-                <Link to="/image-generator">Image Generator</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild className="cursor-pointer">
-                <Link to="/explore">Explore</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild className="cursor-pointer">
-                <Link to="/dashboard">Dashboard</Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Only show model selector on chat page */}
-          {isMainChat && onModelSelectClick && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onModelSelectClick}
-              className="flex items-center gap-1.5 px-2 text-sm h-8 hover:bg-secondary/20"
-            >
-              <div className="w-4 h-4 relative">
-                <div className={`absolute inset-0 rounded-full ${selectedModel.id === 'gemini' ? 'bg-cyan-500/60' : 'bg-cyan-500/60'}`}></div>
-              </div>
-              <span className="font-medium truncate max-w-[150px]">{selectedModel.name}</span>
-            </Button>
-          )}
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border h-14 flex items-center justify-between px-4">
+      <div className="flex items-center gap-4">
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-2">
+          <img src={logoUrl} alt="Orion AI" className="h-7" />
+          <span className="font-semibold text-lg hidden sm:inline-block">Orion</span>
+        </Link>
+        
+        {/* Project name */}
+        {projectName && (
+          <div className="hidden md:block">
+            <span className="text-muted-foreground text-sm">Project:</span>
+            <span className="ml-1 font-medium">{projectName}</span>
+          </div>
+        )}
+        
+        {/* Navigation Links - Desktop */}
+        <nav className="hidden md:flex items-center gap-1">
+          <Button 
+            variant={isActive('/') ? "secondary" : "ghost"} 
+            size="sm" 
+            asChild
+            className="text-sm"
+          >
+            <Link to="/">Chat</Link>
+          </Button>
           
-          {/* Project name dropdown */}
-          {projectName && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+          <Button 
+            variant={isActive('/explore') ? "secondary" : "ghost"} 
+            size="sm"
+            asChild
+            className="text-sm"
+          >
+            <Link to="/explore">Explore</Link>
+          </Button>
+
+          <Button 
+            variant={isActive('/dashboard') ? "secondary" : "ghost"} 
+            size="sm"
+            asChild
+            className="text-sm"
+          >
+            <Link to="/dashboard">Dashboard</Link>
+          </Button>
+
+          <Button 
+            variant={isActive('/image-generator') ? "secondary" : "ghost"} 
+            size="sm"
+            asChild
+            className="text-sm"
+          >
+            <Link to="/image-generator">Images</Link>
+          </Button>
+        </nav>
+      </div>
+      
+      <div className="flex items-center gap-2">
+        {/* Selected model - Desktop */}
+        {selectedModel && onModelSelectClick && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onModelSelectClick}
+            className="hidden md:flex items-center gap-1 text-xs"
+          >
+            <span className="max-w-[100px] truncate">{selectedModel.name}</span>
+            <span className="text-muted-foreground text-xs">{selectedModel.version}</span>
+          </Button>
+        )}
+        
+        {/* Theme toggle */}
+        <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
+          {isDarkMode ? (
+            <Sun className="h-[1.2rem] w-[1.2rem]" />
+          ) : (
+            <Moon className="h-[1.2rem] w-[1.2rem]" />
+          )}
+        </Button>
+        
+        {/* Auth button */}
+        {user ? (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="sm" className="gap-2">
+                <User size={16} />
+                <span className="hidden sm:block">{user.email?.split('@')[0]}</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2">
+              <div className="grid gap-1">
                 <Button 
                   variant="ghost" 
-                  size="sm"
-                  className="flex items-center gap-1 text-sm px-2 h-8"
+                  size="sm" 
+                  className="justify-start gap-2" 
+                  onClick={handleSignOut}
                 >
-                  <span className="truncate max-w-[120px]">{projectName}</span>
-                  <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign out</span>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuItem className="cursor-pointer">
-                  Rename Project
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
-                  Export Project
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        ) : (
+          <Button variant="outline" size="sm" onClick={handleSignIn}>
+            Sign in
+          </Button>
+        )}
         
-        {/* Right - New Chat, Save, Theme, and Settings buttons */}
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onNewChatClick}
-            className="h-8 w-8 rounded-full"
-            title="New Chat"
-          >
-            <Plus className="h-4 w-4 text-cyan-500" />
-          </Button>
-          
-          {onSaveClick && (
-            <Button
-              variant="ghost"
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          {/* New chat button */}
+          {onNewChatClick && (
+            <Button 
+              variant="ghost" 
               size="icon"
-              onClick={onSaveClick}
-              className="h-8 w-8 rounded-full"
-              title="Save Project"
+              onClick={onNewChatClick}
+              className="hidden md:flex"
             >
-              <Save className="h-4 w-4 text-cyan-500" />
+              <PanelLeft className="h-[1.2rem] w-[1.2rem]" />
             </Button>
           )}
           
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleDarkMode}
-            className="h-8 w-8 rounded-full"
-            title={isDarkMode ? "Light Mode" : "Dark Mode"}
+          {/* Mobile menu button */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="md:hidden" 
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
-            {isDarkMode ? <Sun className="h-4 w-4 text-cyan-400" /> : <Moon className="h-4 w-4 text-cyan-600" />}
+            {isMenuOpen ? (
+              <X className="h-[1.2rem] w-[1.2rem]" />
+            ) : (
+              <Menu className="h-[1.2rem] w-[1.2rem]" />
+            )}
           </Button>
-          
-          {onSettingsClick && !isImageGenerator && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onSettingsClick}
-              className="h-8 w-8 rounded-full"
-              title="Settings"
-            >
-              <Settings className="h-4 w-4 text-cyan-500" />
-            </Button>
-          )}
         </div>
       </div>
+      
+      {/* Mobile navigation menu */}
+      {isMenuOpen && (
+        <div className="absolute top-14 left-0 right-0 bg-background border-b border-border p-4 md:hidden">
+          <nav className="flex flex-col gap-2">
+            <Button 
+              variant={isActive('/') ? "secondary" : "ghost"} 
+              size="sm" 
+              asChild
+              className="justify-start"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Link to="/">
+                <PanelLeft className="h-4 w-4 mr-2" />
+                Chat
+              </Link>
+            </Button>
+            
+            <Button 
+              variant={isActive('/explore') ? "secondary" : "ghost"} 
+              size="sm"
+              asChild
+              className="justify-start"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Link to="/explore">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Explore
+              </Link>
+            </Button>
+
+            <Button 
+              variant={isActive('/dashboard') ? "secondary" : "ghost"} 
+              size="sm"
+              asChild
+              className="justify-start"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Link to="/dashboard">
+                <Settings className="h-4 w-4 mr-2" />
+                Dashboard
+              </Link>
+            </Button>
+
+            <Button 
+              variant={isActive('/image-generator') ? "secondary" : "ghost"} 
+              size="sm"
+              asChild
+              className="justify-start"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Link to="/image-generator">
+                <Image className="h-4 w-4 mr-2" />
+                Images
+              </Link>
+            </Button>
+          </nav>
+          
+          {selectedModel && onModelSelectClick && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  onModelSelectClick();
+                  setIsMenuOpen(false);
+                }}
+                className="w-full justify-between"
+              >
+                <span>Model: {selectedModel.name}</span>
+                <span className="text-muted-foreground text-xs">{selectedModel.version}</span>
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
     </header>
   );
 };

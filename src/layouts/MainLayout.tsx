@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -34,13 +35,17 @@ interface MainLayoutProps {
   onApiKeyModalOpenChange: (open: boolean) => void;
   isPreviewMode: boolean;
   onExitPreview: () => void;
+  authModalOpen: boolean;
+  setAuthModalOpen: (open: boolean) => void;
 }
 
 const MainLayout = ({ 
   apiKeyModalOpen, 
   onApiKeyModalOpenChange,
   isPreviewMode,
-  onExitPreview
+  onExitPreview,
+  authModalOpen,
+  setAuthModalOpen
 }: MainLayoutProps) => {
   const { messages, isLoading, isGenerating, handleSendMessage, handleRegenerateResponse, 
           handleStopGeneration, handleNewChat, generatedCode, showClearChatConfirm, 
@@ -121,6 +126,7 @@ const MainLayout = ({
         onModelSelectClick={() => setModelSelectorOpen(true)}
         onNewChatClick={() => setShowClearChatConfirm(true)}
         projectName={projectName}
+        setAuthModalOpen={setAuthModalOpen}
       />
       
       <div className="pt-14 flex-1 flex flex-col md:flex-row overflow-hidden">
@@ -131,6 +137,11 @@ const MainLayout = ({
             isLoading={isLoading}
             isGenerating={isGenerating}
             loadingMessage="Thinking..."
+            onRegenerate={handleRegenerateResponse}
+            onSendMessage={handleSendMessage}
+            onStopGeneration={handleStopGeneration}
+            onViewPreview={onExitPreview}
+            onEnhancePrompt={enhanceUserPrompt}
           />
         </div>
         
