@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { AIModel } from '@/data/models';
 import { useUiStore } from '@/stores/uiStore';
 import { useAuth } from '@/contexts/AuthContext';
-import { Moon, Sun, Settings, Save, LogOut, Menu, X, Image, PanelLeft, TrendingUp, User } from 'lucide-react';
+import { Moon, Sun, LogOut, Menu, X, Image, PanelLeft, User } from 'lucide-react';
 
 interface HeaderProps {
   selectedModel?: AIModel;
@@ -44,14 +44,29 @@ const Header = ({
     }
   };
 
+  // Create a variable to control whether to show the model selector or logo
+  const showModelSelector = location.pathname === '/' && selectedModel && onModelSelectClick;
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border h-14 flex items-center justify-between px-4">
       <div className="flex items-center gap-4">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
-          <img src={logoUrl} alt="Orion AI" className="h-7" />
-          <span className="font-semibold text-lg hidden sm:inline-block">Orion</span>
-        </Link>
+        {/* Show model selector on chat page, logo on other pages */}
+        {showModelSelector ? (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onModelSelectClick}
+            className="flex items-center gap-1 rounded-xl"
+          >
+            <span className="max-w-[100px] truncate">{selectedModel.name}</span>
+            <span className="text-muted-foreground text-xs">{selectedModel.version}</span>
+          </Button>
+        ) : (
+          <Link to="/" className="flex items-center gap-2">
+            <img src={logoUrl} alt="Orion AI" className="h-7" />
+            <span className="font-semibold text-lg hidden sm:inline-block">Orion</span>
+          </Link>
+        )}
         
         {/* Project name */}
         {projectName && (
@@ -67,7 +82,7 @@ const Header = ({
             variant={isActive('/') ? "secondary" : "ghost"} 
             size="sm" 
             asChild
-            className="text-sm"
+            className="text-sm rounded-xl"
           >
             <Link to="/">Chat</Link>
           </Button>
@@ -76,7 +91,7 @@ const Header = ({
             variant={isActive('/explore') ? "secondary" : "ghost"} 
             size="sm"
             asChild
-            className="text-sm"
+            className="text-sm rounded-xl"
           >
             <Link to="/explore">Explore</Link>
           </Button>
@@ -85,7 +100,7 @@ const Header = ({
             variant={isActive('/dashboard') ? "secondary" : "ghost"} 
             size="sm"
             asChild
-            className="text-sm"
+            className="text-sm rounded-xl"
           >
             <Link to="/dashboard">Dashboard</Link>
           </Button>
@@ -94,7 +109,7 @@ const Header = ({
             variant={isActive('/image-generator') ? "secondary" : "ghost"} 
             size="sm"
             asChild
-            className="text-sm"
+            className="text-sm rounded-xl"
           >
             <Link to="/image-generator">Images</Link>
           </Button>
@@ -102,21 +117,8 @@ const Header = ({
       </div>
       
       <div className="flex items-center gap-2">
-        {/* Selected model - Desktop */}
-        {selectedModel && onModelSelectClick && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onModelSelectClick}
-            className="hidden md:flex items-center gap-1 text-xs"
-          >
-            <span className="max-w-[100px] truncate">{selectedModel.name}</span>
-            <span className="text-muted-foreground text-xs">{selectedModel.version}</span>
-          </Button>
-        )}
-        
         {/* Theme toggle */}
-        <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
+        <Button variant="ghost" size="icon" onClick={toggleDarkMode} className="rounded-xl">
           {isDarkMode ? (
             <Sun className="h-[1.2rem] w-[1.2rem]" />
           ) : (
@@ -128,17 +130,17 @@ const Header = ({
         {user ? (
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2">
+              <Button variant="ghost" size="sm" className="gap-2 rounded-xl">
                 <User size={16} />
                 <span className="hidden sm:block">{user.email?.split('@')[0]}</span>
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-56 p-2">
+            <PopoverContent className="w-56 p-2 rounded-xl">
               <div className="grid gap-1">
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="justify-start gap-2" 
+                  className="justify-start gap-2 rounded-xl" 
                   onClick={handleSignOut}
                 >
                   <LogOut className="h-4 w-4" />
@@ -148,7 +150,7 @@ const Header = ({
             </PopoverContent>
           </Popover>
         ) : (
-          <Button variant="outline" size="sm" onClick={handleSignIn}>
+          <Button variant="outline" size="sm" onClick={handleSignIn} className="rounded-xl">
             Sign in
           </Button>
         )}
@@ -161,7 +163,7 @@ const Header = ({
               variant="ghost" 
               size="icon"
               onClick={onNewChatClick}
-              className="hidden md:flex"
+              className="hidden md:flex rounded-xl"
             >
               <PanelLeft className="h-[1.2rem] w-[1.2rem]" />
             </Button>
@@ -171,7 +173,7 @@ const Header = ({
           <Button 
             variant="ghost" 
             size="icon" 
-            className="md:hidden" 
+            className="md:hidden rounded-xl" 
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             {isMenuOpen ? (
@@ -191,71 +193,57 @@ const Header = ({
               variant={isActive('/') ? "secondary" : "ghost"} 
               size="sm" 
               asChild
-              className="justify-start"
+              className="justify-start rounded-xl"
               onClick={() => setIsMenuOpen(false)}
             >
-              <Link to="/">
-                <PanelLeft className="h-4 w-4 mr-2" />
-                Chat
-              </Link>
+              <Link to="/">Chat</Link>
             </Button>
             
             <Button 
               variant={isActive('/explore') ? "secondary" : "ghost"} 
               size="sm"
               asChild
-              className="justify-start"
+              className="justify-start rounded-xl"
               onClick={() => setIsMenuOpen(false)}
             >
-              <Link to="/explore">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Explore
-              </Link>
+              <Link to="/explore">Explore</Link>
             </Button>
-
+            
             <Button 
               variant={isActive('/dashboard') ? "secondary" : "ghost"} 
               size="sm"
               asChild
-              className="justify-start"
+              className="justify-start rounded-xl"
               onClick={() => setIsMenuOpen(false)}
             >
-              <Link to="/dashboard">
-                <Settings className="h-4 w-4 mr-2" />
-                Dashboard
-              </Link>
+              <Link to="/dashboard">Dashboard</Link>
             </Button>
-
+            
             <Button 
               variant={isActive('/image-generator') ? "secondary" : "ghost"} 
               size="sm"
               asChild
-              className="justify-start"
+              className="justify-start rounded-xl"
               onClick={() => setIsMenuOpen(false)}
             >
-              <Link to="/image-generator">
-                <Image className="h-4 w-4 mr-2" />
-                Images
-              </Link>
+              <Link to="/image-generator">Images</Link>
             </Button>
-          </nav>
-          
-          {selectedModel && onModelSelectClick && (
-            <div className="mt-4 pt-4 border-t border-border">
+            
+            {onNewChatClick && (
               <Button 
-                variant="outline" 
-                size="sm" 
+                variant="ghost" 
+                size="sm"
                 onClick={() => {
-                  onModelSelectClick();
+                  onNewChatClick();
                   setIsMenuOpen(false);
                 }}
-                className="w-full justify-between"
+                className="justify-start rounded-xl"
               >
-                <span>Model: {selectedModel.name}</span>
-                <span className="text-muted-foreground text-xs">{selectedModel.version}</span>
+                <PanelLeft className="mr-2 h-4 w-4" />
+                New Chat
               </Button>
-            </div>
-          )}
+            )}
+          </nav>
         </div>
       )}
     </header>

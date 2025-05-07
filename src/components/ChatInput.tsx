@@ -118,7 +118,7 @@ const ChatInput = ({
         {images.length > 0 && (
           <div className="flex gap-2 mb-2 flex-wrap">
             {images.map((img, index) => (
-              <div key={index} className="relative w-20 h-20 rounded overflow-hidden border border-primary/20">
+              <div key={index} className="relative w-20 h-20 rounded-xl overflow-hidden border border-primary/20">
                 <img 
                   src={img} 
                   alt={`Uploaded ${index + 1}`} 
@@ -151,7 +151,7 @@ const ChatInput = ({
               onPressedChange={onToggleChatMode}
               variant="outline"
               size="sm"
-              className="flex items-center gap-1 h-7 border-primary/20"
+              className="flex items-center gap-1 h-7 border-primary/20 rounded-xl"
               title={isChatMode ? "Switch to Code Mode" : "Switch to Chat Mode"}
             >
               {isChatMode ? (
@@ -182,7 +182,7 @@ const ChatInput = ({
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="flex items-center gap-1 h-7 border-gray-500"
+                  className="flex items-center gap-1 h-7 border-gray-500 rounded-xl"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Image className="h-3.5 w-3.5" />
@@ -198,7 +198,7 @@ const ChatInput = ({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
-              className="resize-none min-h-[20px] max-h-[120px] rounded-2xl pl-2 pr-4 border-primary/20 focus:ring-primary/30 overflow-y-scroll scrollbar-none"
+              className="resize-none min-h-[20px] max-h-[120px] rounded-2xl pl-2 pr-16 border-primary/20 focus:ring-primary/30 overflow-y-scroll scrollbar-none"
               disabled={disabled}
               style={{
                 height: 'auto',
@@ -242,7 +242,7 @@ const ChatInput = ({
       
       {/* Enhanced Prompt Dialog */}
       <Dialog open={enhanceDialogOpen} onOpenChange={setEnhanceDialogOpen}>
-        <DialogContent className="glass-morphism">
+        <DialogContent className="glass-morphism rounded-xl">
           <DialogHeader>
             <DialogTitle>Enhanced Prompt</DialogTitle>
             <DialogDescription>
@@ -256,7 +256,7 @@ const ChatInput = ({
           
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="ghost" onClick={() => setEnhanceDialogOpen(false)}>Cancel</Button>
-            <Button onClick={useEnhancedPrompt} className="cyan-glow">Use Enhanced Prompt</Button>
+            <Button onClick={useEnhancedPrompt} className="cyan-glow rounded-xl">Use Enhanced Prompt</Button>
           </div>
         </DialogContent>
       </Dialog>

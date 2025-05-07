@@ -69,7 +69,7 @@ const ImageViewer = ({ imageUrl, prompt, onDelete, alt, caption }: ImageViewerPr
       </div>
 
       <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
-        <DialogContent className="max-w-4xl w-[90vw] p-1 bg-background">
+        <DialogContent className="max-w-4xl w-[90vw] p-1 bg-background rounded-xl">
           <div className="relative flex flex-col h-full">
             <div className="absolute top-2 right-2 z-10">
               <Button 

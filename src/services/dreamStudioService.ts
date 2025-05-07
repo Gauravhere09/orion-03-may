@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
-import { getAllDreamStudioKeys } from "./apiKeyService";
 
 export interface DreamStudioGenerateOptions {
   prompt: string;
@@ -14,8 +13,22 @@ export async function generateDreamStudioImage(options: DreamStudioGenerateOptio
   try {
     const { prompt, aspectRatio = "1:1", stylePreset, outputFormat = "webp" } = options;
     
-    // Get all available Dream Studio API keys from Supabase
-    let apiKeys = await getAllDreamStudioKeys();
+    // Get all available Dream Studio API keys directly from Supabase
+    const { data: apiKeysData, error: apiKeysError } = await supabase
+      .from('dream_studio_api_keys')
+      .select('api_key')
+      .order('priority', { ascending: true })
+      .eq('is_active', true);
+
+    if (apiKeysError) {
+      console.error("Error fetching API keys:", apiKeysError);
+      toast.error("Could not fetch API keys", {
+        description: "Please check your connection to Supabase"
+      });
+      return null;
+    }
+
+    const apiKeys = apiKeysData.map(item => item.api_key);
     
     if (apiKeys.length === 0) {
       toast.error("No Dream Studio API keys found", {

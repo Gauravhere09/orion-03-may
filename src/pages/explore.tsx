@@ -51,7 +51,7 @@ const ExplorePage = ({ authModalOpen, setAuthModalOpen }: ExplorePageProps) => {
           <div className="flex flex-wrap gap-4 justify-center">
             <Button 
               onClick={handleTryNow}
-              className="cyan-glow px-8 py-6"
+              className="cyan-glow px-8 py-6 rounded-xl"
               size="lg"
             >
               Start Creating
@@ -66,7 +66,7 @@ const ExplorePage = ({ authModalOpen, setAuthModalOpen }: ExplorePageProps) => {
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="hover-scale">
+            <Card className="hover-scale rounded-xl">
               <CardHeader>
                 <CardTitle>AI Code Generator</CardTitle>
                 <CardDescription>Generate code snippets and components</CardDescription>
@@ -78,11 +78,11 @@ const ExplorePage = ({ authModalOpen, setAuthModalOpen }: ExplorePageProps) => {
                 </p>
               </CardContent>
               <CardFooter>
-                <Button variant="outline" onClick={handleTryNow} className="w-full">Try Now</Button>
+                <Button variant="outline" onClick={handleTryNow} className="w-full rounded-xl">Try Now</Button>
               </CardFooter>
             </Card>
             
-            <Card className="hover-scale">
+            <Card className="hover-scale rounded-xl">
               <CardHeader>
                 <CardTitle>Image Generator</CardTitle>
                 <CardDescription>Create stunning AI-generated images</CardDescription>
@@ -94,11 +94,11 @@ const ExplorePage = ({ authModalOpen, setAuthModalOpen }: ExplorePageProps) => {
                 </p>
               </CardContent>
               <CardFooter>
-                <Button variant="outline" onClick={handleImageGenerator} className="w-full">Generate Images</Button>
+                <Button variant="outline" onClick={handleImageGenerator} className="w-full rounded-xl">Generate Images</Button>
               </CardFooter>
             </Card>
             
-            <Card className="hover-scale">
+            <Card className="hover-scale rounded-xl">
               <CardHeader>
                 <CardTitle>Save & Organize</CardTitle>
                 <CardDescription>Keep track of your projects</CardDescription>
@@ -113,7 +113,7 @@ const ExplorePage = ({ authModalOpen, setAuthModalOpen }: ExplorePageProps) => {
                 <Button 
                   variant="outline" 
                   onClick={() => user ? navigate('/dashboard') : setAuthModalOpen(true)} 
-                  className="w-full"
+                  className="w-full rounded-xl"
                 >
                   {user ? 'View Dashboard' : 'Sign In'}
                 </Button>
@@ -147,7 +147,7 @@ const ExplorePage = ({ authModalOpen, setAuthModalOpen }: ExplorePageProps) => {
           </p>
           <Button
             variant="outline"
-            className="bg-[#ffdd00] text-black hover:bg-[#ffcc00] border-[#ffcc00]"
+            className="bg-[#ffdd00] text-black hover:bg-[#ffcc00] border-[#ffcc00] rounded-xl"
             onClick={() => window.open('https://www.buymeacoffee.com', '_blank')}
           >
             Buy me a coffee
