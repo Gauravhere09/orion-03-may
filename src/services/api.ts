@@ -1,6 +1,5 @@
-
 import { Message, SendMessageParams, ApiError, MessageContent, GeneratedCode } from './apiTypes';
-import { getApiKeys } from './storage';
+import { getApiKey, listApiKeys } from './apiKeyService';
 
 // Function to extract text content from a message
 export const getMessageText = (content: string | MessageContent[]): string => {
@@ -42,10 +41,10 @@ const sendToGemini = async (
   imageUrls: string[] = [],
   selectedModel: any
 ): Promise<Message> => {
-  const apiKeys = getApiKeys();
-  const geminiKey = apiKeys.find(key => key.key.startsWith('g-'))?.key;
+  // Get all available Gemini API keys directly from Supabase via the apiKeyService
+  const apiKey = await getApiKey('gemini');
   
-  if (!geminiKey) {
+  if (!apiKey) {
     throw new ApiError('Gemini API key not found', 'gemini');
   }
   
@@ -82,7 +81,7 @@ const sendToGemini = async (
   conversationHistory.push(userMessage);
   
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${geminiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -130,10 +129,10 @@ const sendToOpenRouter = async (
   imageUrls: string[] = [],
   selectedModel: any
 ): Promise<Message> => {
-  const apiKeys = getApiKeys();
-  const openRouterKey = apiKeys.find(key => key.key.startsWith('sk-or'))?.key;
+  // Get OpenRouter API key from Supabase using apiKeyService
+  const apiKey = await getApiKey('openrouter');
   
-  if (!openRouterKey) {
+  if (!apiKey) {
     throw new ApiError('OpenRouter API key not found', 'openrouter');
   }
   
@@ -177,7 +176,7 @@ const sendToOpenRouter = async (
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openRouterKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'HTTP-Referer': window.location.origin,
         'X-Title': 'Orion AI Code Generator'
       },
