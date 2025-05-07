@@ -14,6 +14,9 @@ export interface AIModel {
   supportsImages?: boolean; // Whether model supports image input
   geminiVersion?: string; // For Gemini models, specific version
   maxTokens?: number;
+  gradient?: string; // Background gradient for model cards
+  visionCapable?: boolean; // Whether model can process images
+  strengths?: string[]; // Model's strong capabilities
 }
 
 // Update model IDs to match OpenRouter's free tier models
@@ -30,6 +33,9 @@ export const aiModels: AIModel[] = [
     supportsImages: true,
     geminiVersion: "gemini-pro-vision",
     maxTokens: 8192,
+    visionCapable: true,
+    gradient: "from-blue-400 to-purple-500",
+    strengths: ["Image understanding", "General knowledge", "Reasoning"]
   },
   {
     id: "mistralai/mixtral-8x7b-instruct",
@@ -42,6 +48,9 @@ export const aiModels: AIModel[] = [
     isVisible: true,
     supportsImages: false,
     maxTokens: 4096,
+    visionCapable: false,
+    gradient: "from-indigo-500 to-purple-600",
+    strengths: ["Language tasks", "Reasoning", "Knowledge"]
   },
   {
     id: "meta-llama/llama-3-8b-instruct",
@@ -54,6 +63,9 @@ export const aiModels: AIModel[] = [
     isVisible: true,
     supportsImages: false,
     maxTokens: 4096,
+    visionCapable: false,
+    gradient: "from-pink-500 to-orange-500",
+    strengths: ["Reasoning", "Language understanding", "Instruction following"]
   },
   {
     id: "deepseek/deepseek-r1",
@@ -66,6 +78,9 @@ export const aiModels: AIModel[] = [
     isVisible: true,
     supportsImages: false,
     maxTokens: 4096,
+    visionCapable: false,
+    gradient: "from-green-400 to-teal-500",
+    strengths: ["Mathematics", "Reasoning", "General knowledge"]
   },
   {
     id: "meta-llama/codellama-34b-instruct",
@@ -78,6 +93,8 @@ export const aiModels: AIModel[] = [
     isVisible: true,
     supportsImages: false,
     maxTokens: 4096,
+    visionCapable: false,
+    gradient: "from-blue-500 to-cyan-400",
+    strengths: ["Coding", "Logic", "Technical knowledge"]
   }
 ];
-

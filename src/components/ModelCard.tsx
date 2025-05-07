@@ -22,7 +22,7 @@ const ModelCard = ({ model, isSelected, onClick }: ModelCardProps) => {
     >
       <div className={cn(
         'h-2 w-full bg-gradient-to-r', 
-        model.gradient
+        model.gradient || 'from-gray-400 to-gray-500'
       )} />
       <CardContent className="p-4">
         <div className="flex flex-col space-y-1.5">
@@ -43,7 +43,7 @@ const ModelCard = ({ model, isSelected, onClick }: ModelCardProps) => {
             <p className="text-xs line-clamp-2 text-muted-foreground h-8">{model.description}</p>
           </div>
           <div className="flex flex-wrap gap-1 mt-1">
-            {model.strengths.slice(0, 3).map((strength, i) => (
+            {(model.strengths || []).slice(0, 3).map((strength, i) => (
               <span 
                 key={i}
                 className="text-[10px] bg-muted/50 rounded-full px-1.5 py-0.5"
